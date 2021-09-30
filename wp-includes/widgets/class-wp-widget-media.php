@@ -59,7 +59,6 @@ abstract class WP_Widget_Media extends WP_Widget {
 			array(
 				'description'                 => __( 'A media item.' ),
 				'customize_selective_refresh' => true,
-				'show_instance_in_rest'       => true,
 				'mime_type'                   => '',
 			)
 		);
@@ -97,8 +96,8 @@ abstract class WP_Widget_Media extends WP_Widget {
 	 *
 	 * @since 4.8.0
 	 *
-	 * @param int $number Optional. The unique order number of this widget instance
-	 *                    compared to other instances of the same class. Default -1.
+	 * @param integer $number Optional. The unique order number of this widget instance
+	 *                        compared to other instances of the same class. Default -1.
 	 */
 	public function _register_one( $number = -1 ) {
 		parent::_register_one( $number );
@@ -163,7 +162,7 @@ abstract class WP_Widget_Media extends WP_Widget {
 		 * @since 4.9.0
 		 *
 		 * @param array           $schema Instance schema.
-		 * @param WP_Widget_Media $widget Widget object.
+		 * @param WP_Widget_Media $this   Widget object.
 		 */
 		$schema = apply_filters( "widget_{$this->id_base}_instance_schema", $schema, $this );
 
@@ -209,7 +208,7 @@ abstract class WP_Widget_Media extends WP_Widget {
 		}
 		$tokens = array_map( 'sanitize_html_class', $tokens );
 		$tokens = array_filter( $tokens );
-		return implode( ' ', $tokens );
+		return join( ' ', $tokens );
 	}
 
 	/**
@@ -246,7 +245,7 @@ abstract class WP_Widget_Media extends WP_Widget {
 		 *
 		 * @param array           $instance Instance data.
 		 * @param array           $args     Widget args.
-		 * @param WP_Widget_Media $widget   Widget object.
+		 * @param WP_Widget_Media $this     Widget object.
 		 */
 		$instance = apply_filters( "widget_{$this->id_base}_instance", $instance, $args, $this );
 
@@ -344,7 +343,7 @@ abstract class WP_Widget_Media extends WP_Widget {
 				class="media-widget-instance-property"
 				name="<?php echo esc_attr( $this->get_field_name( $name ) ); ?>"
 				id="<?php echo esc_attr( $this->get_field_id( $name ) ); // Needed specifically by wpWidgets.appendTitle(). ?>"
-				value="<?php echo esc_attr( is_array( $value ) ? implode( ',', $value ) : (string) $value ); ?>"
+				value="<?php echo esc_attr( is_array( $value ) ? join( ',', $value ) : strval( $value ) ); ?>"
 			/>
 			<?php
 		endforeach;

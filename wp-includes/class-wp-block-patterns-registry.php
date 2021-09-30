@@ -16,7 +16,6 @@ final class WP_Block_Patterns_Registry {
 	/**
 	 * Registered patterns array.
 	 *
-	 * @since 5.5.0
 	 * @var array
 	 */
 	private $registered_patterns = array();
@@ -24,7 +23,6 @@ final class WP_Block_Patterns_Registry {
 	/**
 	 * Container for the main instance of the class.
 	 *
-	 * @since 5.5.0
 	 * @var WP_Block_Patterns_Registry|null
 	 */
 	private static $instance = null;
@@ -41,29 +39,17 @@ final class WP_Block_Patterns_Registry {
 	 */
 	public function register( $pattern_name, $pattern_properties ) {
 		if ( ! isset( $pattern_name ) || ! is_string( $pattern_name ) ) {
-			_doing_it_wrong(
-				__METHOD__,
-				__( 'Pattern name must be a string.' ),
-				'5.5.0'
-			);
+			_doing_it_wrong( __METHOD__, __( 'Pattern name must be a string.' ), '5.5.0' );
 			return false;
 		}
 
 		if ( ! isset( $pattern_properties['title'] ) || ! is_string( $pattern_properties['title'] ) ) {
-			_doing_it_wrong(
-				__METHOD__,
-				__( 'Pattern title must be a string.' ),
-				'5.5.0'
-			);
+			_doing_it_wrong( __METHOD__, __( 'Pattern title must be a string.' ), '5.5.0' );
 			return false;
 		}
 
 		if ( ! isset( $pattern_properties['content'] ) || ! is_string( $pattern_properties['content'] ) ) {
-			_doing_it_wrong(
-				__METHOD__,
-				__( 'Pattern content must be a string.' ),
-				'5.5.0'
-			);
+			_doing_it_wrong( __METHOD__, __( 'Pattern content must be a string.' ), '5.5.0' );
 			return false;
 		}
 
@@ -85,12 +71,9 @@ final class WP_Block_Patterns_Registry {
 	 */
 	public function unregister( $pattern_name ) {
 		if ( ! $this->is_registered( $pattern_name ) ) {
-			_doing_it_wrong(
-				__METHOD__,
-				/* translators: %s: Pattern name. */
-				sprintf( __( 'Pattern "%s" not found.' ), $pattern_name ),
-				'5.5.0'
-			);
+			/* translators: 1: Pattern name. */
+			$message = sprintf( __( 'Pattern "%1$s" not found.' ), $pattern_name );
+			_doing_it_wrong( __METHOD__, $message, '5.5.0' );
 			return false;
 		}
 
@@ -175,7 +158,7 @@ function register_block_pattern( $pattern_name, $pattern_properties ) {
  *
  * @since 5.5.0
  *
- * @param string $pattern_name Pattern name including namespace.
+ * @param string $pattern_name       Pattern name including namespace.
  * @return bool True if the pattern was unregistered with success and false otherwise.
  */
 function unregister_block_pattern( $pattern_name ) {

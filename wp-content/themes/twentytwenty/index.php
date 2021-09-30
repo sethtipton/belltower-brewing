@@ -98,7 +98,7 @@ get_header();
 			<?php
 			get_search_form(
 				array(
-					'aria_label' => __( 'search again', 'twentytwenty' ),
+					'label' => __( 'search again', 'twentytwenty' ),
 				)
 			);
 			?>

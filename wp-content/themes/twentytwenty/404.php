@@ -21,7 +21,7 @@ get_header();
 		<?php
 		get_search_form(
 			array(
-				'aria_label' => __( '404 not found', 'twentytwenty' ),
+				'label' => __( '404 not found', 'twentytwenty' ),
 			)
 		);
 		?>

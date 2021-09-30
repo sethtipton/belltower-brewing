@@ -1,0 +1,45 @@
+{
+  "name": "Bell Tower Brewing",
+  "version": "1.0.0",
+  "description": "Bell Tower Brewing Theme based on _s, or underscores",
+  "author": "Seth Tipton",
+  "license": "GPL-2.0-or-later",
+  "keywords": [
+    "WordPress",
+    "Theme"
+  ],
+  "homepage": "https://github.com/sethtipton/belltower.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sethtipton/belltower.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Automattic/_s/issues"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^9.0.0",
+    "archiver": "^4.0.1",
+    "node-sass": "^4.14.0",
+    "rtlcss": "^2.5.0"
+  },
+  "rtlcssConfig": {
+    "options": {
+      "autoRename": false,
+      "autoRenameStrict": false,
+      "blacklist": {},
+      "clean": true,
+      "greedy": false,
+      "processUrls": false,
+      "stringMap": []
+    },
+    "plugins": [],
+    "map": false
+  },
+  "scripts": {
+    "compile:css": "node-sass sass/style.scss style.css && node-sass sass/woocommerce.scss woocommerce.css && stylelint '*.css' --fix || true && stylelint '*.css' --fix",
+    "compile:rtl": "rtlcss style.css style-rtl.css",
+    "lint:scss": "wp-scripts lint-style 'sass/**/*.scss'",
+    "lint:js": "wp-scripts lint-js 'js/*.js'",
+    "bundle": "node bin/bundle.js"
+  }
+}

@@ -47,19 +47,15 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 		$plugin_info = get_site_transient( 'update_plugins' );
 		if ( isset( $plugin_info->no_update ) ) {
 			foreach ( $plugin_info->no_update as $plugin ) {
-				if ( isset( $plugin->slug ) ) {
-					$plugin->upgrade          = false;
-					$plugins[ $plugin->slug ] = $plugin;
-				}
+				$plugin->upgrade          = false;
+				$plugins[ $plugin->slug ] = $plugin;
 			}
 		}
 
 		if ( isset( $plugin_info->response ) ) {
 			foreach ( $plugin_info->response as $plugin ) {
-				if ( isset( $plugin->slug ) ) {
-					$plugin->upgrade          = true;
-					$plugins[ $plugin->slug ] = $plugin;
-				}
+				$plugin->upgrade          = true;
+				$plugins[ $plugin->slug ] = $plugin;
 			}
 		}
 
@@ -105,16 +101,13 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 		if ( 'search' === $tab ) {
 			$tabs['search'] = __( 'Search Results' );
 		}
-
 		if ( 'beta' === $tab || false !== strpos( get_bloginfo( 'version' ), '-' ) ) {
 			$tabs['beta'] = _x( 'Beta Testing', 'Plugin Installer' );
 		}
-
 		$tabs['featured']    = _x( 'Featured', 'Plugin Installer' );
 		$tabs['popular']     = _x( 'Popular', 'Plugin Installer' );
 		$tabs['recommended'] = _x( 'Recommended', 'Plugin Installer' );
 		$tabs['favorites']   = _x( 'Favorites', 'Plugin Installer' );
-
 		if ( current_user_can( 'upload_plugins' ) ) {
 			// No longer a real tab. Here for filter compatibility.
 			// Gets skipped in get_views().
@@ -217,14 +210,7 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 		 * Filters API request arguments for each Add Plugins screen tab.
 		 *
 		 * The dynamic portion of the hook name, `$tab`, refers to the plugin install tabs.
-		 *
-		 * Possible hook names include:
-		 *
-		 *  - `install_plugins_table_api_args_favorites`
-		 *  - `install_plugins_table_api_args_featured`
-		 *  - `install_plugins_table_api_args_popular`
-		 *  - `install_plugins_table_api_args_recommended`
-		 *  - `install_plugins_table_api_args_upload`
+		 * Default tabs include 'featured', 'popular', 'recommended', 'favorites', and 'upload'.
 		 *
 		 * @since 3.7.0
 		 *
@@ -441,7 +427,7 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 		$a = $plugin_a->$orderby;
 		$b = $plugin_b->$orderby;
 
-		if ( $a === $b ) {
+		if ( $a == $b ) {
 			return 0;
 		}
 
@@ -486,7 +472,7 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 			}
 
 			// Display the group heading if there is one.
-			if ( isset( $plugin['group'] ) && $plugin['group'] !== $group ) {
+			if ( isset( $plugin['group'] ) && $plugin['group'] != $group ) {
 				if ( isset( $this->groups[ $plugin['group'] ] ) ) {
 					$group_name = $this->groups[ $plugin['group'] ];
 					if ( isset( $plugins_group_titles[ $group_name ] ) ) {
@@ -507,7 +493,6 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 
 				$group = $plugin['group'];
 			}
-
 			$title = wp_kses( $plugin['name'], $plugins_allowedtags );
 
 			// Remove any HTML from the description.
@@ -713,7 +698,7 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 					<h3>
 						<a href="<?php echo esc_url( $details_link ); ?>" class="thickbox open-plugin-details-modal">
 						<?php echo $title; ?>
-						<img src="<?php echo esc_url( $plugin_icon_url ); ?>" class="plugin-icon" alt="" />
+						<img src="<?php echo esc_attr( $plugin_icon_url ); ?>" class="plugin-icon" alt="" />
 						</a>
 					</h3>
 				</div>
@@ -758,7 +743,7 @@ class WP_Plugin_Install_List_Table extends WP_List_Table {
 							_nx( '%s+ Million', '%s+ Million', $active_installs_millions, 'Active plugin installations' ),
 							number_format_i18n( $active_installs_millions )
 						);
-					} elseif ( 0 === $plugin['active_installs'] ) {
+					} elseif ( 0 == $plugin['active_installs'] ) {
 						$active_installs_text = _x( 'Less Than 10', 'Active plugin installations' );
 					} else {
 						$active_installs_text = number_format_i18n( $plugin['active_installs'] ) . '+';

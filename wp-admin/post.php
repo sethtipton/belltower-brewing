@@ -291,14 +291,7 @@ switch ( $action ) {
 			wp_die( __( 'Error in restoring the item from Trash.' ) );
 		}
 
-		$sendback = add_query_arg(
-			array(
-				'untrashed' => 1,
-				'ids'       => $post_id,
-			),
-			$sendback
-		);
-		wp_redirect( $sendback );
+		wp_redirect( add_query_arg( 'untrashed', 1, $sendback ) );
 		exit;
 
 	case 'delete':
@@ -339,7 +332,7 @@ switch ( $action ) {
 		exit;
 
 	case 'toggle-custom-fields':
-		check_admin_referer( 'toggle-custom-fields', 'toggle-custom-fields-nonce' );
+		check_admin_referer( 'toggle-custom-fields' );
 
 		$current_user_id = get_current_user_id();
 		if ( $current_user_id ) {

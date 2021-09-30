@@ -899,8 +899,10 @@ function validate_current_theme() {
  * Uses the information from `Requires at least` and `Requires PHP` headers
  * defined in the theme's `style.css` file.
  *
+ * If the headers are not present in the theme's stylesheet file,
+ * `readme.txt` is also checked as a fallback.
+ *
  * @since 5.5.0
- * @since 5.8.0 Removed support for using `readme.txt` as a fallback.
  *
  * @param string $stylesheet Directory name for the theme.
  * @return true|WP_Error True if requirements are met, WP_Error on failure.
@@ -908,24 +910,25 @@ function validate_current_theme() {
 function validate_theme_requirements( $stylesheet ) {
 	$theme = wp_get_theme( $stylesheet );
 
-	// If the theme is a Full Site Editing theme, check for the presence of the Gutenberg plugin.
-	$theme_tags = $theme->get( 'Tags' );
-
-	if ( ! empty( $theme_tags ) && in_array( 'full-site-editing', $theme_tags, true ) && ! function_exists( 'gutenberg_is_fse_theme' ) ) {
-		return new WP_Error(
-			'theme_requires_gutenberg_plugin',
-			sprintf(
-					/* translators: %s: Theme name. */
-				_x( '<strong>Error:</strong> This theme (%s) uses Full Site Editing, which requires the Gutenberg plugin to be activated.', 'theme' ),
-				$theme->display( 'Name' )
-			)
-		);
-	}
-
 	$requirements = array(
 		'requires'     => ! empty( $theme->get( 'RequiresWP' ) ) ? $theme->get( 'RequiresWP' ) : '',
 		'requires_php' => ! empty( $theme->get( 'RequiresPHP' ) ) ? $theme->get( 'RequiresPHP' ) : '',
 	);
+
+	$readme_file = $theme->theme_root . '/' . $stylesheet . '/readme.txt';
+
+	if ( file_exists( $readme_file ) ) {
+		$readme_headers = get_file_data(
+			$readme_file,
+			array(
+				'requires'     => 'Requires at least',
+				'requires_php' => 'Requires PHP',
+			),
+			'theme'
+		);
+
+		$requirements = array_merge( $readme_headers, $requirements );
+	}
 
 	$compatible_wp  = is_wp_version_compatible( $requirements['requires'] );
 	$compatible_php = is_php_version_compatible( $requirements['requires_php'] );
@@ -1021,8 +1024,6 @@ function get_theme_mod( $name, $default = false ) {
 	if ( is_string( $default ) ) {
 		// Only run the replacement if an sprintf() string format pattern was found.
 		if ( preg_match( '#(?<!%)%(?:\d+\$?)?s#', $default ) ) {
-			// Remove a single trailing percent sign.
-			$default = preg_replace( '#(?<!%)%$#', '', $default );
 			$default = sprintf( $default, get_template_directory_uri(), get_stylesheet_directory_uri() );
 		}
 	}
@@ -1035,11 +1036,9 @@ function get_theme_mod( $name, $default = false ) {
  * Updates theme modification value for the current theme.
  *
  * @since 2.1.0
- * @since 5.6.0 A return value was added.
  *
  * @param string $name  Theme modification name.
  * @param mixed  $value Theme modification value.
- * @return bool True if the value was updated, false otherwise.
  */
 function set_theme_mod( $name, $value ) {
 	$mods      = get_theme_mods();
@@ -1060,8 +1059,7 @@ function set_theme_mod( $name, $value ) {
 	$mods[ $name ] = apply_filters( "pre_set_theme_mod_{$name}", $value, $old_value );
 
 	$theme = get_option( 'stylesheet' );
-
-	return update_option( "theme_mods_$theme", $mods );
+	update_option( "theme_mods_$theme", $mods );
 }
 
 /**
@@ -1087,9 +1085,7 @@ function remove_theme_mod( $name ) {
 		remove_theme_mods();
 		return;
 	}
-
 	$theme = get_option( 'stylesheet' );
-
 	update_option( "theme_mods_$theme", $mods );
 }
 
@@ -1106,7 +1102,6 @@ function remove_theme_mods() {
 	if ( false === $theme_name ) {
 		$theme_name = wp_get_theme()->get( 'Name' );
 	}
-
 	delete_option( 'mods_' . $theme_name );
 }
 
@@ -2152,7 +2147,7 @@ function get_theme_starter_content() {
 				'text',
 				array(
 					'title'  => _x( 'Find Us', 'Theme starter content' ),
-					'text'   => implode(
+					'text'   => join(
 						'',
 						array(
 							'<strong>' . _x( 'Address', 'Theme starter content' ) . "</strong>\n",
@@ -2478,43 +2473,17 @@ function get_theme_starter_content() {
  *              by adding it to the function signature.
  * @since 5.5.0 The `core-block-patterns` feature was added and is enabled by default.
  * @since 5.5.0 The `custom-logo` feature now also accepts 'unlink-homepage-logo'.
- * @since 5.6.0 The `post-formats` feature warns if no array is passed.
- * @since 5.8.0 The `widgets-block-editor` feature enables the Widgets block editor.
  *
  * @global array $_wp_theme_features
  *
- * @param string $feature The feature being added. Likely core values include:
- *                          - 'admin-bar'
- *                          - 'align-wide'
- *                          - 'automatic-feed-links'
- *                          - 'core-block-patterns'
- *                          - 'custom-background'
- *                          - 'custom-header'
- *                          - 'custom-line-height'
- *                          - 'custom-logo'
- *                          - 'customize-selective-refresh-widgets'
- *                          - 'custom-spacing'
- *                          - 'custom-units'
- *                          - 'dark-editor-style'
- *                          - 'disable-custom-colors'
- *                          - 'disable-custom-font-sizes'
- *                          - 'editor-color-palette'
- *                          - 'editor-gradient-presets'
- *                          - 'editor-font-sizes'
- *                          - 'editor-styles'
- *                          - 'featured-content'
- *                          - 'html5'
- *                          - 'menus'
- *                          - 'post-formats'
- *                          - 'post-thumbnails'
- *                          - 'responsive-embeds'
- *                          - 'starter-content'
- *                          - 'title-tag'
- *                          - 'wp-block-styles'
- *                          - 'widgets'
- *                          - 'widgets-block-editor'
+ * @param string $feature The feature being added. Likely core values include 'post-formats', 'post-thumbnails',
+ *                        'custom-header', 'custom-background', 'custom-logo', 'menus', 'automatic-feed-links',
+ *                        'html5', 'title-tag', 'customize-selective-refresh-widgets', 'starter-content',
+ *                        'responsive-embeds', 'align-wide', 'dark-editor-style', 'disable-custom-colors',
+ *                        'disable-custom-font-sizes', 'editor-color-palette', 'editor-font-sizes',
+ *                        'editor-styles', 'wp-block-styles', and 'core-block-patterns'.
  * @param mixed  ...$args Optional extra arguments to pass along with certain features.
- * @return void|false Void on success, false on failure.
+ * @return void|bool False on failure, void otherwise.
  */
 function add_theme_support( $feature, ...$args ) {
 	global $_wp_theme_features;
@@ -2546,9 +2515,6 @@ function add_theme_support( $feature, ...$args ) {
 				unset( $post_formats['standard'] );
 
 				$args[0] = array_intersect( $args[0], array_keys( $post_formats ) );
-			} else {
-				_doing_it_wrong( "add_theme_support( 'post-formats' )", __( 'You need to pass an array of post formats.' ), '5.6.0' );
-				return false;
 			}
 			break;
 

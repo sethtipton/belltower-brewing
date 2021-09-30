@@ -8,26 +8,22 @@
 /* global pagenow */
 
 /**
- * @param {jQuery}  $                                        jQuery object.
- * @param {object}  wp                                       WP object.
- * @param {object}  settings                                 WP Updates settings.
- * @param {string}  settings.ajax_nonce                      Ajax nonce.
- * @param {object=} settings.plugins                         Base names of plugins in their different states.
- * @param {Array}   settings.plugins.all                     Base names of all plugins.
- * @param {Array}   settings.plugins.active                  Base names of active plugins.
- * @param {Array}   settings.plugins.inactive                Base names of inactive plugins.
- * @param {Array}   settings.plugins.upgrade                 Base names of plugins with updates available.
- * @param {Array}   settings.plugins.recently_activated      Base names of recently activated plugins.
- * @param {Array}   settings.plugins['auto-update-enabled']  Base names of plugins set to auto-update.
- * @param {Array}   settings.plugins['auto-update-disabled'] Base names of plugins set to not auto-update.
- * @param {object=} settings.themes                          Slugs of themes in their different states.
- * @param {Array}   settings.themes.all                      Slugs of all themes.
- * @param {Array}   settings.themes.upgrade                  Slugs of themes with updates available.
- * @param {Arrat}   settings.themes.disabled                 Slugs of disabled themes.
- * @param {Array}   settings.themes['auto-update-enabled']   Slugs of themes set to auto-update.
- * @param {Array}   settings.themes['auto-update-disabled']  Slugs of themes set to not auto-update.
- * @param {object=} settings.totals                          Combined information for available update counts.
- * @param {number}  settings.totals.count                    Holds the amount of available updates.
+ * @param {jQuery}  $                                   jQuery object.
+ * @param {object}  wp                                  WP object.
+ * @param {object}  settings                            WP Updates settings.
+ * @param {string}  settings.ajax_nonce                 Ajax nonce.
+ * @param {object=} settings.plugins                    Base names of plugins in their different states.
+ * @param {Array}   settings.plugins.all                Base names of all plugins.
+ * @param {Array}   settings.plugins.active             Base names of active plugins.
+ * @param {Array}   settings.plugins.inactive           Base names of inactive plugins.
+ * @param {Array}   settings.plugins.upgrade            Base names of plugins with updates available.
+ * @param {Array}   settings.plugins.recently_activated Base names of recently activated plugins.
+ * @param {object=} settings.themes                     Plugin/theme status information or null.
+ * @param {number}  settings.themes.all                 Amount of all themes.
+ * @param {number}  settings.themes.upgrade             Amount of themes with updates available.
+ * @param {number}  settings.themes.disabled            Amount of disabled themes.
+ * @param {object=} settings.totals                     Combined information for available update counts.
+ * @param {number}  settings.totals.count               Holds the amount of available updates.
  */
 (function( $, wp, settings ) {
 	var $document = $( document ),
@@ -119,7 +115,7 @@
 		autoUpdatesError: ''
 	};
 
-	wp.updates.l10n = window.wp.deprecateL10nObject( 'wp.updates.l10n', wp.updates.l10n, '5.5.0' );
+	wp.updates.l10n = window.wp.deprecateL10nObject( 'wp.updates.l10n', wp.updates.l10n );
 
 	/**
 	 * User nonce for ajax calls.
@@ -443,8 +439,7 @@
 	 *                     decorated with an abort() method.
 	 */
 	wp.updates.updatePlugin = function( args ) {
-		var $updateRow, $card, $message, message,
-			$adminBarUpdates = $( '#wp-admin-bar-updates' );
+		var $updateRow, $card, $message, message;
 
 		args = _.extend( {
 			success: wp.updates.updatePluginSuccess,
@@ -471,8 +466,6 @@
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
-
-		$adminBarUpdates.addClass( 'spin' );
 
 		if ( $message.html() !== __( 'Updating...' ) ) {
 			$message.data( 'originaltext', $message.html() );
@@ -502,8 +495,7 @@
 	 * @param {string} response.newVersion New version of the plugin.
 	 */
 	wp.updates.updatePluginSuccess = function( response ) {
-		var $pluginRow, $updateMessage, newText,
-			$adminBarUpdates = $( '#wp-admin-bar-updates' );
+		var $pluginRow, $updateMessage, newText;
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow     = $( 'tr[data-plugin="' + response.plugin + '"]' )
@@ -524,8 +516,6 @@
 				.removeClass( 'updating-message' )
 				.addClass( 'button-disabled updated-message' );
 		}
-
-		$adminBarUpdates.removeClass( 'spin' );
 
 		$updateMessage
 			.attr(
@@ -559,8 +549,7 @@
 	 * @param {string}  response.errorMessage The error that occurred.
 	 */
 	wp.updates.updatePluginError = function( response ) {
-		var $card, $message, errorMessage,
-			$adminBarUpdates = $( '#wp-admin-bar-updates' );
+		var $card, $message, errorMessage;
 
 		if ( ! wp.updates.isValidResponse( response, 'update' ) ) {
 			return;
@@ -629,7 +618,7 @@
 				setTimeout( function() {
 					$card
 						.removeClass( 'plugin-card-update-failed' )
-						.find( '.column-name a' ).trigger( 'focus' );
+						.find( '.column-name a' ).focus();
 
 					$card.find( '.update-now' )
 						.attr( 'aria-label', false )
@@ -637,8 +626,6 @@
 				}, 200 );
 			} );
 		}
-
-		$adminBarUpdates.removeClass( 'spin' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
@@ -801,7 +788,7 @@
 			setTimeout( function() {
 				$card
 					.removeClass( 'plugin-card-update-failed' )
-					.find( '.column-name a' ).trigger( 'focus' );
+					.find( '.column-name a' ).focus();
 			}, 200 );
 		} );
 
@@ -1020,24 +1007,6 @@
 				}
 			}
 
-			if ( -1 !== _.indexOf( plugins['auto-update-enabled'], response.plugin ) ) {
-				plugins['auto-update-enabled'] = _.without( plugins['auto-update-enabled'], response.plugin );
-				if ( plugins['auto-update-enabled'].length ) {
-					$views.find( '.auto-update-enabled .count' ).text( '(' + plugins['auto-update-enabled'].length + ')' );
-				} else {
-					$views.find( '.auto-update-enabled' ).remove();
-				}
-			}
-
-			if ( -1 !== _.indexOf( plugins['auto-update-disabled'], response.plugin ) ) {
-				plugins['auto-update-disabled'] = _.without( plugins['auto-update-disabled'], response.plugin );
-				if ( plugins['auto-update-disabled'].length ) {
-					$views.find( '.auto-update-disabled .count' ).text( '(' + plugins['auto-update-disabled'].length + ')' );
-				} else {
-					$views.find( '.auto-update-disabled' ).remove();
-				}
-			}
-
 			plugins.all = _.without( plugins.all, response.plugin );
 
 			if ( plugins.all.length ) {
@@ -1215,10 +1184,10 @@
 
 			// Focus on Customize button after updating.
 			if ( isModalOpen ) {
-				$( '.load-customize:visible' ).trigger( 'focus' );
+				$( '.load-customize:visible' ).focus();
 				$( '.theme-info .theme-autoupdate' ).find( '.auto-update-time' ).empty();
 			} else {
-				$theme.find( '.load-customize' ).trigger( 'focus' );
+				$theme.find( '.load-customize' ).focus();
 			}
 		}
 
@@ -1271,7 +1240,7 @@
 		} else {
 			$notice = $( '.theme-info .notice' ).add( $theme.find( '.notice' ) );
 
-			$( 'body.modal-open' ).length ? $( '.load-customize:visible' ).trigger( 'focus' ) : $theme.find( '.load-customize' ).trigger( 'focus');
+			$( 'body.modal-open' ).length ? $( '.load-customize:visible' ).focus() : $theme.find( '.load-customize' ).focus();
 		}
 
 		wp.updates.addAdminNotice( {
@@ -1536,7 +1505,7 @@
 			$themeRows.css( { backgroundColor: '#faafaa' } ).fadeOut( 350, function() {
 				var $views     = $( '.subsubsub' ),
 					$themeRow  = $( this ),
-					themes     = settings.themes,
+					totals     = settings.themes,
 					deletedRow = wp.template( 'item-deleted-row' );
 
 				if ( ! $themeRow.hasClass( 'plugin-update-tr' ) ) {
@@ -1552,43 +1521,23 @@
 				$themeRow.remove();
 
 				// Remove theme from update count.
-				if ( -1 !== _.indexOf( themes.upgrade, response.slug ) ) {
-					themes.upgrade = _.without( themes.upgrade, response.slug );
+				if ( $themeRow.hasClass( 'update' ) ) {
+					totals.upgrade--;
 					wp.updates.decrementCount( 'theme' );
 				}
 
 				// Remove from views.
-				if ( -1 !== _.indexOf( themes.disabled, response.slug ) ) {
-					themes.disabled = _.without( themes.disabled, response.slug );
-					if ( themes.disabled.length ) {
-						$views.find( '.disabled .count' ).text( '(' + themes.disabled.length + ')' );
+				if ( $themeRow.hasClass( 'inactive' ) ) {
+					totals.disabled--;
+					if ( totals.disabled ) {
+						$views.find( '.disabled .count' ).text( '(' + totals.disabled + ')' );
 					} else {
 						$views.find( '.disabled' ).remove();
 					}
 				}
 
-				if ( -1 !== _.indexOf( themes['auto-update-enabled'], response.slug ) ) {
-					themes['auto-update-enabled'] = _.without( themes['auto-update-enabled'], response.slug );
-					if ( themes['auto-update-enabled'].length ) {
-						$views.find( '.auto-update-enabled .count' ).text( '(' + themes['auto-update-enabled'].length + ')' );
-					} else {
-						$views.find( '.auto-update-enabled' ).remove();
-					}
-				}
-
-				if ( -1 !== _.indexOf( themes['auto-update-disabled'], response.slug ) ) {
-					themes['auto-update-disabled'] = _.without( themes['auto-update-disabled'], response.slug );
-					if ( themes['auto-update-disabled'].length ) {
-						$views.find( '.auto-update-disabled .count' ).text( '(' + themes['auto-update-disabled'].length + ')' );
-					} else {
-						$views.find( '.auto-update-disabled' ).remove();
-					}
-				}
-
-				themes.all = _.without( themes.all, response.slug );
-
 				// There is always at least one theme available.
-				$views.find( '.all .count' ).text( '(' + themes.all.length + ')' );
+				$views.find( '.all .count' ).text( '(' + --totals.all + ')' );
 			} );
 		}
 
@@ -1768,11 +1717,11 @@
 
 			// #upgrade button must always be the last focus-able element in the dialog.
 			if ( 'upgrade' === event.target.id && ! event.shiftKey ) {
-				$( '#hostname' ).trigger( 'focus' );
+				$( '#hostname' ).focus();
 
 				event.preventDefault();
 			} else if ( 'hostname' === event.target.id && event.shiftKey ) {
-				$( '#upgrade' ).trigger( 'focus' );
+				$( '#upgrade' ).focus();
 
 				event.preventDefault();
 			}
@@ -1789,7 +1738,7 @@
 
 		$( 'body' ).addClass( 'modal-open' );
 		$modal.show();
-		$modal.find( 'input:enabled:first' ).trigger( 'focus' );
+		$modal.find( 'input:enabled:first' ).focus();
 		$modal.on( 'keydown', wp.updates.keydown );
 	};
 
@@ -1803,7 +1752,7 @@
 		$( 'body' ).removeClass( 'modal-open' );
 
 		if ( wp.updates.$elToReturnFocusToFromCredentialsModal ) {
-			wp.updates.$elToReturnFocusToFromCredentialsModal.trigger( 'focus' );
+			wp.updates.$elToReturnFocusToFromCredentialsModal.focus();
 		}
 	};
 
@@ -2054,7 +2003,7 @@
 		 */
 		$filesystemForm.on( 'change', 'input[name="connection_type"]', function() {
 			$( '#ssh-keys' ).toggleClass( 'hidden', ( 'ssh' !== $( this ).val() ) );
-		} ).trigger( 'change' );
+		} ).change();
 
 		/**
 		 * Handles events after the credential modal was closed.
@@ -2631,8 +2580,8 @@
 				var $subTitle    = $( '<span />' ).addClass( 'subtitle' ).html(
 					sprintf(
 						/* translators: %s: Search query. */
-						__( 'Search results for: %s' ),
-						'<strong>' + _.escape( data.s ) + '</strong>'
+						__( 'Search results for &#8220;%s&#8221;' ),
+						_.escape( data.s )
 					) ),
 					$oldSubTitle = $( '.wrap .subtitle' );
 
@@ -2774,7 +2723,7 @@
 			}
 
 			try {
-				message = JSON.parse( originalEvent.data );
+				message = $.parseJSON( originalEvent.data );
 			} catch ( e ) {
 				return;
 			}

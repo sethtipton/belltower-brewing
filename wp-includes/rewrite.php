@@ -7,115 +7,112 @@
  */
 
 /**
- * Endpoint mask that matches nothing.
+ * Endpoint Mask for default, which is nothing.
  *
  * @since 2.1.0
  */
 define( 'EP_NONE', 0 );
 
 /**
- * Endpoint mask that matches post permalinks.
+ * Endpoint Mask for Permalink.
  *
  * @since 2.1.0
  */
 define( 'EP_PERMALINK', 1 );
 
 /**
- * Endpoint mask that matches attachment permalinks.
+ * Endpoint Mask for Attachment.
  *
  * @since 2.1.0
  */
 define( 'EP_ATTACHMENT', 2 );
 
 /**
- * Endpoint mask that matches any date archives.
+ * Endpoint Mask for date.
  *
  * @since 2.1.0
  */
 define( 'EP_DATE', 4 );
 
 /**
- * Endpoint mask that matches yearly archives.
+ * Endpoint Mask for year
  *
  * @since 2.1.0
  */
 define( 'EP_YEAR', 8 );
 
 /**
- * Endpoint mask that matches monthly archives.
+ * Endpoint Mask for month.
  *
  * @since 2.1.0
  */
 define( 'EP_MONTH', 16 );
 
 /**
- * Endpoint mask that matches daily archives.
+ * Endpoint Mask for day.
  *
  * @since 2.1.0
  */
 define( 'EP_DAY', 32 );
 
 /**
- * Endpoint mask that matches the site root.
+ * Endpoint Mask for root.
  *
  * @since 2.1.0
  */
 define( 'EP_ROOT', 64 );
 
 /**
- * Endpoint mask that matches comment feeds.
+ * Endpoint Mask for comments.
  *
  * @since 2.1.0
  */
 define( 'EP_COMMENTS', 128 );
 
 /**
- * Endpoint mask that matches searches.
- *
- * Note that this only matches a search at a "pretty" URL such as
- * `/search/my-search-term`, not `?s=my-search-term`.
+ * Endpoint Mask for searches.
  *
  * @since 2.1.0
  */
 define( 'EP_SEARCH', 256 );
 
 /**
- * Endpoint mask that matches category archives.
+ * Endpoint Mask for categories.
  *
  * @since 2.1.0
  */
 define( 'EP_CATEGORIES', 512 );
 
 /**
- * Endpoint mask that matches tag archives.
+ * Endpoint Mask for tags.
  *
  * @since 2.3.0
  */
 define( 'EP_TAGS', 1024 );
 
 /**
- * Endpoint mask that matches author archives.
+ * Endpoint Mask for authors.
  *
  * @since 2.1.0
  */
 define( 'EP_AUTHORS', 2048 );
 
 /**
- * Endpoint mask that matches pages.
+ * Endpoint Mask for pages.
  *
  * @since 2.1.0
  */
 define( 'EP_PAGES', 4096 );
 
 /**
- * Endpoint mask that matches all archive views.
+ * Endpoint Mask for all archive views.
  *
  * @since 3.7.0
  */
 define( 'EP_ALL_ARCHIVES', EP_DATE | EP_YEAR | EP_MONTH | EP_DAY | EP_CATEGORIES | EP_TAGS | EP_AUTHORS );
 
 /**
- * Endpoint mask that matches everything.
+ * Endpoint Mask for everything.
  *
  * @since 2.1.0
  */
@@ -146,9 +143,9 @@ function add_rewrite_rule( $regex, $query, $after = 'bottom' ) {
 /**
  * Add a new rewrite tag (like %postname%).
  *
- * The `$query` parameter is optional. If it is omitted you must ensure that you call
- * this on, or before, the {@see 'init'} hook. This is because `$query` defaults to
- * `$tag=`, and for this to work a new query var has to be added.
+ * The $query parameter is optional. If it is omitted you must ensure that
+ * you call this on, or before, the {@see 'init'} hook. This is because $query defaults
+ * to "$tag=", and for this to work a new query var has to be added.
  *
  * @since 2.1.0
  *
@@ -311,23 +308,6 @@ function flush_rewrite_rules( $hard = true ) {
  *
  * @param string      $name      Name of the endpoint.
  * @param int         $places    Endpoint mask describing the places the endpoint should be added.
- *                               Accepts a mask of:
- *                               - `EP_ALL`
- *                               - `EP_NONE`
- *                               - `EP_ALL_ARCHIVES`
- *                               - `EP_ATTACHMENT`
- *                               - `EP_AUTHORS`
- *                               - `EP_CATEGORIES`
- *                               - `EP_COMMENTS`
- *                               - `EP_DATE`
- *                               - `EP_DAY`
- *                               - `EP_MONTH`
- *                               - `EP_PAGES`
- *                               - `EP_PERMALINK`
- *                               - `EP_ROOT`
- *                               - `EP_SEARCH`
- *                               - `EP_TAGS`
- *                               - `EP_YEAR`
  * @param string|bool $query_var Name of the corresponding query variable. Pass `false` to skip registering a query_var
  *                               for this endpoint. Defaults to the value of `$name`.
  */
@@ -420,12 +400,12 @@ function wp_resolve_numeric_slug_conflicts( $query_vars = array() ) {
 	// If the date of the post doesn't match the date specified in the URL, resolve to the date archive.
 	if ( preg_match( '/^([0-9]{4})\-([0-9]{2})/', $post->post_date, $matches ) && isset( $query_vars['year'] ) && ( 'monthnum' === $compare || 'day' === $compare ) ) {
 		// $matches[1] is the year the post was published.
-		if ( (int) $query_vars['year'] !== (int) $matches[1] ) {
+		if ( intval( $query_vars['year'] ) !== intval( $matches[1] ) ) {
 			return $query_vars;
 		}
 
 		// $matches[2] is the month the post was published.
-		if ( 'day' === $compare && isset( $query_vars['monthnum'] ) && (int) $query_vars['monthnum'] !== (int) $matches[2] ) {
+		if ( 'day' === $compare && isset( $query_vars['monthnum'] ) && intval( $query_vars['monthnum'] ) !== intval( $matches[2] ) ) {
 			return $query_vars;
 		}
 	}
@@ -457,7 +437,7 @@ function wp_resolve_numeric_slug_conflicts( $query_vars = array() ) {
 
 	// If we've gotten to this point, we have a slug/date clash. First, adjust for nextpage.
 	if ( '' !== $maybe_page ) {
-		$query_vars['page'] = (int) $maybe_page;
+		$query_vars['page'] = intval( $maybe_page );
 	}
 
 	// Next, unset autodetected date-related query vars.

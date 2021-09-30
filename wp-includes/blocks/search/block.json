@@ -1,52 +1,33 @@
 {
-	"apiVersion": 2,
 	"name": "core/search",
-	"title": "Search",
 	"category": "widgets",
-	"description": "Help visitors find your content.",
-	"keywords": [ "find" ],
-	"textdomain": "default",
 	"attributes": {
-		"label": {
+		"align": {
 			"type": "string",
-			"__experimentalRole": "content"
+			"enum": [
+				"left",
+				"center",
+				"right",
+				"wide",
+				"full"
+			]
 		},
-		"showLabel": {
-			"type": "boolean",
-			"default": true
+		"className": {
+			"type": "string"
+		},
+		"label": {
+			"type": "string"
 		},
 		"placeholder": {
 			"type": "string",
-			"default": "",
-			"__experimentalRole": "content"
-		},
-		"width": {
-			"type": "number"
-		},
-		"widthUnit": {
-			"type": "string"
+			"default": ""
 		},
 		"buttonText": {
-			"type": "string",
-			"__experimentalRole": "content"
-		},
-		"buttonPosition": {
-			"type": "string",
-			"default": "button-outside"
-		},
-		"buttonUseIcon": {
-			"type": "boolean",
-			"default": false
+			"type": "string"
 		}
 	},
 	"supports": {
-		"align": [ "left", "center", "right" ],
-		"__experimentalBorder": {
-			"radius": true,
-			"__experimentalSkipSerialization": true
-		},
+		"align": true,
 		"html": false
-	},
-	"editorStyle": "wp-block-search-editor",
-	"style": "wp-block-search"
+	}
 }

@@ -11,22 +11,15 @@
 if ( ! class_exists( 'POMO_Reader', false ) ) :
 	class POMO_Reader {
 
-		public $endian = 'little';
-		public $_post  = '';
+		var $endian = 'little';
+		var $_post  = '';
 
 		/**
 		 * PHP5 constructor.
 		 */
 		function __construct() {
-			if ( function_exists( 'mb_substr' )
-				&& ( (int) ini_get( 'mbstring.func_overload' ) & 2 ) // phpcs:ignore PHPCompatibility.IniDirectives.RemovedIniDirectives.mbstring_func_overloadDeprecated
-			) {
-				$this->is_overloaded = true;
-			} else {
-				$this->is_overloaded = false;
-			}
-
-			$this->_pos = 0;
+			$this->is_overloaded = ( ( ini_get( 'mbstring.func_overload' ) & 2 ) != 0 ) && function_exists( 'mb_substr' ); // phpcs:ignore PHPCompatibility.IniDirectives.RemovedIniDirectives.mbstring_func_overloadDeprecated
+			$this->_pos          = 0;
 		}
 
 		/**
@@ -69,7 +62,7 @@ if ( ! class_exists( 'POMO_Reader', false ) ) :
 		/**
 		 * Reads an array of 32-bit Integers from the Stream
 		 *
-		 * @param int $count How many elements should be read
+		 * @param integer $count How many elements should be read
 		 * @return mixed Array of integers or false if there isn't
 		 *  enough data or on error
 		 */
@@ -182,7 +175,7 @@ if ( ! class_exists( 'POMO_FileReader', false ) ) :
 
 		/**
 		 * @param int $pos
-		 * @return bool
+		 * @return boolean
 		 */
 		function seekto( $pos ) {
 			if ( -1 == fseek( $this->_f, $pos, SEEK_SET ) ) {
@@ -233,7 +226,7 @@ if ( ! class_exists( 'POMO_StringReader', false ) ) :
 	 */
 	class POMO_StringReader extends POMO_Reader {
 
-		public $_str = '';
+		var $_str = '';
 
 		/**
 		 * PHP5 constructor.

@@ -145,7 +145,31 @@ if ( isset( $_REQUEST['action'] ) && 'add-site' === $_REQUEST['action'] ) {
 			update_user_option( $user_id, 'primary_blog', $id, true );
 		}
 
-		wpmu_new_site_admin_notification( $id, $user_id );
+		wp_mail(
+			get_site_option( 'admin_email' ),
+			sprintf(
+				/* translators: New site notification email subject. %s: Network title. */
+				__( '[%s] New Site Created' ),
+				get_network()->site_name
+			),
+			sprintf(
+				/* translators: New site notification email. 1: User login, 2: Site URL, 3: Site title. */
+				__(
+					'New site created by %1$s
+
+Address: %2$s
+Name: %3$s'
+				),
+				$current_user->user_login,
+				get_site_url( $id ),
+				wp_unslash( $title )
+			),
+			sprintf(
+				'From: "%1$s" <%2$s>',
+				_x( 'Site Admin', 'email "From" field' ),
+				get_site_option( 'admin_email' )
+			)
+		);
 		wpmu_welcome_notification( $id, $user_id, $password, $title, array( 'public' => 1 ) );
 		wp_redirect(
 			add_query_arg(
@@ -201,7 +225,7 @@ printf(
 );
 ?>
 </p>
-<form method="post" action="<?php echo esc_url( network_admin_url( 'site-new.php?action=add-site' ) ); ?>" novalidate="novalidate">
+<form method="post" action="<?php echo network_admin_url( 'site-new.php?action=add-site' ); ?>" novalidate="novalidate">
 <?php wp_nonce_field( 'add-blog', '_wpnonce_add-blog' ); ?>
 	<table class="form-table" role="presentation">
 		<tr class="form-field form-required">
