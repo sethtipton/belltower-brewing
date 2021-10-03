@@ -110,3 +110,18 @@
 		}
 	}( container ) );
 }() );
+
+const doc = document;
+const btpage = doc.getElementById('primary');
+
+const ro = new ResizeObserver(entries => {
+	for (let entry of entries) {
+	  //entry.target.style.borderRadius = Math.max(0, 250 - entry.contentRect.width) + 'px';
+	  console.log('entry.contentRect.height',entry.contentRect.height);
+
+	  btpage.style.paddingTop=entry.contentRect.height + 'px';
+
+	}
+  });
+  // Only observe the 2nd box
+  ro.observe(doc.querySelector('#masthead'));

@@ -399,7 +399,7 @@ html {
   box-sizing: border-box; }
 
 body {
-  background: #fff; }
+  background: #E5E5E5; }
 
 hr {
   background-color: #ccc;
@@ -791,13 +791,55 @@ object {
 --------------------------------------------------------------*/
 .site {
   clear: both;
-  width: 100%;
-  max-width: 1344px;
-  margin: 0 auto;
-  padding: 0 2em; }
+  width: 100%; }
+
+.cwidth {
+  max-width: 1440px;
+  margin: 0 auto; }
 
 .site-title {
   display: none; }
 
-body {
-  background: #E5E5E5; }
+#masthead {
+  padding-top: 2vh;
+  position: fixed;
+  width: 100%;
+  top: 0; }
+
+#page {
+  margin-top: 2vh; }
+
+.site-header-w1 {
+  height: 100%; }
+
+h1 {
+  margin: 0; }
+
+.main-navigation {
+  background: green;
+  height: 100%; }
+  .main-navigation ul {
+    justify-content: space-between;
+    max-height: 100px;
+    min-height: 70px; }
+    .main-navigation ul li {
+      padding-top: 1vh;
+      padding-bottom: 8vh; }
+      .main-navigation ul li:nth-child(2) {
+        order: 1; }
+      .main-navigation ul li:nth-child(3) {
+        order: 2; }
+      .main-navigation ul li:nth-child(4) {
+        order: 4; }
+      .main-navigation ul li:nth-child(5) {
+        order: 5; }
+      .main-navigation ul li.menu-item-home {
+        order: 3;
+        padding-top: 0;
+        padding-bottom: 0; }
+      .main-navigation ul li a {
+        color: #E5E5E5; }
+
+@media (max-width: 1440px) {
+  .cwidth {
+    padding: 0 2em; } }

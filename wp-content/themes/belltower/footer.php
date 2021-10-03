@@ -11,7 +11,7 @@
 
 ?>
 
-	<footer id="colophon" class="site-footer">
+	<footer id="colophon" class="site-footer cwidth">
 
 		&#169; Bell Tower Brewing
 

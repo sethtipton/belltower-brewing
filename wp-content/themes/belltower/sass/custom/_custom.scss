@@ -1,30 +1,73 @@
+$btsiteWidth: 1440px;
+$btsitePaddingTop: 2vh;
+
 .site {
 	clear: both;
 	width: 100%;
-	max-width: 1344px;
+}
+
+.cwidth {
+	max-width: $btsiteWidth;
 	margin: 0 auto;
-	padding: 0 2em;
-}
-
-.site-header {
-	//background:lightgrey;
-}
-
-.site-main {
-	//background:lightgrey;
-}
-
-.widget-area {
-	//background:lightgrey;
-}
-
-.site-footer {
-	//background:red; 
 }
 
 .site-title {
 	display:none;
-	//background:purple;
 }
 
-body {background:#E5E5E5;}
+body.admin-bar {
+	//#page {margin-top:32px}
+}
+
+#masthead {
+	padding-top:$btsitePaddingTop;
+	position: fixed;
+    width: 100%;
+    top: 0;
+}
+
+#page {
+	margin-top:$btsitePaddingTop;
+}
+
+.site-header-w1 {
+	height:100%;
+}
+
+h1 {
+	margin:0;
+}
+
+.main-navigation {
+	background:green;
+	height:100%;
+	ul {
+		justify-content: space-between;
+		max-height: 100px;
+		min-height: 70px;
+		li {
+			padding-top:1vh;
+			padding-bottom: 8vh;
+			//&:nth-child(1) { order: 1; }
+			&:nth-child(2) { order: 1; }
+			&:nth-child(3) { order: 2; }
+			&:nth-child(4) { order: 4; }
+			&:nth-child(5) { order: 5; }
+			&.menu-item-home {
+				order:3;
+				padding-top:0;
+				padding-bottom: 0;
+			}
+			a {
+				color:$color__btwhite;
+			}
+		}
+	}
+}
+
+@media (max-width:$btsiteWidth) {
+	.cwidth {
+		padding: 0 2em;
+	}
+}
+
