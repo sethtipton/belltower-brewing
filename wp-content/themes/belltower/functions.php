@@ -51,6 +51,8 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		register_nav_menus(
 			array(
 				'menu-1' => esc_html__( 'Primary', 'belltower' ),
+				'footer-1' => esc_html__( 'Footer', 'belltower' ),
+				'social-1' => esc_html__( 'Social', 'belltower' ),
 			)
 		);
 
@@ -132,6 +134,28 @@ function belltower_widgets_init() {
 			'description'   => esc_html__( 'Add widgets here.', 'belltower' ),
 			'before_widget' => '<section id="%1$s" class="widget %2$s">',
 			'after_widget'  => '</section>',
+			'before_title'  => '<h2 class="widget-title">',
+			'after_title'   => '</h2>',
+		)
+	);
+	register_sidebar(
+		array(
+			'name'          => esc_html__( 'Footer Contact', 'belltower' ),
+			'id'            => 'footer-contact',
+			'description'   => esc_html__( 'Add footer widgets here for contact info column.', 'belltower' ),
+			'before_widget' => '<div id="%1$s" class="widget %2$s">',
+			'after_widget'  => '</div>',
+			'before_title'  => '<h2 class="widget-title">',
+			'after_title'   => '</h2>',
+		)
+	);
+	register_sidebar(
+		array(
+			'name'          => esc_html__( 'Footer Newsletter', 'belltower' ),
+			'id'            => 'footer-newsletter',
+			'description'   => esc_html__( 'Add footer widgets here for contact form column.', 'belltower' ),
+			'before_widget' => '<div id="%1$s" class="widget %2$s">',
+			'after_widget'  => '</div>',
 			'before_title'  => '<h2 class="widget-title">',
 			'after_title'   => '</h2>',
 		)

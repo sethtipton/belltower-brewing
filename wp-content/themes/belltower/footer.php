@@ -10,11 +10,33 @@
  */
 
 ?>
+	<footer id="footer" class="site-footer">
+		<div class="footerw1 cwidth">
 
-	<footer id="colophon" class="site-footer cwidth">
+			<?php dynamic_sidebar( 'footer-contact' ); ?>
 
-		&#169; Bell Tower Brewing
+			<?php
+				wp_nav_menu(
+					array(
+						'theme_location' => 'footer-1',
+						'menu_id'        => 'footer-menu',
+					)
+				);
+			?>
 
+			<?php
+				wp_nav_menu(
+					array(
+						'theme_location' => 'social-1',
+						'menu_id'        => 'social-menu',
+					)
+				);
+			?>
+
+			<?php dynamic_sidebar( 'footer-newsletter' ); ?>
+			
+
+		</div>
 	</footer>
 </div><!-- #page -->
 
