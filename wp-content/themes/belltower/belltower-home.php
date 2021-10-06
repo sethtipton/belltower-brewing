@@ -10,8 +10,39 @@
 get_header();
 ?>
 
-	<main id="primary" class="site-main bt-home">
+	<div id="home-head" class="home-head">
+		<div class="home-headw2 cwidth">
+			
+			<h1>Simple & Seasonal</h1>
 
+			<div class="home-headc1">
+				<div class="home-headc1w1">
+					<strong>Monday - Thursday</strong>
+					<p>4-11PM</p>
+					<strong>Friday - Sunday</strong>
+					<p>12-11PM</p>
+				</div>
+			</div>
+			<div class="home-headc2">
+
+				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline.svg">
+
+			</div>
+			<div class="home-headc3">
+				<div class="home-headc3w1">
+					<strong>Beer</strong>
+					<a href='/beer/ontap'>What's on Tap</a>
+					<strong>Food</strong>
+					<a href='/food/menu'>View our Menu</a>
+				</div>
+			</div>
+			
+
+
+		</div>
+	</div>
+
+	<main id="primary" class="site-main bt-home">
 		<?php
 		while ( have_posts() ) :
 			the_post();
@@ -25,7 +56,7 @@ get_header();
 
 		endwhile; // End of the loop.
 		?>
-
+	
 	</main><!-- #main -->
 
 <?php

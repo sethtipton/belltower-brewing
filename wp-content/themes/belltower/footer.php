@@ -13,27 +13,37 @@
 	<footer id="footer" class="site-footer">
 		<div class="footerw1 cwidth">
 
-			<?php dynamic_sidebar( 'footer-contact' ); ?>
+			<div class="footerc1">
+				<?php dynamic_sidebar( 'footer-contact' ); ?>
+			</div>
 
-			<?php
-				wp_nav_menu(
-					array(
-						'theme_location' => 'footer-1',
-						'menu_id'        => 'footer-menu',
-					)
-				);
-			?>
+			<div class="footerc2">
+				<strong>Info</strong>
+				<?php
+					wp_nav_menu(
+						array(
+							'theme_location' => 'footer-1',
+							'menu_id'        => 'footer-menu',
+						)
+					);
+				?>
+			</div>
 
-			<?php
-				wp_nav_menu(
-					array(
-						'theme_location' => 'social-1',
-						'menu_id'        => 'social-menu',
-					)
-				);
-			?>
+			<div class="footerc3">
+				<strong>Social</strong>
+				<?php
+					wp_nav_menu(
+						array(
+							'theme_location' => 'social-1',
+							'menu_id'        => 'social-menu',
+						)
+					);
+				?>
+			</div>
 
-			<?php dynamic_sidebar( 'footer-newsletter' ); ?>
+			<div class="footerc4">
+				<?php dynamic_sidebar( 'footer-newsletter' ); ?>
+			</div>
 			
 
 		</div>
