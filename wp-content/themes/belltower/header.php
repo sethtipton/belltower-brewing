@@ -62,7 +62,19 @@
 		<div class="site-header-w1 cwidth">
 
 			<nav id="site-navigation" class="main-navigation">
-				<button class="menu-toggle" aria-controls="primary-menu" aria-expanded="false"><?php esc_html_e( 'Menu', 'belltower' ); ?></button>
+				
+				<button class="menu-toggle" aria-controls="primary-menu" aria-expanded="false">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+						<title>Menu</title>
+						<path d="M16,4 L2,4" class="p1"></path>
+						<path d="M2,12 L22,12" class="p2"></path>
+						<path d="M2,20 L16,20" class="p3"></path>
+						<path d="M0,12 L24,12" class="p4"></path>
+						<path d="M0,12 L24,12" class="p5"></path>
+					</svg>
+					<span><?php esc_html_e( 'Menu', 'belltower' ); ?></span>
+				</button>
+
 				<?php
 				wp_nav_menu(
 					array(

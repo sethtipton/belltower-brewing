@@ -4,6 +4,11 @@
  * Handles toggling the navigation menu for small screens and enables TAB key
  * navigation support for dropdown menus.
  */
+
+ const doc = document;
+ const docbody = doc.body;
+ const btpage = doc.getElementById('primary');
+
 ( function() {
 	var container, button, menu, links, i, len;
 
@@ -33,9 +38,11 @@
 		if ( -1 !== container.className.indexOf( 'toggled' ) ) {
 			container.className = container.className.replace( ' toggled', '' );
 			button.setAttribute( 'aria-expanded', 'false' );
+			docbody.classList.remove('menu-toggled');
 		} else {
 			container.className += ' toggled';
 			button.setAttribute( 'aria-expanded', 'true' );
+			docbody.classList.add('menu-toggled');
 		}
 	};
 
@@ -45,6 +52,7 @@
 
 		if ( ! isClickInside ) {
 			container.className = container.className.replace( ' toggled', '' );
+			docbody.classList.remove('menu-toggled');
 			button.setAttribute( 'aria-expanded', 'false' );
 		}
 	} );
@@ -111,9 +119,8 @@
 	}( container ) );
 }() );
 
-const doc = document;
-const docbody = doc.body;
-const btpage = doc.getElementById('primary');
+//////
+//Begin Custom
 
 
 
@@ -148,6 +155,9 @@ var btlogo = '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/200
 var src = document.getElementsByClassName('home menu-item');
 var homeAnchor = src[0].children[0];
 //console.log('src[0].children',src[0].children)
-homeAnchor.innerHTML = btlogo;
+//homeAnchor.innerHTML = btlogo;
+homeAnchor.innerHTML = btlogo + '<span>Home</span>';
 
-
+//Insert logo for mobile
+var shw1 = document.getElementsByClassName('site-header-w1');
+shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo">'+btlogo+'</a>');

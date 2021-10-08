@@ -1,7 +1,9 @@
 $btsiteWidth: 1440px;
 $btsitePaddingTop: 2vh;
-$u30navPadding : clamp(18px, 3vh, 30px);
+$btsitePadding : 2vw;
+$u30navPadding : clamp(1px, 2vh, 30px);
 $u30txtPadding1 : clamp(10px, 2vh, 20px);
+
 
 #wpadminbar + #page #masthead{
 	margin-top:32px;
@@ -17,6 +19,10 @@ $u30txtPadding1 : clamp(10px, 2vh, 20px);
 	left: 0;
 }
 
+.mlogo {
+	display:none;
+}
+
 #primary {
 	min-height:1000px;
 }
@@ -24,6 +30,22 @@ $u30txtPadding1 : clamp(10px, 2vh, 20px);
 .site {
 	clear: both;
 	width: 100%;
+	&:after {
+		content:'';
+		background-color:$color__btblack;
+		position: absolute;
+		top:0;
+		right:0;
+		left:0;
+		bottom:0;
+		opacity:0;
+		position: fixed;
+		pointer-events: none;
+		transition: opacity 300ms ease-in-out;
+		.menu-toggled &{
+			opacity:.5;
+		}
+	}
 }
 
 .cwidth {
@@ -62,10 +84,69 @@ body.admin-bar {
 		background-color:$color__btwhite;
 		&:after{opacity: 0.1;}
 	}
+	.menu-toggled &{
+		background-color:$color__btwhite;
+		&:after{display:none!important;}
+	}
 }
 
-#page {
-	//margin-top:$btsitePaddingTop;
+.menu-toggle {
+	width: 44px;
+	height: 44px;
+	text-indent: -9999px;
+	border-radius:4px;
+	background-color:transparent;
+	border:none;
+	transition: background-color 200ms ease;
+	position: relative;
+	display: inline-flex;
+	justify-content: left;
+	display:none;
+	svg {
+		height: auto;
+		align-self: center;
+	}
+	path {
+		backface-visibility: hidden;
+		transition: 200ms;
+		stroke-width: 2px;
+		stroke: $color__btwhite;
+		.scrolled &{
+			stroke:$color__btdarkgreen;
+		}
+		&.p1, &.p2, &.p3 {
+			transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+			-webkit-transition: opacity 100ms ease-in 100ms, -webkit-transform 100ms ease-in 100ms;
+		}
+		&.p4, &.p5 {
+			opacity:0;
+			transform-origin: center;
+			transition: opacity 100ms ease-in, transform 100ms ease-in;
+			-webkit-transition: opacity 100ms ease-in, -webkit-transform 100ms ease-in;
+		}
+	}
+	&:hover {
+		cursor: pointer;
+		//background-color:$color__btlightgreen;
+	}
+	&[aria-expanded="true"] {
+		//background-color:$color__btlightgreen;
+		.p1, .p2, .p3 {
+			transition: opacity 100ms ease-in, transform 100ms ease-in;
+			-webkit-transition: opacity 100ms ease-in, -webkit-transform 100ms ease-in;
+			opacity:0;
+		}
+		.p4, .p5 {
+			transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+			-webkit-transition: opacity 100ms ease-in 100ms, -webkit-transform 100ms ease-in 100ms;
+			opacity:1;
+			stroke: $color__btdarkgreen;
+		}
+		.p1 {transform: translate(0,8px);}
+		.p3 {transform: translate(0,-8px);}
+		.p4 {transform: rotate(45deg);}
+		.p5 {transform: rotate(-45deg);}
+	}
 }
 
 .site-header-w1 {
@@ -95,6 +176,8 @@ h1 {
 				order:3;
 				padding-top:0;
 				padding-bottom: 0;
+				span {display:none;}
+				a:after {display:none;}
 			}
 			a {
 				color:$color__btwhite;
@@ -102,11 +185,32 @@ h1 {
 				.scrolled &{
 					color:$color__btblack;
 				}
+				&:after {
+					content:'';
+					width:100%;
+					position:absolute;
+					left:0;
+					right:0;
+					height:1px;
+					bottom:4px;
+					transform: translate(0,-2px);
+					opacity: 0;
+					background-color: $color__btwhite;
+					transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+					.scrolled &{
+						background-color: $color__btblack;
+					}
+				}
+				&:hover:after {
+					opacity:1;
+					transform: translate(0,0);
+				}
 			}
 			&.home a svg{
 				height: 50px;
 				transform: translate(0, 6px);
 				fill:$color__btwhite;
+				transition: fill 300ms ease;
 				.scrolled &{
 					fill:$color__btblack;
 				}
@@ -138,6 +242,7 @@ h1 {
 		color:$color__btwhite;
 		display:block;
 		width:100%;
+		font-size: 1.1rem;
 	}
 	a {
 		display:block;
@@ -154,6 +259,8 @@ h1 {
 .home-head {
 	background-color: $color__btdarkgreen;
 	height:100vh;
+	min-height: 500px;
+	//max-height:900px;
 }
 
 .home-headw2 {
@@ -162,7 +269,7 @@ h1 {
 	grid-template-rows: 0 auto;
 	//min-height:500px;
 	height: 100%;
-	padding-top: 6vh!important;
+	padding-top: 4vh!important;
 	gap: 0 2vw;
 	overflow:hidden;
 	h1 {
@@ -174,6 +281,7 @@ h1 {
 		line-height: 1;
 		font-size: calc(3.5vw + 3.5vh);
 		z-index: 1;
+		font-weight: 300;
 		//text-shadow: 0px 1px 1px rgb(000 000 000 / 50%);
 		text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
 		//height: 0;
@@ -205,12 +313,19 @@ h1 {
 		&.home-headc2 {
 			//grid-row: 1 / 2;
 			background:white;
-			margin-top: 3vh;
+			margin-top: 5vh;
 			position: relative;
 			background-color: $color__btdarkgreen;
 			background-image: url("/wp-content/themes/belltower/images/belltower-2.jpg");
 			background-size: cover;
 			background-position: center;
+			outline: 2px solid $color__btdarkgreen;
+			outline-offset: -1px;
+
+			//max-height: 800px;
+			//margin-top: auto;
+			//height: 100%;
+
 			img {
 				position: absolute;
 				top: 0;
@@ -240,7 +355,159 @@ h1 {
 
 @media (max-width:$btsiteWidth) {
 	.cwidth {
-		padding: 0 2em;
+		padding: 0 $btsitePadding;
+	}
+	.footerw1 {
+		padding: 10vh $btsitePadding;
 	}
 }
+
+@media (max-width:$mobileBreakpoint) {
+	.home-head {
+		height:auto;
+		min-height: auto;
+	}
+	.main-navigation ul li.home a {
+		svg {
+			display:none;
+		}
+		span {
+			display:block;
+		}
+	}
+	.mlogo {
+		display:block;
+		height:44px;
+		float:left;
+		padding: 3px 0 3px 3px;
+		svg {
+			height: 100%;
+			fill:$color__btwhite;
+			transition: fill 300ms ease;
+			.scrolled &{
+				fill:$color__btdarkgreen;
+			}
+			.menu-toggled &{
+				fill:$color__btdarkgreen;
+			}
+		}
+	}
+	.scrolled .main-navigation ul li a {
+		color:$color__btdarkgreen;
+	}
+
+	.menu-toggle {
+		display:inline-flex;
+		float: right;
+	}
+
+	.main-navigation ul {
+		text-align: left;
+		position: absolute;
+		left:0;
+		padding-left:$btsitePadding;
+		top:98%;
+		padding-top:1em;
+		padding-bottom:1em;
+		max-height:none;
+		background:transparent;
+		pointer-events: none;
+		display:block;
+		//visibility: hidden;
+		background-color:$color__btwhite;
+		transition: opacity 300ms ease-in-out;
+		width: 100%;
+		opacity: 0;
+		.menu-toggled &{
+			pointer-events: all;
+			opacity:1;
+		}
+		li {
+			padding-left:5px;
+			a {
+				padding-top: 8px;
+    			padding-bottom: 8px;
+				color:$color__btdarkgreen;
+				font-size: 1.2rem;
+				&:after{display:none;}
+			}
+		}
+	}
+
+	.home-headw2 {
+		grid-template-columns: 100%;
+		grid-template-rows: 0 auto auto auto;
+		//display: block;
+		gap:0;
+		h1 {
+			grid-row: 1 / 1;
+			grid-column: 1 / 1;
+		}
+		strong {
+			display: block;
+			padding: 0.5em 0;
+		}
+		div.home-headc1 {
+			grid-row: 3 / 3;
+			grid-column: 1 / 1;
+			padding-bottom: 1.5vh;
+			padding-top: 1.5vh;
+			position: relative;
+			.home-headc1w1 {
+				width: 100%;
+			}
+			&:after {
+				content:'';
+				position: absolute;
+				bottom:0;
+				left:0;
+				right:0;
+				opacity:0.3;
+				height:1px;
+				background-color:$color__btblack;
+			}
+		}
+		div.home-headc2 {
+			grid-row: 2 / 2;
+			grid-column: 1 / 1;
+			//margin-top:0;
+			max-height: 50vh;
+			min-height: 300px;
+			img {
+				position: relative;
+			}
+		}
+		div.home-headc3 {
+			grid-row: 4 / 4;
+			grid-column: 1 / 1;
+			padding-bottom: 3vh;
+			padding-top: 1.5vh;
+			.home-headc3w1 {
+				width: 100%;
+			}
+		}
+	}
+
+	.footerw1 {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: auto auto auto;
+		.footerc1 {
+			grid-row: 1 / 1;
+			grid-column: 1 / 3;
+		}
+		.footerc2 {
+			grid-row: 2 / 2;
+			grid-column: 1 / 1;
+		}
+		.footerc3 {
+			grid-row: 2 / 2;
+			grid-column: 2 / 2;
+		}
+		.footerc4 {
+			grid-row: 3 / 3;
+			grid-column: 1 / 3;
+		}
+	}
+}
+
 
