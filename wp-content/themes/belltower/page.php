@@ -15,7 +15,7 @@
 get_header();
 ?>
 
-	<main id="primary" class="site-main cwidth">
+	<main id="primary" class="site-main default-page">
 
 		<?php
 		while ( have_posts() ) :

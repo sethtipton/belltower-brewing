@@ -32,6 +32,9 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		// Add default posts and comments RSS feed links to head.
 		add_theme_support( 'automatic-feed-links' );
 
+		add_theme_support('editor-styles');
+		add_editor_style( 'style.css' );
+
 		/*
 		 * Let WordPress manage the document title.
 		 * By adding theme support, we declare that this theme does not use a
@@ -102,6 +105,60 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 				'flex-height' => true,
 			)
 		);
+
+		// Disable Gutenberg Custom Colors
+		add_theme_support( 'disable-custom-colors' );
+
+		// Disable Gutenberg Custom Gradients
+		add_theme_support( 'disable-custom-gradients' );
+
+		$btdarkgreen  = '#808166';
+		$btblack      = '#231F20';
+		$btpink       = '#E0CDC0';
+		$btlightgreen = '#BAB488';
+		$btred        = '#BA583B';
+		$btwhite      = '#E5E5E5';
+		$btpurewhite  = '#FFFFFF';
+
+		// Editor Color Palette
+		add_theme_support( 'editor-color-palette', array(
+			array(
+				'name'  => __( 'Dark Green', 'belltower' ),
+				'slug'  => 'dark-green',
+				'color'	=> $btdarkgreen,
+			),
+			array(
+				'name'	=> __( 'Black', 'belltower' ),
+				'slug'	=> 'black',
+				'color'	=> $btblack,
+			),
+			array(
+				'name'  => __( 'Pink', 'belltower' ),
+				'slug'  => 'pink',
+				'color'	=> $btpink,
+			),
+			array(
+				'name'  => __( 'Light Green', 'belltower' ),
+				'slug'  => 'light-green',
+				'color' => $btlightgreen,
+			),
+			array(
+				'name'  => __( 'Red', 'belltower' ),
+				'slug'  => 'red',
+				'color' => $btred,
+			),
+			array(
+				'name'	=> __( 'White', 'belltower' ),
+				'slug'	=> 'white',
+				'color'	=> $btwhite,
+			),
+			array(
+				'name'	=> __( 'Pure White', 'belltower' ),
+				'slug'	=> 'pure-white',
+				'color'	=> $btpurewhite,
+			),
+		) );
+
 	}
 endif;
 add_action( 'after_setup_theme', 'belltower_setup' );

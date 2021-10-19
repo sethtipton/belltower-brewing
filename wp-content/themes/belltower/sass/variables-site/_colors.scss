@@ -4,8 +4,9 @@ $color__btpink: #E0CDC0;
 $color__btlightgreen: #BAB488;
 $color__btred: #BA583B;
 $color__btwhite: #E5E5E5;
+$color__btpurewhite: #FFFFFF;
 
-$color__background-body: $color__btwhite;
+$color__background-body: $color__btpurewhite;
 $color__background-screen: #f1f1f1;
 $color__background-hr: #ccc;
 $color__background-button: #e6e6e6;
@@ -25,3 +26,25 @@ $color__border-button-hover: #ccc #bbb #aaa;
 $color__border-button-focus: #aaa #bbb #bbb;
 $color__border-input: #ccc;
 $color__border-abbr: #666;
+
+.has-dark-green-color {color:$color__btdarkgreen;}
+a.has-dark-green-color:hover {color:$color__btdarkgreen;}
+.has-dark-green-bg {background-color:$color__btdarkgreen;}
+
+.has-black-color {color:$color__btblack;}
+.has-black-bg {background-color:$color__btblack;}
+
+.has-pink-color {color:$color__btpink;}
+.has-pink-bg {background-color:$color__btpink;}
+
+.has-light-green-color {color:$color__btlightgreen;}
+.has-light-green-bg {background-color:$color__btlightgreen;}
+
+.has-red-color {color:$color__btred;}
+.has-red-bg {background-color:$color__btred;}
+
+.has-pure-white-color {color:$color__btpurewhite;}
+.has-pure-white-bg {background-color:$color__btpurewhite;}
+
+.has-white-color {color:$color__btwhite!important;}
+.has-white-bg {background-color:$color__btwhite;}

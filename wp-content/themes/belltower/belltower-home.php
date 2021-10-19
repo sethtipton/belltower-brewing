@@ -23,8 +23,8 @@ get_header();
 					<p>12-11PM</p>
 				</div>
 			</div>
-			<div class="home-headc2">
-
+			<div class="home-headc2" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+			
 				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline.svg">
 
 			</div>
