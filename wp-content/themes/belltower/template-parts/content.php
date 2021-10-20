@@ -31,7 +31,7 @@
 
 	<?php belltower_post_thumbnail(); ?>
 
-	<div class="entry-content">
+	<div class="entry-content <?php the_field('limit-width'); ?>">
 		<?php
 		the_content(
 			sprintf(

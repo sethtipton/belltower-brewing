@@ -17,21 +17,19 @@ get_header();
 
 			<div class="home-headc1">
 				<div class="home-headc1w1">
-					<strong>Monday - Thursday</strong>
+					<strong>Thursday</strong>
 					<p>4-11PM</p>
 					<strong>Friday - Sunday</strong>
 					<p>12-11PM</p>
 				</div>
 			</div>
 			<div class="home-headc2" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
-			
 				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline.svg">
-
 			</div>
 			<div class="home-headc3">
 				<div class="home-headc3w1">
 					<strong>Beer</strong>
-					<a href='/beer/ontap'>What's on Tap</a>
+					<a href='/beer/on-tap'>What's on Tap</a>
 					<strong>Food</strong>
 					<a href='/food/menu'>View our Menu</a>
 				</div>

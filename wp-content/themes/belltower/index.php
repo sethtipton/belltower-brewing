@@ -15,11 +15,17 @@
 get_header();
 ?>
 
+	
+	<header class="entry-header blog" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+		<h1>Blog</h1>
+	</header><!-- .entry-header -->
+
 	<main id="primary" class="site-main cwidth">
 
 		<?php
 		if ( have_posts() ) :
 
+			/* 
 			if ( is_home() && ! is_front_page() ) :
 				?>
 				<header>
@@ -27,6 +33,7 @@ get_header();
 				</header>
 				<?php
 			endif;
+			*/
 
 			/* Start the Loop */
 			while ( have_posts() ) :

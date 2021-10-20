@@ -33,7 +33,7 @@
 
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
-<div id="page" class="site">
+<div id="page" class="site swidth">
 	<a class="skip-link screen-reader-text" href="#primary"><?php esc_html_e( 'Skip to content', 'belltower' ); ?></a>
 	<div id="pixel-to-watch"></div>
 	<header id="masthead" class="site-header">
@@ -64,7 +64,7 @@
 			<nav id="site-navigation" class="main-navigation">
 				
 				<button class="menu-toggle" aria-controls="primary-menu" aria-expanded="false">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="none">
 						<title>Menu</title>
 						<path d="M16,4 L2,4" class="p1"></path>
 						<path d="M2,12 L22,12" class="p2"></path>

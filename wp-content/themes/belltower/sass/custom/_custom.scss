@@ -1,11 +1,12 @@
 //$btsiteWidth: 1440px;
-$btsiteWidth: 1174px;
+$btsiteWidth: 1800px;
+$btcwidth: 1174px;
 $btsitePaddingTop: 2vh;
 $btsitePadding : 2vw;
 $u30navPadding : clamp(1px, 2vh, 30px);
 $u30txtPadding1 : clamp(10px, 2vh, 20px);
-
 $btcmpPadding1 : clamp(10px, 10vh, 80px);
+$btcmpPadding2 : clamp(10px, 8vh, 50px);
 
 .has-small-font-size {
 	font-size: 0.8125rem;
@@ -25,7 +26,21 @@ $btcmpPadding1 : clamp(10px, 10vh, 80px);
 	font-size: 2.625rem;
 }
 
-h2 span {
+.bt-after {
+	content:'';
+	width:100%;
+	position:absolute;
+	left:0;
+	right:0;
+	height:1px;
+	bottom:4px;
+	transform: translate(0,-2px);
+	opacity: 0;
+	background-color: $color__btpurewhite;
+	transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+}
+
+h2 span, h2 {
 	@extend .has-large-font-size;
 	font-weight: 600;
 }
@@ -33,6 +48,16 @@ h2 span {
 p {
 	margin-block-start: 0;
     margin-block-end: 0;
+}
+
+hr, .wp-block-separator {
+	border-top:none;
+	border-bottom:none;
+	margin: 4vh 0;
+}
+
+ul li {
+	margin: $u30txtPadding1 0;
 }
 
 #wpadminbar + #page #masthead{
@@ -78,8 +103,13 @@ p {
 	}
 }
 
+.swidth {
+	//max-width: $btsiteWidth;
+	//margin: 0 auto;
+}
+
 .cwidth {
-	max-width: $btsiteWidth;
+	max-width: $btcwidth;
 	margin: 0 auto;
 }
 
@@ -132,7 +162,8 @@ body.admin-bar {
 	justify-content: left;
 	display:none;
 	svg {
-		height: auto;
+		height: 24px;
+		width:24px;
 		align-self: center;
 	}
 	path {
@@ -213,17 +244,8 @@ h1 {
 					color:$color__btblack;
 				}
 				&:after {
-					content:'';
-					width:100%;
-					position:absolute;
-					left:0;
-					right:0;
-					height:1px;
-					bottom:4px;
-					transform: translate(0,-2px);
-					opacity: 0;
 					background-color: $color__btpurewhite;
-					transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+					@extend .bt-after;
 					.scrolled &{
 						background-color: $color__btblack;
 					}
@@ -241,6 +263,10 @@ h1 {
 				.scrolled &{
 					fill:$color__btblack;
 				}
+			}
+			&.current-menu-item a:after {
+				opacity:1;
+				transform: translate(0,0);
 			}
 		}
 	}
@@ -278,15 +304,12 @@ h1 {
 	.fcontact {
 		margin-top:5vh;
 	}
-	ul li {
-		padding: 0.3em 0;
-	}
 }
 
 .footer-logo-w1 {
 	text-align: center;
-	padding-top:$btcmpPadding1;
-	padding-bottom:$btcmpPadding1;
+	padding-top:$btcmpPadding2;
+	padding-bottom:$btcmpPadding2;
 }
 .footerlogo {
 	display: inline-block;
@@ -373,7 +396,7 @@ h1 {
 	grid-template-rows: 0 auto;
 	height: 100%;
 	padding-top: 4vh!important;
-	gap: 0 2vw;
+	gap: 0;
 	overflow:hidden;
 	h1 {
 		text-align: center;
@@ -449,19 +472,29 @@ h1 {
 }
 
 //Default Page
-.default-page {
-	.entry-header {
-		background-repeat: no-repeat;
-    	background-size: cover;
-		background-position: center;
-		h1 {
-			width:100%;
-			text-align: center;
-			color:$color__btpurewhite;
-			font-size: 5rem;
-			padding-top: clamp(100px, 18vh, 150px);
-    		padding-bottom: 9vh;
-		}
+.entry-header {
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-position: center;
+	h1 {
+		width:100%;
+		text-align: center;
+		color:$color__btpurewhite;
+		font-size: 4rem;
+		padding-top: clamp(100px, 18vh, 150px);
+		padding-bottom: 9vh;
+	}
+}
+
+.entry-header.blog {
+	background-color:$color__btdarkgreen;
+	h1 {
+		width:100%;
+		text-align: center;
+		color:$color__btpurewhite;
+		font-size: 4rem;
+		padding-top: clamp(100px, 18vh, 150px);
+		padding-bottom: 9vh;
 	}
 }
 
@@ -473,6 +506,9 @@ h1 {
 		a {
 			margin-top:2em;
 			display: block;
+			&.has-pure-white-color:hover {
+				color:$color__btpurewhite;
+			}
 		}
 	}
 	&.has-media-on-the-right{
@@ -496,39 +532,85 @@ h1 {
 .wp-block-image {
 	max-height:70vh;
 	overflow: hidden;
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 	img {
-		width:100%;
+		flex-shrink: 0;
+		min-width: 100%;
+		min-height: 100%;
+	}
+}
+
+.wp-block-file {
+	a {
+		color:$color__btdarkgreen;
+		font-size:18px;
+	}
+	.wp-block-file__button {
+		border-radius: 3px;
+		color:$color__btpurewhite;
+		background-color:$color__btdarkgreen;
+		font-size:18px;
+		&:hover {
+			color:$color__btblack!important;
+			background-color:$color__btlightgreen;
+		}
 	}
 }
 
 .entry-content {
-	&>div {
+	padding-top:$btcmpPadding2;
+	padding-bottom:$btcmpPadding2;
+	&>[class^="wp-block"] {
 		margin-top:$btcmpPadding1;
 		margin-bottom:$btcmpPadding1;
 	}
+	&>[class^="wp-block"]:nth-child(1) {
+		margin-top:0;
+	}
 	&>figure {
-		margin-top:$btcmpPadding1;
-		margin-bottom:$btcmpPadding1;
+		//margin-top:$btcmpPadding1;
+		//margin-bottom:$btcmpPadding1;
+	}
+	&>h2:first-of-type {
+		margin-top:0;
 	}
 }
 
 .visitus {
-	h2 span {
-		@extend .has-large-font-size;
-		font-weight: 600;
-	}
+	//h2 span {
+		//@extend .has-large-font-size;
+		//font-weight: 600;
+	//}
 	strong {
 		display:block;
 		@extend .has-medium-font-size;
 		//font-size:1.4rem;
 		margin-top:1em;
 		font-weight: 600;
+		&+ span {
+			@extend .has-medium-font-size;
+			font-weight: 300;
+		}
+		&+ a {
+			@extend .has-medium-font-size;
+			font-weight: 300;
+		}
+	}
+	.has-dark-green-color a {
+		color:$color__btdarkgreen;
 	}
 	span {
-		display:block;
+		//display:block;
 		//font-size:1.4rem;
-		@extend .has-medium-font-size;
-		font-weight: 300;
+		//@extend .has-medium-font-size;
+		//font-weight: 300;
+	}
+	h2 span {
+		//@extend .has-medium-font-size;
+		//font-weight: 600;
 	}
 }
 
@@ -581,6 +663,17 @@ h1 {
 	}
 }
 
+.btlist_1 {
+	li {
+		span {
+
+		}
+		a {
+
+		}
+	}
+}
+
 .full-size-img {
 	figure {
 		height:100%;
@@ -591,12 +684,25 @@ h1 {
 	}
 }
 
-@media (max-width:$btsiteWidth) {
+body.blog {
+	a {color:$color__btdarkgreen;}
+	.site-main article {
+		margin-top: $btcmpPadding2;
+	}
+}
+
+.blogtitle {
+	background:$color__btdarkgreen;
+	height:200px
+}
+
+@media (max-width:$btcwidth) {
 	.cwidth {
-		padding: 0 $btsitePadding;
+		padding-left: $btsitePadding;
+		padding-right: $btsitePadding;
 	}
 	.footerw1 {
-		padding: $btcmpPadding1 $btsitePadding;
+		padding: $btcmpPadding2 $btsitePadding;
 	}
 
 	.has-small-font-size {
@@ -618,6 +724,41 @@ h1 {
 	}
 
 }
+
+
+
+
+
+@media (max-width:900px) {
+	.footerw1 {
+		//background:blue;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: auto auto auto;
+		.footerc1 {
+			grid-row: 1 / 1;
+			grid-column: 1 / 3;
+			text-align:center;
+		}
+		.footerc2 {
+			grid-row: 2 / 2;
+			grid-column: 1 / 1;
+		}
+		.footerc3 {
+			grid-row: 2 / 2;
+			grid-column: 2 / 2;
+		}
+		.footerc4 {
+			grid-row: 3 / 3;
+			grid-column: 1 / 3;
+		}
+	}
+}
+
+
+
+
+
+
 
 @media (max-width:$mobileBreakpoint) {
 
@@ -660,6 +801,10 @@ h1 {
 	.menu-toggle {
 		display:inline-flex;
 		float: right;
+		padding: 10px;
+		svg {
+			width: 100%;
+		}
 	}
 
 	.main-navigation ul {
@@ -746,6 +891,16 @@ h1 {
 		}
 	}
 
+	.visitus {
+		.wp-block-column:nth-child(1) {
+			margin-bottom: 2em;
+			text-align: center;
+		}
+		#wpmapblock_0 {
+			height:300px!important;
+		}
+	}
+
 	.footerw1 {
 		grid-template-columns: 1fr 1fr;
 		grid-template-rows: auto auto auto;
@@ -795,25 +950,93 @@ h1 {
 		}
 	}
 
-	.wp-block-media-text__content {
-		//padding-top: 8vh;
-	}
-
-	.wp-block-media-text.has-media-on-the-right .wp-block-media-text__content {
-		//padding-top: 8vh;
-	}
-
-	
-
 	.full-size-img.wp-block-media-text.has-media-on-the-right .wp-block-media-text__content {
-		//background:red!important;
 		padding-left:$btsitePadding;
 		padding-right:$btsitePadding;
 		padding-bottom:4em;
 	}
 
-	
+	.draftlistw1 {
+		grid-auto-flow: row;
+		grid-template-rows: 1fr;
+		p {
+			margin-bottom: 3em;
+		}
+	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* AgeGate Popup Container Styles */
+
+.popup-container {
+	box-sizing: border-box;
+	position: relative;
+	width: 100%;
+	max-width: 300px;
+	//padding: 40px;
+	margin: 80px auto 0;
+	//background: white;
+	color:$color__btpurewhite;
+	text-align: center;
+	a {
+		color:$color__btpurewhite;
+		&:hover {
+			color:$color__btpurewhite;
+		}
+	}
+	p {
+		margin-top: 80px;
+    	padding: 0 0.5em;
+		font-size: 14px;
+	}
+	.agelogo {
+		//position: absolute;
+    	width: 100%;
+		z-index: -1;
+		svg {
+			fill: $color__btdarkgreen;
+		}
+	}
+  }
+
+  .popupw1 {
+	position: absolute;
+    top: 0;
+    width: 100%;
+  }
+  
+  .popup-body {
+	box-sizing: border-box;
+	font-size: 26px;
+	margin-bottom: 20px;
+	padding-top:70px;
+	//position: absolute;
+  }
+  
+  .popup-btn {
+	box-sizing: border-box;
+	padding: 6px 12px;
+	margin-right: 10px;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	background-color: $color__btpurewhite;
+	&:hover {
+		opacity: 0.8;
+	}
+  }
 
 
