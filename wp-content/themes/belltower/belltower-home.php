@@ -10,11 +10,10 @@
 get_header();
 ?>
 
+<!-- OG
 	<div id="home-head" class="home-head">
 		<div class="home-headw2 cwidth">
-			
 			<h1>Simple & Seasonal</h1>
-
 			<div class="home-headc1">
 				<div class="home-headc1w1">
 					<strong>Thursday</strong>
@@ -24,7 +23,7 @@ get_header();
 				</div>
 			</div>
 			<div class="home-headc2" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
-				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline.svg">
+				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline-Green.svg">
 			</div>
 			<div class="home-headc3">
 				<div class="home-headc3w1">
@@ -34,9 +33,20 @@ get_header();
 					<a href='/food/menu'>View our Menu</a>
 				</div>
 			</div>
-			
+		</div>
+	</div>
+-->
 
-
+	<div id="home-head" class="home-head" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+		<div class="home-headw2 cwidth">
+			<h1 class="has-pure-white-color">Simple & Seasonal</h1>
+			<div class="home-headc1">
+				<div class="home-headc1w1">
+					<p class="has-pure-white-color"><strong>Thursday</strong>4-10PM</p>
+					<p class="has-pure-white-color"><strong>Friday - Saturday</strong>11-11PM</p>
+					<p class="has-pure-white-color"><strong>Sunday</strong>11-9PM</p>
+				</div>
+			</div>
 		</div>
 	</div>
 
