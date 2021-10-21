@@ -29,7 +29,7 @@ get_header();
 			<div class="home-headc3">
 				<div class="home-headc3w1">
 					<strong>Beer</strong>
-					<a href='/beer/on-tap'>What's on Tap</a>
+					<a href='/beer'>What's on Tap</a>
 					<strong>Food</strong>
 					<a href='/food/menu'>View our Menu</a>
 				</div>
