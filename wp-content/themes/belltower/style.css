@@ -85,6 +85,47 @@ a.has-dark-green-color:hover {
 .has-white-bg {
   background-color: #E5E5E5; }
 
+.entry-header {
+  position: relative; }
+  .entry-header h1 {
+    position: relative;
+    z-index: 3; }
+  .entry-header:before {
+    content: '';
+    background-image: inherit;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    z-index: 1;
+    filter: grayscale(100%); }
+  .entry-header:after {
+    content: '';
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    z-index: 2;
+    opacity: 1;
+    mix-blend-mode: multiply; }
+  .entry-header.black:after {
+    background-color: #231F20; }
+  .entry-header.darkgreen:after {
+    background-color: #808166; }
+  .entry-header.lightgreen:after {
+    background-color: #BAB488; }
+  .entry-header.pink:after {
+    background-color: #E0CDC0; }
+  .entry-header.red:after {
+    background-color: #BA583B; }
+  .entry-header.white:after {
+    background-color: #E5E5E5; }
+  .entry-header.purewhite:after {
+    background-color: #FFFFFF; }
+
 @font-face {
   font-family: 'Raisonne Pro';
   src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.woff2") format("woff2"), url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.woff") format("woff"), url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf") format("truetype"), url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.svg#RaisonnePro-Regular") format("svg");
@@ -860,43 +901,43 @@ ul li {
   position: relative; }
   .img-arch .wp-block-media-text__media:after {
     content: '';
-    width: 100%;
     background-image: url("/wp-content/themes/belltower/images/BTB-Bell-Outline-White.svg");
     background-repeat: no-repeat;
     position: absolute;
-    left: 0;
-    top: 0;
+    left: -1px;
+    top: -1px;
     bottom: 0;
-    right: 0;
-    background-size: cover; }
+    right: -1px;
+    background-size: cover;
+    z-index: 1; }
 
 .img-circle .wp-block-media-text__media {
   position: relative; }
   .img-circle .wp-block-media-text__media:after {
     content: '';
-    width: 100%;
     background-image: url("/wp-content/themes/belltower/images/BTB-Circle-White.svg");
     background-repeat: no-repeat;
     position: absolute;
-    left: 0;
-    top: 0;
+    left: -1px;
+    top: -2px;
     bottom: 0;
-    right: 0;
-    background-size: cover; }
+    right: -1px;
+    background-size: cover;
+    z-index: 1; }
 
 .wp-block-image.img-circle {
   position: relative; }
   .wp-block-image.img-circle:after {
     content: '';
-    width: 100%;
     background-image: url("/wp-content/themes/belltower/images/BTB-Circle-White.svg");
     background-repeat: no-repeat;
     position: absolute;
-    left: 0;
-    top: 0;
+    left: -1px;
+    top: -1px;
     bottom: 0;
-    right: 0;
-    background-size: cover; }
+    right: -1px;
+    background-size: cover;
+    z-index: 1; }
 
 #pixel-to-watch {
   position: absolute;
@@ -937,7 +978,7 @@ ul li {
   display: none; }
 
 #masthead {
-  position: fixed;
+  position: sticky;
   width: 100%;
   top: 0;
   z-index: 10;
@@ -1033,48 +1074,58 @@ h1 {
     padding-top: clamp(1px, 2vh, 30px);
     padding-bottom: clamp(1px, 2vh, 30px);
     align-items: center; }
-    .main-navigation ul li:nth-child(2) {
-      order: 1; }
-    .main-navigation ul li:nth-child(3) {
-      order: 2; }
-    .main-navigation ul li:nth-child(4) {
-      order: 4; }
-    .main-navigation ul li:nth-child(5) {
-      order: 5; }
-    .main-navigation ul li.menu-item-home {
-      order: 3;
-      padding-top: 0;
-      padding-bottom: 0; }
-      .main-navigation ul li.menu-item-home span {
-        display: none; }
-      .main-navigation ul li.menu-item-home a:after {
-        display: none; }
-    .main-navigation ul li a {
-      color: #FFFFFF;
-      font-size: 1.1rem; }
-      .scrolled .main-navigation ul li a {
-        color: #231F20; }
-      .page-template-belltower-home.scrolled .main-navigation ul li a {
-        color: #FFFFFF; }
-      .main-navigation ul li a:after {
-        background-color: #FFFFFF; }
-        .scrolled .main-navigation ul li a:after {
-          background-color: #231F20; }
-      .main-navigation ul li a:hover:after {
+    .main-navigation ul li {
+      margin: 0; }
+      .main-navigation ul li:nth-child(2) {
+        order: 1; }
+      .main-navigation ul li:nth-child(3) {
+        order: 2; }
+      .main-navigation ul li:nth-child(4) {
+        order: 3; }
+      .main-navigation ul li:nth-child(5) {
+        order: 5; }
+      .main-navigation ul li:nth-child(6) {
+        order: 6; }
+      .main-navigation ul li:nth-child(7) {
+        order: 7; }
+      .main-navigation ul li.menu-item-home {
+        order: 4;
+        padding-top: 0;
+        padding-bottom: 0; }
+        .main-navigation ul li.menu-item-home span {
+          display: none; }
+        .main-navigation ul li.menu-item-home a {
+          color: transparent; }
+        .main-navigation ul li.menu-item-home a:after {
+          display: none; }
+      .main-navigation ul li a {
+        color: #FFFFFF;
+        font-size: 1.1rem; }
+        .scrolled .main-navigation ul li a {
+          color: #231F20; }
+        .page-template-belltower-home.scrolled .main-navigation ul li a {
+          color: #FFFFFF; }
+        .main-navigation ul li a:after {
+          background-color: #FFFFFF; }
+          .scrolled .main-navigation ul li a:after {
+            background-color: #231F20; }
+          .scrolled.page-template-belltower-home .main-navigation ul li a:after {
+            background-color: #FFFFFF; }
+        .main-navigation ul li a:hover:after {
+          opacity: 1;
+          transform: translate(0, 0); }
+      .main-navigation ul li.home a svg {
+        height: 50px;
+        transform: translate(0, 6px);
+        fill: #FFFFFF;
+        transition: fill 300ms ease; }
+        .scrolled .main-navigation ul li.home a svg {
+          fill: #231F20; }
+        .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
+          fill: #FFFFFF; }
+      .main-navigation ul li.current-menu-item a:after {
         opacity: 1;
         transform: translate(0, 0); }
-    .main-navigation ul li.home a svg {
-      height: 50px;
-      transform: translate(0, 6px);
-      fill: #FFFFFF;
-      transition: fill 300ms ease; }
-      .scrolled .main-navigation ul li.home a svg {
-        fill: #231F20; }
-      .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
-        fill: #FFFFFF; }
-    .main-navigation ul li.current-menu-item a:after {
-      opacity: 1;
-      transform: translate(0, 0); }
 
 .site-footer {
   background-color: #808166; }
@@ -1083,7 +1134,7 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 2em;
-  padding: 0 0 16vh 0; }
+  padding: 8vh 0 8vh 0; }
   .footerw1 a {
     color: #FFFFFF;
     text-decoration: none; }
@@ -1103,7 +1154,6 @@ h1 {
 
 .footer-logo-w1 {
   text-align: center;
-  padding-top: clamp(10px, 8vh, 50px);
   padding-bottom: clamp(10px, 8vh, 50px); }
 
 .footerlogo {
@@ -1257,26 +1307,31 @@ h1 {
   background-size: cover;
   background-position: center;
   height: 100vh;
-  min-height: 500px;
+  min-height: 275px;
   display: flex; }
   .home-head .home-headw2 {
     margin-top: auto;
     text-align: center;
-    padding-bottom: 1em; }
+    padding-bottom: 2em; }
   .home-head h1 {
     text-align: center;
     font-size: 110px;
     line-height: 1;
-    font-size: calc(3.5vw + 3.5vh);
+    font-size: calc(3.6vw + 3.6vh);
     z-index: 1;
     font-weight: 300;
-    text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);
-    padding-bottom: 0.3em; }
+    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+    padding-bottom: 13vh; }
   .home-head p {
     margin-bottom: 0.8em;
-    font-size: 1.1rem; }
+    font-size: 20px;
+    text-shadow: 0px 0px 4px rgba(0, 0, 0, 0.7); }
     .home-head p strong {
       padding-right: 0.5em; }
+
+@supports (-webkit-touch-callout: none) {
+  .home-head {
+    height: -webkit-fill-available; } }
 
 .bt-home .entry-header {
   background-image: none !important;
@@ -1284,17 +1339,13 @@ h1 {
   top: 0;
   z-index: -1; }
 
-.entry-header {
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center; }
-  .entry-header h1 {
-    width: 100%;
-    text-align: center;
-    color: #FFFFFF;
-    font-size: 4rem;
-    padding-top: clamp(100px, 18vh, 150px);
-    padding-bottom: 9vh; }
+.entry-header h1 {
+  width: 100%;
+  text-align: center;
+  color: #FFFFFF;
+  font-size: 4rem;
+  padding-top: clamp(100px, 18vh, 150px);
+  padding-bottom: 9vh; }
 
 .entry-header.blog {
   background-color: #808166; }
@@ -1376,6 +1427,8 @@ h1 {
     margin-top: 0; }
   .entry-content h2 {
     text-align: center; }
+    .entry-content h2.leftalign {
+      text-align: left; }
   .entry-content > h2:first-of-type {
     margin-top: 0; }
 
@@ -1432,8 +1485,47 @@ h1 {
 body.blog a {
   color: #808166; }
 
-body.blog .site-main article {
-  margin-top: clamp(10px, 8vh, 50px); }
+body.blog .site-main > article {
+  margin-top: clamp(10px, 8vh, 50px);
+  padding-bottom: clamp(10px, 8vh, 50px);
+  position: relative; }
+  body.blog .site-main > article:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    opacity: 0.3;
+    background-color: #808166; }
+
+body.blog .entry-content {
+  padding-top: 0;
+  padding-bottom: 2em; }
+
+.wp-block-image {
+  position: relative; }
+  .wp-block-image figure {
+    position: relative; }
+  .wp-block-image figcaption {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    padding: 1em;
+    bottom: 5em;
+    margin: 0;
+    color: #FFFFFF; }
+    .wp-block-image figcaption:before {
+      content: '';
+      background-color: #808166;
+      opacity: 0.8;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: -1; }
 
 .blogtitle {
   background: #808166;
@@ -1457,6 +1549,10 @@ body.blog .site-main article {
   .has-larger-font-size,
   .has-huge-font-size {
     font-size: 2.625rem; } }
+
+@media (max-width: 781px) {
+  .wp-block-column:nth-child(3n) {
+    margin-top: 3vh; } }
 
 @media (max-width: 900px) {
   .footerw1 {
@@ -1482,6 +1578,11 @@ body.blog .site-main article {
     min-height: auto; }
     .home-head h1 {
       margin-top: 30vh; }
+  .site-header-w1 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    display: flex;
+    flex-direction: row-reverse; }
   .main-navigation ul li.home a svg {
     display: none; }
   .main-navigation ul li.home a span {
@@ -1505,6 +1606,8 @@ body.blog .site-main article {
         fill: #FFFFFF; }
   .wp-block-columns .wp-block-column + .wp-block-column {
     margin-top: 3vh; }
+  .wp-block-image {
+    max-height: none; }
   .scrolled .main-navigation ul li a {
     color: #808166; }
   .menu-toggle {
@@ -1545,6 +1648,15 @@ body.blog .site-main article {
           color: #FFFFFF; }
         .main-navigation ul li a:after {
           display: none; }
+  .page-template-belltower-home .main-navigation ul li:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    height: 1px;
+    background-color: #231F20;
+    opacity: 0.1;
+    right: 24px;
+    left: 5px; }
   /*
 	.home-headw2 {
 		grid-template-columns: 100%;

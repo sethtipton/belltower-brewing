@@ -74,15 +74,15 @@ ul li {
 		position: relative;
 		&:after {
 			content:'';
-			width:100%;
 			background-image: url("/wp-content/themes/belltower/images/BTB-Bell-Outline-White.svg");
 			background-repeat: no-repeat;
 			position: absolute;
-			left: 0;
-			top: 0;
+			left: -1px;
+			top: -1px;
 			bottom: 0;
-			right: 0;
+			right: -1px;
 			background-size: cover;
+			z-index: 1;
 		}
 	}
 }
@@ -92,15 +92,15 @@ ul li {
 		position: relative;
 		&:after {
 			content:'';
-			width:100%;
 			background-image: url("/wp-content/themes/belltower/images/BTB-Circle-White.svg");
 			background-repeat: no-repeat;
 			position: absolute;
-			left: 0;
-			top: 0;
+			left: -1px;
+			top: -2px;
 			bottom: 0;
-			right: 0;
+			right: -1px;
 			background-size: cover;
+			z-index: 1;
 		}
 	}
 }
@@ -109,15 +109,15 @@ ul li {
 	position: relative;
 	&:after {
 		content:'';
-		width:100%;
 		background-image: url("/wp-content/themes/belltower/images/BTB-Circle-White.svg");
 		background-repeat: no-repeat;
 		position: absolute;
-		left: 0;
-		top: 0;
+		left: -1px;
+		top: -1px;
 		bottom: 0;
-		right: 0;
+		right: -1px;
 		background-size: cover;
+		z-index: 1;
 	}
 }
 
@@ -179,7 +179,8 @@ body.admin-bar {
 }
 
 #masthead {
-	position: fixed;
+	//position: fixed;
+	position: sticky;
     width: 100%;
     top: 0;
 	z-index: 10;
@@ -206,7 +207,6 @@ body.admin-bar {
 	}
 	.page-template-belltower-home &{
 		background-color:$color__btdarkgreen;
-		//background-color:red;
 	}
 }
 
@@ -293,15 +293,19 @@ h1 {
 		padding-bottom: $u30navPadding;
 		align-items: center;
 		li {
+			margin:0;
 			&:nth-child(2) { order: 1; }
 			&:nth-child(3) { order: 2; }
-			&:nth-child(4) { order: 4; }
+			&:nth-child(4) { order: 3; }
 			&:nth-child(5) { order: 5; }
+			&:nth-child(6) { order: 6; }
+			&:nth-child(7) { order: 7; }
 			&.menu-item-home {
-				order:3;
+				order:4;
 				padding-top:0;
 				padding-bottom: 0;
 				span {display:none;}
+				a{color:transparent;}
 				a:after {display:none;}
 			}
 			a {
@@ -318,6 +322,9 @@ h1 {
 					@extend .bt-after;
 					.scrolled &{
 						background-color: $color__btblack;
+					}
+					.scrolled.page-template-belltower-home &{
+						background-color: $color__btpurewhite;
 					}
 				}
 				&:hover:after {
@@ -353,7 +360,7 @@ h1 {
 	display:grid;
 	grid-template-columns: 1fr 1fr 1fr 1fr;
 	gap:2em;
-	padding: 0 0 16vh 0;
+	padding: 8vh 0 8vh 0;
 	a {
 		color: $color__btpurewhite;
 		text-decoration: none;
@@ -381,7 +388,7 @@ h1 {
 
 .footer-logo-w1 {
 	text-align: center;
-	padding-top:$btcmpPadding2;
+	//padding-top:$btcmpPadding2;
 	padding-bottom:$btcmpPadding2;
 }
 .footerlogo {
@@ -543,30 +550,40 @@ h1 {
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: center;
+	//min-height: -webkit-fill-available;
 	height:100vh;
-	min-height: 500px;
+	min-height: 275px;
 	display:flex;
 	.home-headw2 {
 		margin-top:auto;
 		text-align: center;
-		padding-bottom:1em;
+		padding-bottom:2em;
 	}
 	h1 {
 		text-align: center;
 		font-size: 110px;
 		line-height: 1;
-		font-size: calc(3.5vw + 3.5vh);
+		font-size: calc(3.6vw + 3.6vh);
 		z-index: 1;
 		font-weight: 300;
-		text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
-		padding-bottom:0.3em;
+		//text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
+		text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
+		padding-bottom:13vh;
 	}
 	p {
 		margin-bottom:0.8em;
-		font-size:1.1rem;
+		font-size:20px;
+		//text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
+		text-shadow: 0px 0px 4px rgba(0, 0, 0, 0.7);
 		strong {padding-right:0.5em;}
 	}
 }
+
+@supports (-webkit-touch-callout: none) {
+	.home-head {
+	  height: -webkit-fill-available;
+	}
+  }
 
 .bt-home .entry-header {
 	background-image:none!important;
@@ -577,9 +594,9 @@ h1 {
 
 //Default Page
 .entry-header {
-	background-repeat: no-repeat;
-	background-size: cover;
-	background-position: center;
+	//background-repeat: no-repeat;
+	//background-size: cover;
+	//background-position: center;
 	h1 {
 		width:100%;
 		text-align: center;
@@ -703,6 +720,9 @@ h1 {
 	}
 	h2 {
 		text-align: center;
+		&.leftalign {
+			text-align: left;
+		}
 	}
 	&>figure {
 		//margin-top:$btcmpPadding1;
@@ -824,8 +844,52 @@ h1 {
 
 body.blog {
 	a {color:$color__btdarkgreen;}
-	.site-main article {
+	.site-main>article {
 		margin-top: $btcmpPadding2;
+		padding-bottom:$btcmpPadding2;
+		position: relative;
+		&:after {
+			content:'';
+			position: absolute;
+			left:0;
+			right:0;
+			bottom:0;
+			height:1px;
+			opacity:0.3;
+			background-color:$color__btdarkgreen;
+		}
+	}
+	.entry-content {
+		padding-top:0;
+		padding-bottom: 2em;
+	}
+}
+
+.wp-block-image {
+	position: relative;
+	figure {
+		position: relative;
+	}
+	figcaption {
+		position: absolute;
+		z-index: 2;
+		right:0;
+		padding:1em;
+		bottom:5em;
+		margin:0;
+		color:$color__btpurewhite;
+		&:before {
+			content:'';
+			background-color:$color__btdarkgreen;
+			opacity:0.8;
+			position:absolute;
+			width:100%;
+			height:100%;
+			left:0;
+			right:0;
+			top:0;
+			z-index: -1;
+		}
 	}
 }
 
@@ -865,6 +929,14 @@ body.blog {
 
 
 
+// WP blocks breakpoint
+@media (max-width: 781px) {
+
+	.wp-block-column:nth-child(3n) {
+		margin-top:3vh;
+	}
+
+}
 
 
 @media (max-width:900px) {
@@ -908,6 +980,13 @@ body.blog {
 		}
 	}
 
+	.site-header-w1 {
+		padding-top:8px;
+		padding-bottom:8px;
+		display: flex;
+		flex-direction: row-reverse;
+	}
+
 	.main-navigation ul li.home a {
 		svg {
 			display:none;
@@ -945,6 +1024,10 @@ body.blog {
 		.wp-block-column + .wp-block-column {
 			margin-top:3vh;
 		}
+	}
+
+	.wp-block-image {
+		max-height:none;
 	}
 
 	.scrolled .main-navigation ul li a {
@@ -996,6 +1079,17 @@ body.blog {
 				&:after{display:none;}
 			}
 		}
+	}
+
+	.page-template-belltower-home .main-navigation ul li:after {
+		content:'';
+		position: absolute;
+		bottom:0;
+		height:1px;
+		background-color:$color__btblack;
+		opacity:0.1;
+		right:24px;
+		left:5px;
 	}
 
 	/*

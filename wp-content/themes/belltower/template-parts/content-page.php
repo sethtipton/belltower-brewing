@@ -12,7 +12,7 @@
 
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-	<header class="entry-header" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+	<header class="entry-header <?php the_field('apply_overlay_to_featured_image'); ?>" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
 		<?php the_title( '<h1 class="entry-title">', '</h1>' ); ?>
 	</header><!-- .entry-header -->
 

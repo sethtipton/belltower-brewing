@@ -129,10 +129,15 @@ const ro = new ResizeObserver(entries => {
 	for (let entry of entries) {
 
 		if (docbody.classList.contains('home')) {
-			doc.getElementById('home-head').style.paddingTop=entry.contentRect.height + 'px';
+      const winheight = window.innerHeight;
+			//doc.getElementById('home-head').style.paddingTop=entry.contentRect.height + 'px';
+      //console.log('winheight',winheight);
+      //doc.getElementById('home-head').style.height=-winheight + 'px';
+      doc.getElementById('home-head').style.marginTop=-entry.contentRect.height + 'px';
 		}
 		else {
 			//btpage.style.paddingTop=entry.contentRect.height + 'px';
+      doc.getElementById('primary').style.marginTop=-entry.contentRect.height + 'px';
 		}
 
 		
@@ -165,7 +170,7 @@ shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo">'+btlogo+'</a
 
 //Insert logo in footer
 var footer = document.getElementById( 'footer' );
-footer.insertAdjacentHTML('afterbegin', '<div class="footer-logo-w1"><a href="/" class="footerlogo">'+btbelllogo+'</a></div>');
+footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" class="footerlogo">'+btbelllogo+'</a></div>');
 
 
 
