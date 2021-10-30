@@ -49,7 +49,15 @@ a.has-dark-green-color:hover {color:$color__btdarkgreen;}
 .has-white-color {color:$color__btwhite!important;}
 .has-white-bg {background-color:$color__btwhite;}
 
-
+#masthead {
+    //opacity:0;
+    height:0;
+    //transition: opacity 10ms ease-in 0ms;
+    &.load {
+        //opacity:1;
+        height: auto;
+    }
+}
 
 .entry-header {
     position: relative;

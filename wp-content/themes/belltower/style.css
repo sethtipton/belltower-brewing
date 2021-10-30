@@ -85,6 +85,11 @@ a.has-dark-green-color:hover {
 .has-white-bg {
   background-color: #E5E5E5; }
 
+#masthead {
+  height: 0; }
+  #masthead.load {
+    height: auto; }
+
 .entry-header {
   position: relative; }
   .entry-header h1 {
@@ -861,6 +866,10 @@ object {
 .has-huge-font-size {
   font-size: 2.625rem; }
 
+body.pause * {
+  animation: none !important;
+  transition: none !important; }
+
 .bt-center {
   text-align: center; }
   .bt-center strong {
@@ -894,9 +903,6 @@ hr, .wp-block-separator {
 ul li {
   margin: clamp(10px, 2vh, 20px) 0; }
 
-#wpadminbar + #page #masthead {
-  margin-top: 32px; }
-
 .img-arch .wp-block-media-text__media {
   position: relative; }
   .img-arch .wp-block-media-text__media:after {
@@ -926,6 +932,7 @@ ul li {
     z-index: 1; }
 
 .wp-block-image.img-circle {
+  max-height: none;
   position: relative; }
   .wp-block-image.img-circle:after {
     content: '';
@@ -1114,15 +1121,17 @@ h1 {
         .main-navigation ul li a:hover:after {
           opacity: 1;
           transform: translate(0, 0); }
-      .main-navigation ul li.home a svg {
-        height: 50px;
-        transform: translate(0, 6px);
-        fill: #FFFFFF;
-        transition: fill 300ms ease; }
-        .scrolled .main-navigation ul li.home a svg {
-          fill: #231F20; }
-        .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
-          fill: #FFFFFF; }
+      .main-navigation ul li.home a {
+        height: 50px; }
+        .main-navigation ul li.home a svg {
+          height: 100%;
+          transform: translate(0, 2px);
+          fill: #FFFFFF;
+          transition: fill 300ms ease; }
+          .scrolled .main-navigation ul li.home a svg {
+            fill: #231F20; }
+          .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
+            fill: #FFFFFF; }
       .main-navigation ul li.current-menu-item a:after {
         opacity: 1;
         transform: translate(0, 0); }
@@ -1306,8 +1315,9 @@ h1 {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
+  background-color: #808166;
   height: 100vh;
-  min-height: 275px;
+  min-height: 375px;
   display: flex; }
   .home-head .home-headw2 {
     margin-top: auto;
@@ -1531,6 +1541,50 @@ body.blog .entry-content {
   background: #808166;
   height: 200px; }
 
+.popup-container {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 80px auto 0;
+  color: #FFFFFF;
+  text-align: center; }
+  .popup-container a {
+    color: #FFFFFF; }
+    .popup-container a:hover {
+      color: #FFFFFF; }
+  .popup-container p {
+    margin-top: 80px;
+    padding: 0 0.5em;
+    font-size: 14px; }
+  .popup-container .agelogo {
+    width: 100%;
+    z-index: -1; }
+    .popup-container .agelogo svg {
+      fill: #808166; }
+
+.popupw1 {
+  position: absolute;
+  top: 0;
+  width: 100%; }
+
+.popup-body {
+  box-sizing: border-box;
+  font-size: 26px;
+  margin-bottom: 20px;
+  padding-top: 70px; }
+
+.popup-btn {
+  box-sizing: border-box;
+  padding: 6px 12px;
+  margin-right: 10px;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  background-color: #FFFFFF; }
+  .popup-btn:hover {
+    opacity: 0.8; }
+
 @media (max-width: 1174px) {
   .cwidth, .wp-block-columns {
     padding-left: 2vw;
@@ -1573,11 +1627,14 @@ body.blog .entry-content {
       grid-column: 1 / 3; } }
 
 @media (max-width: 600px) {
-  .home-head {
-    height: auto;
+  .home-head h1 {
+    margin-top: 30vh; }
+  .home-head p {
+    font-size: 18px; }
+  object.wp-block-file__embed[type="application/pdf"] {
+    display: none; }
+  #primary {
     min-height: auto; }
-    .home-head h1 {
-      margin-top: 30vh; }
   .site-header-w1 {
     padding-top: 8px;
     padding-bottom: 8px;
@@ -1643,11 +1700,16 @@ body.blog .entry-content {
         padding-top: 8px;
         padding-bottom: 8px;
         color: #808166;
+        height: auto !important;
         font-size: 1.2rem; }
         .page-template-belltower-home .main-navigation ul li a {
           color: #FFFFFF; }
         .main-navigation ul li a:after {
           display: none; }
+  .main-navigation ul li.menu-item-home a {
+    color: #808166; }
+    .page-template-belltower-home .main-navigation ul li.menu-item-home a {
+      color: #FFFFFF; }
   .page-template-belltower-home .main-navigation ul li:after {
     content: '';
     position: absolute;
@@ -1732,7 +1794,7 @@ body.blog .entry-content {
       grid-column: 1 / 3; }
   .default-page .entry-header h1 {
     font-size: 2rem;
-    padding-top: 7vh; }
+    padding-top: 10vh; }
   .wp-block-media-text {
     overflow: hidden; }
     .wp-block-media-text .wp-block-media-text__content {
@@ -1751,49 +1813,6 @@ body.blog .entry-content {
     grid-auto-flow: row;
     grid-template-rows: 1fr; }
     .draftlistw1 p {
-      margin-bottom: 3em; } }
-
-/* AgeGate Popup Container Styles */
-.popup-container {
-  box-sizing: border-box;
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-  margin: 80px auto 0;
-  color: #FFFFFF;
-  text-align: center; }
-  .popup-container a {
-    color: #FFFFFF; }
-    .popup-container a:hover {
-      color: #FFFFFF; }
-  .popup-container p {
-    margin-top: 80px;
-    padding: 0 0.5em;
-    font-size: 14px; }
-  .popup-container .agelogo {
-    width: 100%;
-    z-index: -1; }
-    .popup-container .agelogo svg {
-      fill: #808166; }
-
-.popupw1 {
-  position: absolute;
-  top: 0;
-  width: 100%; }
-
-.popup-body {
-  box-sizing: border-box;
-  font-size: 26px;
-  margin-bottom: 20px;
-  padding-top: 70px; }
-
-.popup-btn {
-  box-sizing: border-box;
-  padding: 6px 12px;
-  margin-right: 10px;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  background-color: #FFFFFF; }
-  .popup-btn:hover {
-    opacity: 0.8; }
+      margin-bottom: 3em; }
+  .entry-content h2.leftalign {
+    text-align: center; } }

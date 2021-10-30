@@ -45,6 +45,7 @@ get_header();
 					<p class="has-pure-white-color"><strong>Thursday</strong>4-10PM</p>
 					<p class="has-pure-white-color"><strong>Friday - Saturday</strong>11-11PM</p>
 					<p class="has-pure-white-color"><strong>Sunday</strong>11-9PM</p>
+					<p class="has-pure-white-color">Our kitchen is open from 4-8pm, Thursday through Sunday</p>
 				</div>
 			</div>
 		</div>
