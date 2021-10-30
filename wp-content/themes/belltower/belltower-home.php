@@ -39,15 +39,9 @@ get_header();
 
 	<div id="home-head" class="home-head" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
 		<div class="home-headw2 cwidth">
-			<h1 class="has-pure-white-color">Simple & Seasonal</h1>
-			<div class="home-headc1">
-				<div class="home-headc1w1">
-					<p class="has-pure-white-color"><strong>Thursday</strong>4-10PM</p>
-					<p class="has-pure-white-color"><strong>Friday - Saturday</strong>11-11PM</p>
-					<p class="has-pure-white-color"><strong>Sunday</strong>11-9PM</p>
-					<p class="has-pure-white-color">Our kitchen is open from 4-8pm, Thursday through Sunday</p>
-				</div>
-			</div>
+
+			<?php dynamic_sidebar( 'bt-home-hero' ); ?>
+			
 		</div>
 	</div>
 

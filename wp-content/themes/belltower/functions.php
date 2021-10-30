@@ -186,6 +186,17 @@ add_action( 'after_setup_theme', 'belltower_content_width', 0 );
 function belltower_widgets_init() {
 	register_sidebar(
 		array(
+			'name'          => esc_html__( 'Homepage Hero Text', 'belltower' ),
+			'id'            => 'bt-home-hero',
+			'description'   => esc_html__( 'Add widgets here to change the text in the homepage hero.', 'belltower' ),
+			'before_widget' => '<div id="%1$s" class="widget %2$s">',
+			'after_widget'  => '</div>',
+			'before_title'  => '<h2 class="widget-title">',
+			'after_title'   => '</h2>',
+		)
+	);
+	register_sidebar(
+		array(
 			'name'          => esc_html__( 'Sidebar', 'belltower' ),
 			'id'            => 'sidebar-1',
 			'description'   => esc_html__( 'Add widgets here.', 'belltower' ),
