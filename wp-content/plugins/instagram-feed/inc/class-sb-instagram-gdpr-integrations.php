@@ -32,10 +32,10 @@ class SB_Instagram_GDPR_Integrations {
 	 */
 	public static function undo_script_blocking( $blocking ) {
 		$settings = sbi_get_database_settings();
-		if ( ! SB_Instagram_GDPR_Integrations::doing_gdpr( $settings ) ) {
+		if ( ! self::doing_gdpr( $settings ) ) {
 			return $blocking;
 		}
-		unset($blocking['instagram-feed']);
+		unset( $blocking['instagram-feed'] );
 		return $blocking;
 	}
 
@@ -58,7 +58,7 @@ class SB_Instagram_GDPR_Integrations {
 		if ( class_exists( 'COMPLIANZ' ) ) {
 			return 'Complianz by Really Simple Plugins';
 		}
-		if ( function_exists('BorlabsCookieHelper') ) {
+		if ( function_exists( 'BorlabsCookieHelper' ) ) {
 			return 'Borlabs Cookie by Borlabs';
 		}
 
@@ -81,7 +81,7 @@ class SB_Instagram_GDPR_Integrations {
 		if ( $gdpr === 'yes' ) {
 			return true;
 		}
-		return (SB_Instagram_GDPR_Integrations::gdpr_plugins_active() !== false);
+		return ( self::gdpr_plugins_active() !== false );
 	}
 
 	public static function blocking_cdn( $settings ) {
@@ -95,7 +95,7 @@ class SB_Instagram_GDPR_Integrations {
 		$sbi_statuses_option = get_option( 'sbi_statuses', array() );
 
 		if ( $sbi_statuses_option['gdpr']['from_update_success'] ) {
-			return (SB_Instagram_GDPR_Integrations::gdpr_plugins_active() !== false);
+			return ( self::gdpr_plugins_active() !== false );
 		}
 		return false;
 	}
@@ -120,7 +120,7 @@ class SB_Instagram_GDPR_Integrations {
 			if ( ! is_wp_error( $image_editor ) ) {
 				$sbi_statuses_option['gdpr']['image_editor'] = true;
 			} else {
-				$test_image = 'http://plugin.smashballoon.com/editor-test.png';
+				$test_image = 'https://plugin.smashballoon.com/editor-test.png';
 
 				$image_editor = wp_get_image_editor( $test_image );
 				if ( ! is_wp_error( $image_editor ) ) {
@@ -149,14 +149,14 @@ class SB_Instagram_GDPR_Integrations {
 			}
 
 			global $wpdb;
-			$table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE );
+			$table_name                            = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE );
 			$sbi_statuses_option['gdpr']['tables'] = true;
-			if ( $wpdb->get_var( "show tables like '$table_name'" ) != $table_name ) {
+			if ( $wpdb->get_var( "show tables like '$table_name'" ) !== $table_name ) {
 				$sbi_statuses_option['gdpr']['tables'] = false;
 			}
 
 			$feeds_posts_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS );
-			if ( $wpdb->get_var( "show tables like '$feeds_posts_table_name'" ) != $feeds_posts_table_name ) {
+			if ( $wpdb->get_var( "show tables like '$feeds_posts_table_name'" ) !== $feeds_posts_table_name ) {
 				$sbi_statuses_option['gdpr']['tables'] = false;
 			}
 
@@ -169,8 +169,8 @@ class SB_Instagram_GDPR_Integrations {
 		}
 
 		if ( ! $sbi_statuses_option['gdpr']['upload_dir']
-		     || ! $sbi_statuses_option['gdpr']['tables']
-		     || ! $sbi_statuses_option['gdpr']['image_editor'] ) {
+			 || ! $sbi_statuses_option['gdpr']['tables']
+			 || ! $sbi_statuses_option['gdpr']['image_editor'] ) {
 			return false;
 		}
 
@@ -182,18 +182,19 @@ class SB_Instagram_GDPR_Integrations {
 
 		$errors = array();
 		if ( ! $sbi_statuses_option['gdpr']['upload_dir'] ) {
-			$errors[] =  __( 'A folder for storing resized images was not successfully created.' );
+			$errors[] = __( 'A folder for storing resized images was not successfully created.' );
 		}
 		if ( ! $sbi_statuses_option['gdpr']['tables'] ) {
 			$errors[] = __( 'Tables used for storing information about resized images were not successfully created.' );
 		}
 		if ( ! $sbi_statuses_option['gdpr']['image_editor'] ) {
-			$errors[] = sprintf( __( 'An image editor is not available on your server. Instagram Feed is unable to create local resized images. See %sthis FAQ%s for more information' ), '<a href="https://smashballoon.com/doc/the-images-in-my-feed-are-missing-or-showing-errors/" target="_blank" rel="noopener noreferrer">','</a>' );
+			$errors[] = sprintf( __( 'An image editor is not available on your server. Instagram Feed is unable to create local resized images. See %1$sthis FAQ%2$s for more information' ), '<a href="https://smashballoon.com/doc/the-images-in-my-feed-are-missing-or-showing-errors/" target="_blank" rel="noopener noreferrer">', '</a>' );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['tab'] ) && $_GET['tab'] !== 'support' ) {
-			$tab = sbi_is_pro_version() ? 'customize-advanced' : 'customize';
-			$errors[] = '<a href="?page=sb-instagram-feed&amp;tab='.$tab.'&amp;retest=1" class="button button-secondary">' . __( 'Retest', 'instagram-feed' ) . '</a>';
+			$tab      = sbi_is_pro_version() ? 'customize-advanced' : 'customize';
+			$errors[] = '<a href="?page=sb-instagram-feed&amp;tab=' . esc_attr( $tab ) . '&amp;retest=1" class="button button-secondary">' . __( 'Retest', 'instagram-feed' ) . '</a>';
 		}
 
 		return implode( '<br>', $errors );

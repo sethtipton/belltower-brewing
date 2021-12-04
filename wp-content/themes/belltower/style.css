@@ -67,6 +67,12 @@ a.has-dark-green-color:hover {
 .has-light-green-bg {
   background-color: #BAB488; }
 
+.has-yellow-color {
+  color: #b8a881; }
+
+.has-yellow-bg {
+  background-color: #b8a881; }
+
 .has-red-color {
   color: #BA583B; }
 
@@ -1152,6 +1158,9 @@ h1 {
             right: 1em;
             left: 0.5em;
             width: auto; }
+
+body.page-id-1168 #primary {
+  background-color: #808166; }
 
 .site-footer {
   background-color: #808166; }

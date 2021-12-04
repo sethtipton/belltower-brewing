@@ -2,6 +2,7 @@ $color__btdarkgreen: #808166;
 $color__btblack: #231F20;
 $color__btpink: #E0CDC0;
 $color__btlightgreen: #BAB488;
+$color__btyellow: #b8a881;
 $color__btred: #BA583B;
 $color__btwhite: #E5E5E5;
 $color__btpurewhite: #FFFFFF;
@@ -39,6 +40,9 @@ a.has-dark-green-color:hover {color:$color__btdarkgreen;}
 
 .has-light-green-color {color:$color__btlightgreen;}
 .has-light-green-bg {background-color:$color__btlightgreen;}
+
+.has-yellow-color {color:$color__btyellow;}
+.has-yellow-bg {background-color:$color__btyellow;}
 
 .has-red-color {color:$color__btred;}
 .has-red-bg {background-color:$color__btred;}

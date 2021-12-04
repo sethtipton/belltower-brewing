@@ -116,6 +116,7 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		$btblack      = '#231F20';
 		$btpink       = '#E0CDC0';
 		$btlightgreen = '#BAB488';
+		$btyellow     = '#b8a881';
 		$btred        = '#BA583B';
 		$btwhite      = '#E5E5E5';
 		$btpurewhite  = '#FFFFFF';
@@ -141,6 +142,11 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 				'name'  => __( 'Light Green', 'belltower' ),
 				'slug'  => 'light-green',
 				'color' => $btlightgreen,
+			),
+			array(
+				'name'  => __( 'Yellow', 'belltower' ),
+				'slug'  => 'yellow',
+				'color' => $btyellow,
 			),
 			array(
 				'name'  => __( 'Red', 'belltower' ),

@@ -3,7 +3,7 @@
 Plugin Name: Smash Balloon Instagram Feed
 Plugin URI: https://smashballoon.com/instagram-feed
 Description: Display beautifully clean, customizable, and responsive Instagram feeds.
-Version: 2.9.4
+Version: 2.9.7
 Author: Smash Balloon
 Author URI: https://smashballoon.com/
 License: GPLv2 or later
@@ -23,7 +23,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 if ( ! defined( 'SBIVER' ) ) {
-	define( 'SBIVER', '2.9.4' );
+	define( 'SBIVER', '2.9.7' );
 }
 // Db version.
 if ( ! defined( 'SBI_DBVERSION' ) ) {
@@ -52,9 +52,11 @@ if ( ! defined( 'SBI_MINIMUM_INTERVAL' ) ) {
 	define( 'SBI_MINIMUM_INTERVAL', 600 );
 }
 
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ){
+	exit;
+} // Exit if accessed directly
 if ( function_exists( 'sb_instagram_feed_init' ) ) {
-	wp_die( "Please deactivate Custom Feeds for Instagram Pro before activating this version.<br /><br />Back to the WordPress <a href='".get_admin_url(null, 'plugins.php')."'>Plugins page</a>." );
+	wp_die( "Please deactivate Custom Feeds for Instagram Pro before activating this version.<br /><br />Back to the WordPress <a href='".esc_url( get_admin_url(null, 'plugins.php') )."'>Plugins page</a>." );
 } else {
 	/**
 	 * Define constants and load plugin files
@@ -367,7 +369,7 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 			$charset_collate = $wpdb->get_charset_collate();
 			$table_name      = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE );
 
-			if ( $wpdb->get_var( "show tables like '$table_name'" ) != $table_name ) {
+			if ( $wpdb->get_var( "show tables like '$table_name'" ) !== $table_name ) {
 				$sql = "CREATE TABLE " . $table_name . " (
                 id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 created_on DATETIME,
@@ -603,8 +605,6 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 			update_option( 'sbi_db_version', SBI_DBVERSION );
 		}
 
-		//$manager = new SB_Instagram_Data_Manager();
-		//$manager->reset(); die();
 		if ( (float) $db_ver < 1.91 ) {
 			$manager = new SB_Instagram_Data_Manager();
 			$manager->update_db_for_dpa();
@@ -763,7 +763,7 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 	 *
 	 * @since  2.0
 	 */
-	function sbi_on_create_blog( $blog_id, $user_id, $domain, $path, $site_id, $meta ) {
+	function sbi_on_create_blog( $blog_id ) {
 		if ( is_plugin_active_for_network( 'instagram-feed/instagram-feed.php' ) ) {
 			switch_to_blog( $blog_id );
 			sbi_create_database_table();
