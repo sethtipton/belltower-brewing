@@ -607,7 +607,6 @@ a {
     margin: 0;
     padding-left: 0; }
     .main-navigation ul ul {
-      box-shadow: 0 3px 3px rgba(0, 0, 0, 0.2);
       float: left;
       position: absolute;
       top: 100%;
@@ -1132,9 +1131,27 @@ h1 {
             fill: #231F20; }
           .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
             fill: #FFFFFF; }
-      .main-navigation ul li.current-menu-item a:after {
+      .main-navigation ul li.current-menu-item > a:after {
         opacity: 1;
         transform: translate(0, 0); }
+    .main-navigation ul ul {
+      background-color: transparent;
+      width: auto;
+      padding: 0 0 0.5em 0; }
+      .scrolled .main-navigation ul ul {
+        background-color: #FFFFFF; }
+      .page-template-belltower-home .main-navigation ul ul {
+        background-color: #808166; }
+      .main-navigation ul ul li {
+        padding-top: 0.5em; }
+        .main-navigation ul ul li a {
+          width: auto;
+          white-space: nowrap;
+          padding: 0 1em 0 0.5em; }
+          .main-navigation ul ul li a:after {
+            right: 1em;
+            left: 0.5em;
+            width: auto; }
 
 .site-footer {
   background-color: #808166; }
