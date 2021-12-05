@@ -1439,8 +1439,9 @@ body.page-id-1168 #primary {
     flex-shrink: 0;
     min-width: 100%;
     min-height: 100%; }
-  .wp-block-image.fullheightimg {
-    max-height: none; }
+
+.wp-block-image.fullheightimg {
+  max-height: none; }
 
 .wp-block-file a {
   color: #808166;

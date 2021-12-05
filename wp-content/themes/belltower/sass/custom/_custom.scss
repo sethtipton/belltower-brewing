@@ -635,9 +635,10 @@ body.page-id-1168 #primary {background-color: #515440;}
 		min-width: 100%;
 		min-height: 100%;
 	}
-	&.fullheightimg {
-		max-height: none;
-	}
+}
+
+.wp-block-image.fullheightimg {
+	max-height: none;
 }
 
 .wp-block-file {
