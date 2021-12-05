@@ -1160,7 +1160,7 @@ h1 {
             width: auto; }
 
 body.page-id-1168 #primary {
-  background-color: #808166; }
+  background-color: #515440; }
 
 .site-footer {
   background-color: #808166; }
@@ -1439,6 +1439,8 @@ body.page-id-1168 #primary {
     flex-shrink: 0;
     min-width: 100%;
     min-height: 100%; }
+  .wp-block-image.fullheightimg {
+    max-height: none; }
 
 .wp-block-file a {
   color: #808166;

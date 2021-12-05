@@ -328,7 +328,7 @@ h1 {margin:0;}
 }
 
 //New Years
-body.page-id-1168 #primary {background-color: $color__btdarkgreen;}
+body.page-id-1168 #primary {background-color: #515440;}
 
 .site-footer {background-color: $color__btdarkgreen;}
 
@@ -634,6 +634,9 @@ body.page-id-1168 #primary {background-color: $color__btdarkgreen;}
 		flex-shrink: 0;
 		min-width: 100%;
 		min-height: 100%;
+	}
+	&.fullheightimg {
+		max-height: none;
 	}
 }
 
