@@ -1172,7 +1172,8 @@ body.page-id-1168 .fullheightimg {
   color: #b8a881 !important;
   display: table;
   margin-left: auto;
-  margin-right: auto; }
+  margin-right: auto;
+  text-decoration: none; }
 
 .site-footer {
   background-color: #808166; }
