@@ -1162,12 +1162,15 @@ h1 {
 body.page-id-1168 #primary {
   background-color: #515440; }
 
+body.page-id-1168 .fullheightimg {
+  margin-bottom: 0; }
+
 .newyearslink {
   border: 1px solid #b8a881;
   font-size: 2.3rem;
   padding: 0.5em 1em;
-  color: #b8a881;
-  display: block;
+  color: #b8a881 !important;
+  display: table;
   margin-left: auto;
   margin-right: auto; }
 
