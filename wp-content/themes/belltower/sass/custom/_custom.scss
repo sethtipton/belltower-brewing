@@ -329,6 +329,15 @@ h1 {margin:0;}
 
 //New Years
 body.page-id-1168 #primary {background-color: #515440;}
+.newyearslink {
+	border: 1px solid $color__btyellow;
+	font-size: 2.3rem;
+	padding: 0.5em 1em;
+	color:$color__btyellow;
+	display:block;
+	margin-left: auto;
+	margin-right: auto;
+}
 
 .site-footer {background-color: $color__btdarkgreen;}
 
