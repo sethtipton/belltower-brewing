@@ -1748,6 +1748,29 @@ body.blog .entry-content {
           color: #FFFFFF; }
         .main-navigation ul li a:after {
           display: none; }
+      .main-navigation ul li.menu-item-has-children:after {
+        display: none; }
+    .main-navigation ul ul {
+      position: relative;
+      left: 0;
+      width: 100%;
+      margin-bottom: 0.5em; }
+      .main-navigation ul ul li {
+        padding-left: 0.5em;
+        padding-top: 0; }
+        .main-navigation ul ul li:after {
+          display: none; }
+        .main-navigation ul ul li a {
+          font-size: 1.1rem; }
+      .main-navigation ul ul:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        height: 1px;
+        background-color: #231F20;
+        opacity: 0.1;
+        right: 24px;
+        left: 0px; }
   .main-navigation ul li.menu-item-home a {
     color: #808166; }
     .page-template-belltower-home .main-navigation ul li.menu-item-home a {

@@ -992,6 +992,30 @@ body.blog {
 				font-size: 1.2rem;
 				&:after{display:none;}
 			}
+			&.menu-item-has-children:after {display:none;}
+		}
+		ul {
+			position: relative;
+			left:0;
+			width:100%;
+			//padding-bottom:1em;
+			margin-bottom:0.5em;
+			li {
+				padding-left:0.5em;
+				padding-top:0;
+				&:after {display:none;}
+				a {font-size:1.1rem;}
+			}
+			&:after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				height: 1px;
+				background-color: #231F20;
+				opacity: 0.1;
+				right: 24px;
+				left: 0px;
+			}
 		}
 	}
 
