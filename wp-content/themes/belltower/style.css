@@ -113,6 +113,8 @@ a.has-dark-green-color:hover {
     position: absolute;
     z-index: 1;
     filter: grayscale(100%); }
+  .entry-header.none:before {
+    filter: none; }
   .entry-header:after {
     content: '';
     width: 100%;
