@@ -1193,3 +1193,12 @@ body.blog {
 		display:none;
 	}
 }
+
+@media (max-width:$mobileBreakpoint) {
+
+	.ut-menu .menu-items-container .menu-item{
+		width:100%!important;
+		margin-right:0!important;
+	}
+
+}

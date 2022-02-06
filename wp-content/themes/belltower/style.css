@@ -1917,3 +1917,8 @@ body.blog .entry-content {
 
 .ut-menu .menu-items-container .menu-item .item .item-details .item-description .ut-more {
   display: none; }
+
+@media (max-width: 600px) {
+  .ut-menu .menu-items-container .menu-item {
+    width: 100% !important;
+    margin-right: 0 !important; } }
