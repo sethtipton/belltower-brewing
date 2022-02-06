@@ -453,6 +453,13 @@ textarea {
   font-size: 1rem;
   line-height: 1.5; }
 
+.ut-menu {
+  color: #231F20 !important;
+  font-family: "Raisonne Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
+  src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
+  font-size: 1rem !important;
+  line-height: 1.5 !important; }
+
 h1,
 h2,
 h3,
@@ -1885,3 +1892,28 @@ body.blog .entry-content {
     text-align: center; }
   .newyearslink {
     font-size: 1.3rem; } }
+
+.ut-menu .h1 {
+  color: #808166 !important;
+  text-transform: none !important; }
+
+.ut-menu .menu-header {
+  border-bottom: none !important; }
+
+.ut-menu .menu-info {
+  border-bottom: none !important; }
+
+.ut-menu a.ut-more {
+  color: #808166 !important; }
+
+.ut-menu .item-name {
+  font-size: 1.2rem !important; }
+
+.ut-menu .pagination-container {
+  display: none; }
+
+.ut-menu .menu-items-container .menu-item .item .item-details .item-description p.show-less {
+  white-space: inherit !important; }
+
+.ut-menu .menu-items-container .menu-item .item .item-details .item-description .ut-more {
+  display: none; }

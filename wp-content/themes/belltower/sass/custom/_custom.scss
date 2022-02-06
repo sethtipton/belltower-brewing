@@ -1159,3 +1159,37 @@ body.blog {
 		font-size: 1.3rem;
 	}
 }
+
+
+
+
+
+//untappd
+
+.ut-menu {
+	.h1 {
+		color:$color__btdarkgreen!important;
+		text-transform: none!important;
+	}
+	.menu-header {
+		border-bottom:none!important;
+	}
+	.menu-info {
+		border-bottom: none!important;
+	}
+	a.ut-more {
+		color:$color__btdarkgreen!important;
+	}
+	.item-name {
+		font-size: 1.2rem!important;
+	}
+	.pagination-container {
+		display:none;
+	}
+	.menu-items-container .menu-item .item .item-details .item-description p.show-less {
+		white-space: inherit!important;
+	}
+	.menu-items-container .menu-item .item .item-details .item-description .ut-more {
+		display:none;
+	}
+}

@@ -17,6 +17,15 @@ textarea {
 	line-height: $font__line-height-body;
 }
 
+//untappd
+.ut-menu {
+	color: $color__text-main!important;
+	font-family: $font__main!important;
+	src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
+	font-size: 1rem!important;
+	line-height: $font__line-height-body!important;
+}
+
 @import "headings";
 @import "copy";
 
