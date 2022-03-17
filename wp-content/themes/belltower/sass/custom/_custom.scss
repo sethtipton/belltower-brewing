@@ -855,6 +855,10 @@ body.blog {
 	&:hover {opacity: 0.8;}
   }
 
+ul.indentlist {
+	padding-left:1em;
+}
+
 @media (max-width:$btcwidth) {
 	.cwidth {
 		padding-left: $btsitePadding;
