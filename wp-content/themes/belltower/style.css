@@ -884,6 +884,9 @@ body.pause * {
   animation: none !important;
   transition: none !important; }
 
+ul.indentlist {
+  padding-left: 1em; }
+
 .bt-center {
   text-align: center; }
   .bt-center strong {
