@@ -821,30 +821,30 @@ body.blog {
 	}
 	p {
 		margin-top: 80px;
-    	padding: 0 0.5em;
+		padding: 0 0.5em;
 		font-size: 14px;
 	}
 	.agelogo {
-    	width: 100%;
+		width: 100%;
 		z-index: -1;
 		svg {fill: $color__btdarkgreen;}
 	}
-  }
+}
 
-  .popupw1 {
+.popupw1 {
 	position: absolute;
-    top: 0;
-    width: 100%;
-  }
-  
-  .popup-body {
+	top: 0;
+	width: 100%;
+}
+
+.popup-body {
 	box-sizing: border-box;
 	font-size: 26px;
 	margin-bottom: 20px;
 	padding-top:70px;
-  }
-  
-  .popup-btn {
+}
+
+.popup-btn {
 	box-sizing: border-box;
 	padding: 6px 12px;
 	margin-right: 10px;
@@ -853,9 +853,9 @@ body.blog {
 	cursor: pointer;
 	background-color: $color__btpurewhite;
 	&:hover {opacity: 0.8;}
-  }
+}
 
-ul.indentlist {
+.indentlist {
 	padding-left:1em;
 }
 
