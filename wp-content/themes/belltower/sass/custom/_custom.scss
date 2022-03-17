@@ -21,6 +21,10 @@ body.pause * {
 	transition: none !important;
 }
 
+.indentlist {
+	padding-left:1em;
+}
+
 .bt-center {
 	text-align: center;
 	strong {display:block;}
@@ -853,10 +857,6 @@ body.blog {
 	cursor: pointer;
 	background-color: $color__btpurewhite;
 	&:hover {opacity: 0.8;}
-}
-
-.indentlist {
-	padding-left:1em;
 }
 
 @media (max-width:$btcwidth) {
