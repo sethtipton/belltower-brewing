@@ -11,5 +11,5 @@ jobs:
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
         server: ftp.sethtipton.com
-        username: sethtipt@162.241.217.135
+        username: sethtipt
         password: ${{ secrets.SSH_PRIVATE_KEY }}
