@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name: WP Map Block
- * Plugin URI: http://itushar.me/wp-map-block
+ * Plugin URI: https://academylms.net/wp-map-block
  * Description: Gutenberg Map Block for Google Map and OpenStreet Map build with LeafletJS
- * Author: tusharimran
- * Author URI: http://itushar.me
- * Version: 1.3.0
+ * Author: Academy LMS
+ * Author URI: https://academylms.net/
+ * Version: 1.4.8
  * License: GPL2+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.txt
  *
@@ -36,7 +36,7 @@ if (!class_exists('WPMapBlock')) {
             /**
              * Defines CONSTANTS for Whole plugins.
              */
-            define('WPMAPBLOCK_VERSION', '1.3.0');
+            define('WPMAPBLOCK_VERSION', '1.4.8');
             define('WPMAPBLOCK_PLUGIN_FILE', __FILE__);
             define('WPMAPBLOCK_PLUGIN_BASENAME', plugin_basename(__FILE__));
             define('WPMAPBLOCK_PLUGIN_SLUG', 'wp-map-block');
@@ -45,7 +45,7 @@ if (!class_exists('WPMapBlock')) {
             define('WPMAPBLOCK_ASSETS_DIR_PATH', WPMAPBLOCK_ROOT_DIR_PATH . 'assets/');
             define('WPMAPBLOCK_ASSETS_URI', WPMAPBLOCK_PLUGIN_ROOT_URI . 'assets/');
         }
-    
+
         public function init_plugin()
         {
             $this->load_textdomain();
@@ -57,6 +57,9 @@ if (!class_exists('WPMapBlock')) {
             WPMapBlock\Assets::init();
             WPMapBlock\Block::init();
             WPMapBlock\Migration::init();
+			if(is_admin()){
+                WPMapBlock\Admin::init();
+			}
         }
 
         public function load_textdomain()

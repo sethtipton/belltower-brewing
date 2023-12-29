@@ -93,14 +93,14 @@ class SB_Instagram_Parse {
 	}
 
 	/**
-	 * @param array $post
+	 * @param array  $post
 	 * @param string $resolution
 	 *
 	 * @return string
 	 *
 	 * @since 2.0/5.0
 	 */
-	public static function get_media_url( $post ) {
+	public static function get_media_url( $post, $resolution = 'lightbox' ) {
 		$account_type = isset( $post['images'] ) ? 'personal' : 'business';
 		$media_type   = isset( $post['media_type'] ) ? $post['media_type'] : 'none';
 
@@ -127,7 +127,7 @@ class SB_Instagram_Parse {
 								$full_size = $carousel_item['thumbnail_url'];
 							} else {
 								$media = trailingslashit( SBI_PLUGIN_URL ) . 'img/thumb-placeholder.png';
-								//attempt to get
+								// attempt to get
 								$permalink = self::fix_permalink( self::get_permalink( $carousel_item ) );
 								$single    = new SB_Instagram_Single( $permalink );
 								$single->init();
@@ -149,7 +149,7 @@ class SB_Instagram_Parse {
 					if ( ! class_exists( 'SB_Instagram_Single' ) ) {
 						return trailingslashit( SBI_PLUGIN_URL ) . 'img/thumb-placeholder.png';
 					}
-					//attempt to get
+					// attempt to get
 					$permalink = self::fix_permalink( self::get_permalink( $post ) );
 					$single    = new SB_Instagram_Single( $permalink );
 					$single->init();
@@ -168,6 +168,17 @@ class SB_Instagram_Parse {
 					return $post['media_url'];
 				}
 
+				$permalink = self::fix_permalink( self::get_permalink( $post ) );
+				$single    = new SB_Instagram_Single( $permalink );
+				$single->init();
+				$maybe_post = $single->get_post();
+
+				if ( isset( $maybe_post['media_url'] ) ) {
+					return $maybe_post['media_url'];
+				} elseif ( isset( $maybe_post['thumbnail_url'] ) ) {
+					return $maybe_post['thumbnail_url'];
+				}
+
 				return trailingslashit( SBI_PLUGIN_URL ) . 'img/thumb-placeholder.png';
 			}
 		}
@@ -175,7 +186,7 @@ class SB_Instagram_Parse {
 	}
 
 	/**
-	 * Uses the existing data for the indvidual instagram post to
+	 * Uses the existing data for the individual instagram post to
 	 * set the best image sources for each resolution size. Due to
 	 * random bugs or just how the API works, different post types
 	 * need special treatment.
@@ -194,7 +205,7 @@ class SB_Instagram_Parse {
 			'd'   => self::get_media_url( $post ),
 			'150' => '',
 			'320' => '',
-			'640' => '',
+			'640' => ''
 		);
 		$account_type = isset( $post['images'] ) ? 'personal' : 'business';
 
@@ -281,13 +292,18 @@ class SB_Instagram_Parse {
 	 * @since 2.0/5.0
 	 * @since 2.2/5.3 added support for a custom avatar in settings
 	 */
-	public static function get_avatar( $header_data, $settings = array( 'favor_local' => false ) ) {
+	public static function get_avatar( $header_data, $settings = array( 'favor_local' => false ), $is_header_attr = false ) {
+		if ( $is_header_attr ) {
+			return self::get_avatar_url( $header_data );
+		}
 		if ( ! empty( $settings['customavatar'] ) ) {
 			return $settings['customavatar'];
-		} elseif ( ! empty( $header_data['local_avatar'] ) ) {
+		} elseif ( ! empty( $header_data['local_avatar_url'] ) ) {
+			return $header_data['local_avatar_url'];
+		} elseif ( ! empty( $header_data['local_avatar'] ) && is_string( $header_data['local_avatar'] ) ) {
 			return $header_data['local_avatar'];
 		} else {
-			if ( ! SB_Instagram_GDPR_Integrations::doing_gdpr( $settings ) ) {
+			if ( ! SB_Instagram_GDPR_Integrations::doing_gdpr( $settings ) || $is_header_attr ) {
 				if ( isset( $header_data['profile_picture'] ) ) {
 					return $header_data['profile_picture'];
 				} elseif ( isset( $header_data['profile_picture_url'] ) ) {
@@ -334,16 +350,21 @@ class SB_Instagram_Parse {
 	 * @since 2.2/5.3 added support for a custom bio in settings
 	 */
 	public static function get_bio( $header_data, $settings = array() ) {
-		if ( ! empty( $settings['custombio'] ) ) {
-			return $settings['custombio'];
-		} elseif ( isset( $header_data['data']['bio'] ) ) {
-			return $header_data['data']['bio'];
-		} elseif ( isset( $header_data['bio'] ) ) {
-			return $header_data['bio'];
-		} elseif ( isset( $header_data['biography'] ) ) {
-			return $header_data['biography'];
+		$customizer = $settings['customizer'];
+		if ( $customizer ) {
+			return '{{$parent.getHeaderBio()}}';
+		} else {
+			if ( ! empty( $settings['custombio'] ) ) {
+				return $settings['custombio'];
+			} elseif ( isset( $header_data['data']['bio'] ) ) {
+				return $header_data['data']['bio'];
+			} elseif ( isset( $header_data['bio'] ) ) {
+				return $header_data['bio'];
+			} elseif ( isset( $header_data['biography'] ) ) {
+				return $header_data['biography'];
+			}
+			return '';
 		}
-		return '';
 	}
 
 	/**
@@ -397,6 +418,36 @@ class SB_Instagram_Parse {
 			return strtolower( $post['media_product_type'] );
 		}
 
+		// get media_type and permalink and search for reel in permalink.
+		$media_type = self::get_media_type( $post );
+		$permalink  = self::get_permalink( $post );
+		if ( $media_type === 'video' && strpos( $permalink, 'https://www.instagram.com/reel/' ) !== false ) {
+			return 'reels';
+		}
+
 		return 'feed';
+	}
+
+	/**
+	 * Get the avatar URL from the API response
+	 *
+	 * @param array $account_info
+	 *
+	 * @return string
+	 *
+	 * @since 6.0
+	 */
+	public static function get_avatar_url( $account_info ) {
+		if ( isset( $account_info['profile_picture'] ) ) {
+			return $account_info['profile_picture'];
+		} elseif ( isset( $account_info['profile_picture_url'] ) ) {
+			return $account_info['profile_picture_url'];
+		} elseif ( isset( $account_info['user'] ) ) {
+			return $account_info['user']['profile_picture'];
+		} elseif ( isset( $account_info['data'] ) ) {
+			return $account_info['data']['profile_picture'];
+		}
+
+		return '';
 	}
 }

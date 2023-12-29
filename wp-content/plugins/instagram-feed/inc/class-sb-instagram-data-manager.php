@@ -37,6 +37,7 @@ class SB_Instagram_Data_Manager {
 	public function hooks() {
 		add_action( 'sbi_before_display_instagram', array( $this, 'update_last_used' ) );
 		add_action( 'sbi_before_display_instagram', array( $this, 'check' ) );
+		add_action( 'sbi_before_display_instagram', array( $this, 'maybe_update_legacy_sources' ) );
 		add_action( 'sb_instagram_twicedaily', array( $this, 'maybe_delete_old_data' ) );
 	}
 
@@ -56,7 +57,6 @@ class SB_Instagram_Data_Manager {
 
 			$this->update_statuses( $statuses );
 		}
-
 	}
 
 	/**
@@ -69,6 +69,15 @@ class SB_Instagram_Data_Manager {
 	}
 
 	/**
+	 * Updates legacy sources if some are left in the queue from an update
+	 */
+	public function maybe_update_legacy_sources() {
+		if ( \InstagramFeed\Builder\SBI_Source::should_do_source_updates() ) {
+			\InstagramFeed\Builder\SBI_Source::batch_process_legacy_source_queue();
+		}
+	}
+
+	/**
 	 * Delete unused data after a period
 	 *
 	 * @return bool
@@ -76,13 +85,15 @@ class SB_Instagram_Data_Manager {
 	 * @since 2.9.4/5.12.4
 	 */
 	public function maybe_delete_old_data() {
+		global $sb_instagram_posts_manager;
+
 		$statuses = $this->get_statuses();
 
 		$data_was_deleted = false;
 
-		if ( $statuses['last_used'] < sbi_get_current_time() - ( 21 * DAY_IN_SECONDS ) ) {
-			global $sb_instagram_posts_manager;
+		do_action( 'sbi_before_delete_old_data', $statuses );
 
+		if ( $statuses['last_used'] < sbi_get_current_time() - ( 21 * DAY_IN_SECONDS ) ) {
 			$this->delete_caches();
 			$this->delete_comments_data();
 			$this->delete_hashtag_data();
@@ -94,6 +105,7 @@ class SB_Instagram_Data_Manager {
 
 		if ( $statuses['last_used'] < sbi_get_current_time() - ( 90 * DAY_IN_SECONDS ) ) {
 			SB_Instagram_Connected_Account::update_connected_accounts( array() );
+			\InstagramFeed\Builder\SBI_Db::clear_sbi_sources();
 			global $sb_instagram_posts_manager;
 
 			$sb_instagram_posts_manager->add_action_log( 'Deleted all connected accounts.' );
@@ -115,6 +127,7 @@ class SB_Instagram_Data_Manager {
 		$sb_instagram_posts_manager->delete_all_sbi_instagram_posts();
 
 		delete_option( 'sbi_top_api_calls' );
+		delete_option( 'sbi_local_avatars' );
 	}
 
 	/**
@@ -127,7 +140,7 @@ class SB_Instagram_Data_Manager {
 	public function delete_non_hashtag_sbi_instagram_posts( $username ) {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE;
-		$feeds_posts_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS );
+		$feeds_posts_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS;
 
 		$non_hashtag_posts = $wpdb->get_results(
 			"SELECT p.id, p.media_id FROM $table_name as p
@@ -156,8 +169,7 @@ class SB_Instagram_Data_Manager {
 		$non_hashtag_posts_deleted = $wpdb->query(
 			"DELETE p, f FROM $table_name as p
 					INNER JOIN $feeds_posts_table_name AS f ON p.id = f.id
-					WHERE f.hashtag = '';",
-			ARRAY_A
+					WHERE f.hashtag = '';"
 		);
 
 	}
@@ -170,7 +182,7 @@ class SB_Instagram_Data_Manager {
 	public function update_json_non_hashtag_sbi_instagram_posts() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE;
-		$feeds_posts_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS );
+		$feeds_posts_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS;
 
 		$updated = $wpdb->query(
 			"UPDATE $table_name as p
@@ -200,7 +212,7 @@ class SB_Instagram_Data_Manager {
 		global $wpdb;
 		$encryption             = new SB_Instagram_Data_Encryption();
 		$table_name             = $wpdb->prefix . SBI_INSTAGRAM_POSTS_TYPE;
-		$feeds_posts_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS );
+		$feeds_posts_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEEDS_POSTS;
 
 		$plaintext_posts = $wpdb->get_results(
 			"SELECT * FROM $table_name as p
@@ -323,6 +335,8 @@ class SB_Instagram_Data_Manager {
 		);
 
 		delete_option( 'sbi_single_cache' );
+
+		\InstagramFeed\Builder\SBI_Db::clear_sbi_feed_caches();
 	}
 
 	/**
@@ -340,7 +354,7 @@ class SB_Instagram_Data_Manager {
 		$permanent_caches = $wpdb->get_results(
 			"
 		    SELECT *
-		    FROM $wpdb->options
+		    FROM $table_name
 		    WHERE option_name LIKE ('%!sbi\_%')
 		    ",
 			ARRAY_A
@@ -357,7 +371,7 @@ class SB_Instagram_Data_Manager {
 
 			$this->delete_caches( false );
 		} else {
-			$this->delete_caches();
+			$this->delete_caches( true );
 		}
 
 		SB_Instagram_Connected_Account::encrypt_all_access_tokens();
@@ -436,9 +450,6 @@ class SB_Instagram_Data_Manager {
 			$args = array(
 				'timeout' => 20,
 			);
-			if ( version_compare( get_bloginfo( 'version' ), '3.7', '<' ) ) {
-				$args['sslverify'] = false;
-			}
 			$response = wp_remote_get( $url, $args );
 
 			if ( ! is_wp_error( $response ) ) {
@@ -457,6 +468,32 @@ class SB_Instagram_Data_Manager {
 		$remote_encrypt = new SB_Instagram_Data_Encryption( $args );
 
 		return $remote_encrypt->encrypt( $raw_value );
+	}
+
+	public function remote_decrypt( $encrypted_value ) {
+		if ( $this->key_salt === null ) {
+			$url  = 'https://secure.smashballoon.com/';
+			$args = array(
+				'timeout' => 20,
+			);
+			$response = wp_remote_get( $url, $args );
+
+			if ( ! is_wp_error( $response ) ) {
+				$this->key_salt = $response['body'];
+			}
+		}
+
+		$key  = substr( $this->key_salt, 0, 64 );
+		$salt = substr( $this->key_salt, 64, 64 );
+
+		$args = array(
+			'key'  => $key,
+			'salt' => $salt,
+		);
+
+		$remote_encrypt = new SB_Instagram_Data_Encryption( $args );
+
+		return $remote_encrypt->decrypt( $encrypted_value );
 	}
 
 	/**

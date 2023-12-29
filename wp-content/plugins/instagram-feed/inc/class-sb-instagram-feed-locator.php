@@ -12,15 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class SB_Instagram_Feed_Locator {
+	const COLUMN_NAMES = array( 'feed_id', 'post_id', 'html_location', 'shortcode_atts', 'last_update' );
 
-	/**
-	 * @var array
-	 */
 	private $feed_details;
 
-	/**
-	 * @var array
-	 */
+	private $expiration_time;
+
 	private $matching_entries;
 
 	public function __construct( $feed_details ) {
@@ -39,6 +36,8 @@ class SB_Instagram_Feed_Locator {
 		$this->feed_details = $feed_details;
 
 		$this->matching_entries = array();
+
+		$this->expiration_time = time() - 2 * WEEK_IN_SECONDS;
 	}
 
 	/**
@@ -51,7 +50,7 @@ class SB_Instagram_Feed_Locator {
 	 */
 	public function retrieve_matching_entries() {
 		global $wpdb;
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
@@ -77,34 +76,25 @@ class SB_Instagram_Feed_Locator {
 	public function insert_entry() {
 		global $wpdb;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
-		$two_minutes_ago         = date( 'Y-m-d H:i:s', time() - 120 );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+		$two_minutes_ago = date( 'Y-m-d H:i:s', time() - 120 );
 
-		$results_recent_entries = $wpdb->get_results(
-			$wpdb->prepare(
-				"
+		$results_recent_entries = $wpdb->get_results( $wpdb->prepare("
 			SELECT COUNT(*) AS num_entries
             FROM $feed_locator_table_name
             WHERE last_update > %s;
-            ",
-				$two_minutes_ago
-			),
-			ARRAY_A
-		);
+            ", $two_minutes_ago ), ARRAY_A );
 
 		// Only allow 5 new entries within 5 minutes
-		if ( isset( $results_recent_entries[0]['num_entries'] ) && (int) $results_recent_entries[0]['num_entries'] > 5 ) {
+		if ( isset( $results_recent_entries[0]['num_entries'] ) && (int)$results_recent_entries[0]['num_entries'] > 5 ) {
 			return;
 		}
 
 		// Only allow 1000 total entries
-		$results_total_entries = $wpdb->get_results(
-			"
+		$results_total_entries = $wpdb->get_results( "
 			SELECT COUNT(*) AS num_entries
-            FROM $feed_locator_table_name",
-			ARRAY_A
-		);
-		if ( isset( $results_total_entries[0]['num_entries'] ) && (int) $results_total_entries[0]['num_entries'] > 1000 ) {
+            FROM $feed_locator_table_name", ARRAY_A );
+		if ( isset( $results_total_entries[0]['num_entries'] ) && (int)$results_total_entries[0]['num_entries'] > 1000 ) {
 			$this->delete_oldest_entry();
 		}
 
@@ -131,19 +121,6 @@ class SB_Instagram_Feed_Locator {
 		);
 	}
 
-	public function delete_oldest_entry() {
-		global $wpdb;
-
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
-
-		$affected = $wpdb->query(
-			"DELETE FROM $feed_locator_table_name
-					ORDER BY last_update ASC
-					LIMIT 1;"
-		);
-
-	}
-
 	/**
 	 * Update a record based on the existing "id" column. Location can change
 	 * from "unknown" to one of footer, content, header, or sidebar.
@@ -156,7 +133,7 @@ class SB_Instagram_Feed_Locator {
 	public function update_entry( $id, $location ) {
 		global $wpdb;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 
 		$query = $wpdb->query(
 			$wpdb->prepare(
@@ -180,6 +157,10 @@ class SB_Instagram_Feed_Locator {
 	 */
 	public function add_or_update_entry() {
 		if ( empty( $this->feed_details['feed_id'] ) ) {
+			return;
+		}
+
+		if ( empty( $this->feed_details['location']['post_id'] ) ) {
 			return;
 		}
 
@@ -217,12 +198,12 @@ class SB_Instagram_Feed_Locator {
 			if ( false === $matched_location ) {
 				// if there is no matched location, there is only one feed on the page, and the feed being checked has an unknown location, update the known location
 				if ( count( $matching_indices ) === 1
-					 && $this->feed_details['location']['html'] === 'unknown'
-					 && false !== $non_unknown_match ) {
+				     && $this->feed_details['location']['html'] === 'unknown'
+				     && false !== $non_unknown_match ) {
 					$this->update_entry( $this->matching_entries[ $non_unknown_match ]['id'], $this->matching_entries[ $non_unknown_match ]['html_location'] );
 				} else {
 					if ( $this->feed_details['location']['html'] !== 'unknown'
-						 && false !== $unknown_match ) {
+					     && false !== $unknown_match ) {
 						$this->update_entry( $this->matching_entries[ $unknown_match ]['id'], $this->feed_details['location']['html'] );
 					} else {
 						$this->insert_entry();
@@ -230,6 +211,198 @@ class SB_Instagram_Feed_Locator {
 				}
 			}
 		}
+	}
+
+	public function delete_oldest_entry() {
+		global $wpdb;
+
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+
+		$affected = $wpdb->query(
+			"DELETE FROM $feed_locator_table_name
+					ORDER BY last_update ASC
+					LIMIT 1;" );
+
+	}
+
+	/**
+	 * Queries the locator table for feeds by feed_id
+	 *
+	 * @param $args
+	 *
+	 * @return array|object|null
+	 *
+	 * @since 4.0
+	 */
+	public static function instagram_feed_locator_query( $args ) {
+		global $wpdb;
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+
+		$group_by = isset( $args['group_by'] ) ? self::sanitize_group_by( $args['group_by'] ) : '';
+
+		$location_string = 'content';
+		if ( isset( $args['html_location'] ) ) {
+			$locations       = array_map( 'esc_sql', $args['html_location'] );
+			$location_string = implode( "', '", $locations );
+		}
+
+		$page = 0;
+		if ( isset( $args['page'] ) ) {
+			$page = (int) $args['page'] - 1;
+			unset( $args['page'] );
+		}
+
+		$offset = max( 0, $page * InstagramFeed\Builder\SBI_Db::RESULTS_PER_PAGE );
+
+		if ( isset( $args['shortcode_atts'] ) ) {
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+			SELECT *
+			FROM $feed_locator_table_name
+			WHERE shortcode_atts = %s
+		  	AND html_location IN ( '$location_string' )
+		  	$group_by
+		  	LIMIT %d
+			OFFSET %d;",
+					$args['shortcode_atts'],
+					InstagramFeed\Builder\SBI_Db::RESULTS_PER_PAGE,
+					$offset
+				),
+				ARRAY_A
+			);
+		} else {
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+			SELECT *
+			FROM $feed_locator_table_name
+			WHERE feed_id = %s
+		  	AND html_location IN ( '$location_string' )
+		  	$group_by
+		  	LIMIT %d
+			OFFSET %d;",
+					$args['feed_id'],
+					InstagramFeed\Builder\SBI_Db::RESULTS_PER_PAGE,
+					$offset
+				),
+				ARRAY_A
+			);
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Queries all legacy feeds that have been located
+	 *
+	 * @param $args
+	 *
+	 * @return array|object|null
+	 *
+	 * @since 4.0
+	 */
+	public static function legacy_instagram_feed_locator_query( $args ) {
+		global $wpdb;
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+
+		$group_by = isset( $args['group_by'] ) ? self::sanitize_group_by( $args['group_by'] ) : '';
+
+		$location_string = 'content';
+		if ( isset( $args['html_location'] ) ) {
+			$locations       = array_map( 'esc_sql', $args['html_location'] );
+			$location_string = implode( "', '", $locations );
+		}
+
+		$page = 0;
+		if ( isset( $args['page'] ) ) {
+			$page = (int) $args['page'] - 1;
+			unset( $args['page'] );
+		}
+
+		$offset = max( 0, $page * InstagramFeed\Builder\SBI_Db::RESULTS_PER_PAGE );
+		$limit  = InstagramFeed\Builder\SBI_Db::RESULTS_PER_PAGE;
+
+		$results = $wpdb->get_results(
+			"
+			SELECT *
+			FROM $feed_locator_table_name
+			WHERE feed_id NOT LIKE '*%'
+		  	AND html_location IN ( '$location_string' )
+		  	$group_by
+		  	LIMIT $limit
+			OFFSET $offset;",
+			ARRAY_A
+		);
+
+		return $results;
+	}
+
+	public static function update_legacy_to_builder( $args ) {
+		global $wpdb;
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+
+		$data = array(
+			'feed_id'        => '*' . $args['new_feed_id'],
+			'shortcode_atts' => '{"feed":"' . $args['new_feed_id'] . '"}',
+		);
+
+		$affected = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE $feed_locator_table_name
+         				SET feed_id = %s, shortcode_atts = %s",
+				$data['feed_id'],
+				$data['shortcode_atts']
+			)
+		);
+
+		return $affected;
+	}
+
+	/**
+	 * Simple count of rows based on args
+	 *
+	 * @param array $args
+	 *
+	 * @return int
+	 *
+	 * @since 4.0
+	 */
+	public static function count( $args ) {
+		global $wpdb;
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
+
+		if ( isset( $args['shortcode_atts'] ) ) {
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+			SELECT COUNT(*) AS num_entries
+            FROM $feed_locator_table_name
+            WHERE shortcode_atts = %s
+            ",
+					$args['shortcode_atts']
+				),
+				ARRAY_A
+			);
+		} else {
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+			SELECT COUNT(*) AS num_entries
+            FROM $feed_locator_table_name
+            WHERE feed_id = %s
+            ",
+					$args['feed_id']
+				),
+				ARRAY_A
+			);
+		}
+
+		if ( isset( $results[0]['num_entries'] ) ) {
+			return (int) $results[0]['num_entries'];
+		}
+
+		return 0;
 	}
 
 	/**
@@ -254,7 +427,7 @@ class SB_Instagram_Feed_Locator {
 	public static function delete_old_locations() {
 		global $wpdb;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 		$two_weeks_ago           = date( 'Y-m-d H:i:s', time() - 2 * WEEK_IN_SECONDS );
 
 		$affected = $wpdb->query(
@@ -285,9 +458,12 @@ class SB_Instagram_Feed_Locator {
 	 * @since 5.11
 	 */
 	public static function should_do_locating() {
+		if ( is_admin() || isset( $_GET['page'] ) && strpos( $_GET['page'], 'sbi' ) !== false ) {
+			return false;
+		}
 		$sbi_statuses_option = get_option( 'sbi_statuses', array() );
 		if ( isset( $sbi_statuses_option['feed_locator']['initialized'] )
-			 && $sbi_statuses_option['feed_locator']['initialized'] < ( time() - 300 ) ) {
+		     && $sbi_statuses_option['feed_locator']['initialized'] < ( time() - 300 ) ) {
 			$should_do_locating = rand( 1, 10 ) === 10;
 		} else {
 			$should_do_locating = rand( 1, 30 ) === 30;
@@ -310,9 +486,12 @@ class SB_Instagram_Feed_Locator {
 	 * @since 5.11
 	 */
 	public static function should_do_ajax_locating( $feed_id, $post_id ) {
+		if ( is_admin() || isset( $_GET['page'] ) && strpos( $_GET['page'], 'sbi' ) !== false ) {
+			return false;
+		}
 		$sbi_statuses_option = get_option( 'sbi_statuses', array() );
 		if ( isset( $sbi_statuses_option['feed_locator']['initialized'] )
-			 && $sbi_statuses_option['feed_locator']['initialized'] < ( time() - 300 ) ) {
+		     && $sbi_statuses_option['feed_locator']['initialized'] < ( time() - 300 ) ) {
 			$should_do_locating = rand( 1, 10 ) === 10;
 		} else {
 			$should_do_locating = rand( 1, 30 ) === 30;
@@ -342,7 +521,7 @@ class SB_Instagram_Feed_Locator {
 	 */
 	public static function entries_need_locating( $feed_id, $post_id ) {
 		global $wpdb;
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 
 		$one_day_ago = date( 'Y-m-d H:i:s', time() - DAY_IN_SECONDS );
 
@@ -375,7 +554,7 @@ class SB_Instagram_Feed_Locator {
 		global $wpdb;
 		global $sb_instagram_posts_manager;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 
 		if ( $wpdb->get_var( "show tables like '$feed_locator_table_name'" ) !== $feed_locator_table_name ) {
 			$sql = 'CREATE TABLE ' . $feed_locator_table_name . " (
@@ -414,7 +593,7 @@ class SB_Instagram_Feed_Locator {
 	public static function count_unique() {
 		global $wpdb;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 		$results_content         = $wpdb->get_results(
 			"
 			SELECT COUNT(*) AS num_entries
@@ -456,7 +635,7 @@ class SB_Instagram_Feed_Locator {
 	public static function summary() {
 		global $wpdb;
 
-		$feed_locator_table_name = esc_sql( $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR );
+		$feed_locator_table_name = $wpdb->prefix . SBI_INSTAGRAM_FEED_LOCATOR;
 
 		$locations = array(
 			array(
@@ -484,7 +663,7 @@ class SB_Instagram_Feed_Locator {
 
 		foreach ( $locations as $key => $location ) {
 			$in       = implode( "', '", $location['html_locations'] );
-			$group_by = isset( $location['group_by'] ) ? 'GROUP BY ' . $location['group_by'] : '';
+			$group_by = isset( $location['group_by'] ) ? self::sanitize_group_by( $location['group_by'] ) : '';
 			$results  = $wpdb->get_results(
 				"
 			SELECT *
@@ -507,5 +686,13 @@ class SB_Instagram_Feed_Locator {
 		}
 
 		return $locations;
+	}
+
+	public static function sanitize_group_by( $group_by ) {
+		if ( in_array( $group_by, self::COLUMN_NAMES, true ) ) {
+			return 'GROUP BY ' . $group_by;
+		}
+
+		return '';
 	}
 }

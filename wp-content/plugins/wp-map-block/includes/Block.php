@@ -8,20 +8,14 @@ class Block
         $self = new self();
         add_action('init', [$self, 'register_block']);
     }
-    
+
     public function register_block()
     {
         register_block_type(
             'wpmapblock/wp-map-block',
             array(
-                // Enqueue blocks.style.build.css on both frontend & backend.
-                'style'         => 'wp-map-block-stylesheets',
-                // Enqueue blocks.build.js in the editor only.
-                'editor_script' => 'wp-map-block-js',
-                // Enqueue Frontend scripts
-                'script'          => 'wp-map-block-frontend-js',
-                // Enqueue blocks.editor.build.css in the editor only.
-                'editor_style'  => 'wp-map-block-editor-css',
+                'editor_style_handles'  => [ 'wp-map-block-editor-css', 'wp-map-block-stylesheets'],
+                'editor_script_handles'  => [ 'wp-map-block-js', 'wp-map-block-frontend-js'],
                 'render_callback' => [$this, 'render_callback'],
             )
         );
@@ -39,6 +33,11 @@ class Block
     }
     public function render_callback($attributes, $content = '')
     {
+		wp_enqueue_style('wp-map-block-stylesheets');
+		wp_enqueue_script('wpmapblock-leaflet');
+		wp_enqueue_script('wpmapblock-leaflet-fullscreen');
+		wp_enqueue_script('wp-map-block-frontend-js');
+
         $settings = [
             'map_marker' => $this->escaping_array_data(isset($attributes['map_marker_list']) ? $attributes['map_marker_list'] : [[
                 'lat' 		=> 23.7806365,
