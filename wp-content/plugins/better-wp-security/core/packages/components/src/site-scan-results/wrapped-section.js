@@ -8,24 +8,24 @@ import { isEmpty } from 'lodash';
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { Fragment } from '@wordpress/element';
+import { Fragment, useState } from '@wordpress/element';
 import { Button } from '@wordpress/components';
-import { compose, withState, withInstanceId } from '@wordpress/compose';
+import { useInstanceId } from '@wordpress/compose';
 
 /**
  * Internal dependencies
  */
 import Details from './details';
 
-function WrappedSection( {
+export default function WrappedSection( {
 	type,
 	status,
 	description,
-	isShowing,
-	setState,
-	instanceId,
 	children,
 } ) {
+	const instanceId = useInstanceId( WrappedSection );
+	const [ isShowing, setIsShowing ] = useState( false );
+
 	let statusText;
 
 	switch ( status ) {
@@ -68,10 +68,10 @@ function WrappedSection( {
 						{ statusEl }
 						{ description }
 						<Button
-							isLink
+							variant="link"
 							className="itsec-site-scan-toggle-details"
 							onClick={ () =>
-								setState( { isShowing: ! isShowing } )
+								setIsShowing( ! isShowing )
 							}
 							aria-expanded={ isShowing }
 							aria-controls={ `itsec-site-scan__details--${ instanceId }` }
@@ -92,7 +92,3 @@ function WrappedSection( {
 		</div>
 	);
 }
-
-export default compose( [ withState( { isShowing: false } ), withInstanceId ] )(
-	WrappedSection
-);

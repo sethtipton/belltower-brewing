@@ -21,10 +21,13 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 		function initialize() {
 
 			// vars
-			$this->name     = 'file';
-			$this->label    = __( 'File', 'acf' );
-			$this->category = 'content';
-			$this->defaults = array(
+			$this->name          = 'file';
+			$this->label         = __( 'File', 'acf' );
+			$this->category      = 'content';
+			$this->description   = __( 'Uses the native WordPress media picker to upload, or choose files.', 'acf' );
+			$this->preview_image = acf_get_url() . '/assets/images/field-type-previews/field-preview-file.png';
+			$this->doc_url       = acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/file/', 'docs', 'field-type-selection' );
+			$this->defaults      = array(
 				'return_format' => 'array',
 				'library'       => 'all',
 				'min_size'      => 0,
@@ -106,7 +109,6 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 
 			// has value?
 			if ( $field['value'] ) {
-
 				$attachment = acf_get_attachment( $field['value'] );
 				if ( $attachment ) {
 
@@ -125,7 +127,7 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 			}
 
 			?>
-<div <?php acf_esc_attr_e( $div ); ?>>
+<div <?php echo acf_esc_attrs( $div ); ?>>
 			<?php
 			acf_hidden_input(
 				array(
@@ -172,6 +174,7 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 					array(
 						'name' => $field['name'],
 						'id'   => $field['id'],
+						'key'  => $field['key'],
 					)
 				);
 				?>
@@ -186,9 +189,7 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 	</div>
 </div>
 			<?php
-
 		}
-
 
 		/*
 		*  render_field_settings()
@@ -202,25 +203,7 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 		*
 		*  @param   $field  - an array holding all the field's data
 		*/
-
 		function render_field_settings( $field ) {
-
-			// clear numeric settings
-			$clear = array(
-				'min_size',
-				'max_size',
-			);
-
-			foreach ( $clear as $k ) {
-
-				if ( empty( $field[ $k ] ) ) {
-
-					$field[ $k ] = '';
-
-				}
-			}
-
-			// return_format
 			acf_render_field_setting(
 				$field,
 				array(
@@ -237,7 +220,6 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 				)
 			);
 
-			// library
 			acf_render_field_setting(
 				$field,
 				array(
@@ -252,8 +234,29 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 					),
 				)
 			);
+		}
 
-			// min
+		/**
+		 * Renders the field settings used in the "Validation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_validation_settings( $field ) {
+			// Clear numeric settings.
+			$clear = array(
+				'min_size',
+				'max_size',
+			);
+
+			foreach ( $clear as $k ) {
+				if ( empty( $field[ $k ] ) ) {
+					$field[ $k ] = '';
+				}
+			}
+
 			acf_render_field_setting(
 				$field,
 				array(
@@ -266,7 +269,6 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 				)
 			);
 
-			// max
 			acf_render_field_setting(
 				$field,
 				array(
@@ -279,19 +281,16 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 				)
 			);
 
-			// allowed type
 			acf_render_field_setting(
 				$field,
 				array(
-					'label'        => __( 'Allowed file types', 'acf' ),
-					'instructions' => __( 'Comma separated list. Leave blank for all types', 'acf' ),
-					'type'         => 'text',
-					'name'         => 'mime_types',
+					'label' => __( 'Allowed File Types', 'acf' ),
+					'hint'  => __( 'Comma separated list. Leave blank for all types', 'acf' ),
+					'type'  => 'text',
+					'name'  => 'mime_types',
 				)
 			);
-
 		}
-
 
 		/*
 		*  format_value()
@@ -326,11 +325,8 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 
 			// format
 			if ( $field['return_format'] == 'url' ) {
-
 				return wp_get_attachment_url( $value );
-
 			} elseif ( $field['return_format'] == 'array' ) {
-
 				return acf_get_attachment( $value );
 			}
 
@@ -356,7 +352,6 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 
 			$vars['send'] = true;
 			return( $vars );
-
 		}
 
 
@@ -412,12 +407,12 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 				return $valid;
 			}
 
-			// bail ealry if is numeric
+			// bail early if is numeric
 			if ( is_numeric( $value ) ) {
 				return $valid;
 			}
 
-			// bail ealry if not basic string
+			// bail early if not basic string
 			if ( ! is_string( $value ) ) {
 				return $valid;
 			}
@@ -453,6 +448,10 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 		 * @return bool|WP_Error
 		 */
 		public function validate_rest_value( $valid, $value, $field ) {
+			if ( is_null( $value ) && empty( $field['required'] ) ) {
+				return $valid;
+			}
+
 			/**
 			 * A bit of a hack, but we use `wp_prepare_attachment_for_js()` here
 			 * since it returns all the data we need to validate the file, and we use this anyways
@@ -534,13 +533,11 @@ if ( ! class_exists( 'acf_field_file' ) ) :
 		public function format_value_for_rest( $value, $post_id, array $field ) {
 			return acf_format_numerics( $value );
 		}
-
 	}
 
 
 	// initialize
 	acf_register_field_type( 'acf_field_file' );
-
 endif; // class_exists check
 
 ?>

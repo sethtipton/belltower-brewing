@@ -61,6 +61,14 @@
         "custom"
       ]
     },
+    "load": {
+      "type": "string",
+      "enum": [
+        "early",
+        "normal"
+      ],
+      "default": "normal"
+    },
     "order": {
       "type": "integer",
       "minimum": 0
@@ -436,56 +444,183 @@
         "type": "string"
       }
     },
+    "import-export": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "import-settings": {
+          "description": "List of settings to present in the import sequence.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude-settings": {
+          "description": "List of settings to exclude from exports.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "encryption": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "user-meta": {
+          "description": "List of user meta keys that store encrypted values.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "requirements": {
       "type": "object",
       "properties": {
         "ssl": {
           "$ref": "#/definitions/requirement"
+        },
+        "feature-flags": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/definitions/requirement"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "flags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "multisite": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/definitions/requirement"
+            },
+            {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "enabled",
+                    "disabled"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "server": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/definitions/requirement"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "php": {
+                  "type": "string"
+                },
+                "extensions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "OpenSSL"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "load": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/definitions/requirement"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "early"
+                  ]
+                }
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
-    }
-  },
-  "feature-flags": {
-    "description": "List of feature flags the module provides.",
-    "type": "object",
-    "additionalProperties": {
+    },
+    "feature-flags": {
+      "description": "List of feature flags the module provides.",
       "type": "object",
-      "properties": {
-        "rate": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "remote": {
-          "type": "boolean"
-        },
-        "title": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "documentation": {
-          "type": "string",
-          "format": "uri"
-        },
-        "requirements": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^\\w+$": {
           "type": "object",
-          "additionalProperties": false,
           "properties": {
-            "version": {
+            "rate": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "remote": {
+              "type": "boolean"
+            },
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string",
+              "format": "uri"
+            },
+            "requirements": {
               "type": "object",
-              "required": [
-                "pro",
-                "free"
-              ],
+              "additionalProperties": false,
               "properties": {
-                "pro": {
-                  "type": "string"
-                },
-                "free": {
-                  "type": "string"
+                "version": {
+                  "type": "object",
+                  "required": [
+                    "pro",
+                    "free"
+                  ],
+                  "properties": {
+                    "pro": {
+                      "type": "string"
+                    },
+                    "free": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
@@ -507,6 +642,9 @@
             "activate",
             "run"
           ]
+        },
+        "showMessageIfUnmet": {
+          "type": "boolean"
         }
       }
     }

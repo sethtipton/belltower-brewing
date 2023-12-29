@@ -7,7 +7,7 @@ const INITIAL_STATE = {
 	byTopic: {},
 };
 
-export default function ( state = INITIAL_STATE, action ) {
+export default function( state = INITIAL_STATE, action ) {
 	switch ( action.type ) {
 		case RECEIVE_HELP:
 			return {

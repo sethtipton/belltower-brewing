@@ -42,7 +42,7 @@ export default function FieldTemplate( props ) {
 			{ resettable && (
 				<Button
 					className="itsec-rjsf-reset-field"
-					isSecondary
+					variant="secondary"
 					onClick={ () => onChange( schema.default ) }
 				>
 					{ __( 'Restore Default', 'better-wp-security' ) }

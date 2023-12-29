@@ -4,15 +4,15 @@ use iThemesSecurity\User_Groups;
 use iThemesSecurity\Lib;
 
 /**
- * iThemes Security Core.
+ * Solid Security Core.
  *
- * Core class for iThemes Security sets up globals and other items and dispatches modules.
+ * Core class for Solid Security sets up globals and other items and dispatches modules.
  *
  * @since   4.0
  *
  * @package iThemes_Security
  *
- * @global array  $itsec_globals Global variables for use throughout iThemes Security.
+ * @global array  $itsec_globals Global variables for use throughout Solid Security.
  * @global object $itsec_lockout Class for handling lockouts.
  *
  */
@@ -27,7 +27,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 *
 		 * @access private
 		 */
-		private $plugin_build = 4124;
+		private $plugin_build = 4128;
 
 		/**
 		 * Used to distinguish between a user modifying settings and the API modifying settings (such as from Sync
@@ -42,6 +42,13 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 
 		/** @var true|WP_Error|null */
 		private $setup_error;
+
+		/**
+		 * True if Security was loaded via an mu-plugin.
+		 *
+		 * @var bool
+		 */
+		private $load_early = false;
 
 		private
 			$itsec_files,
@@ -96,6 +103,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		public function init( $plugin_file, $plugin_name ) {
 			global $itsec_globals, $itsec_lockout;
 
+			$this->load_early       = defined( 'ITSEC_LOAD_EARLY' ) && ITSEC_LOAD_EARLY;
 			$this->plugin_file      = $plugin_file;
 			$this->plugin_dir       = dirname( $plugin_file ) . '/';
 			$this->plugin_name      = $plugin_name;
@@ -146,7 +154,10 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			$this->itsec_notify = new ITSEC_Notify();
 			$itsec_lockout      = new ITSEC_Lockout();
 
-			// Handle upgrade if needed.
+			if ( ITSEC_Core::is_loading_early() ) {
+				$this->early_init();
+			}
+
 			add_action( 'plugins_loaded', array( $this, 'compat_checks' ), - 150 );
 			add_action( 'plugins_loaded', array( $this, 'handle_upgrade' ), - 100, 0 );
 			add_action( 'plugins_loaded', array( $this, 'continue_init' ), - 90 );
@@ -159,6 +170,125 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			add_action( 'itsec_after_import', function () {
 				$this->importing = false;
 			} );
+		}
+
+		/**
+		 * Shared initialization that needs to happen for early and normal loading.
+		 */
+		private function shared_init() {
+			global $itsec_lockout;
+
+			$this->setup_scheduler();
+			ITSEC_Modules::run_active_modules();
+
+			$itsec_lockout->run();
+		}
+
+		/**
+		 * Performs initialization for the plugin when it is being loaded by an MU Plugin.
+		 *
+		 * @return void
+		 */
+		private function early_init() {
+			// We don't want to run our upgrade routines early, and it's not safe to run
+			// Security without the upgrade routine having been run. So skip the early
+			// loading and fallback to a normal load for this request.
+			if ( self::needs_upgrade() ) {
+				self::get_instance()->load_early = false;
+
+				return;
+			}
+
+			$this->shared_init();
+		}
+
+		/**
+		 * Perform initialization that requires the plugins_loaded hook to be fired.
+		 */
+		public function continue_init() {
+			if ( is_wp_error( $this->setup_error ) ) {
+				add_action( 'all_admin_notices', function () {
+					if ( ! current_user_can( is_multisite() ? 'manage_network_options' : 'manage_options' ) ) {
+						return;
+					}
+
+					echo '<div class="notice notice-error">';
+					echo '<p>';
+					esc_html_e( 'Cannot run Solid Security. Error encountered during setup. Please try deactivating and reactivating Solid Security. Contact support if the error persists.', 'better-wp-security' );
+					echo '</p>';
+
+					echo '<ol>';
+					foreach ( ITSEC_Lib::get_error_strings( $this->setup_error ) as $string ) {
+						echo '<li>' . $string . '</li>';
+					}
+					echo '</ol>';
+					echo '</div>';
+				} );
+
+				return;
+			}
+
+			// If this wasn't an early load, we need to do the shared initialization.
+			if ( ! self::is_loading_early() ) {
+				$this->shared_init();
+			}
+
+			if ( is_admin() ) {
+				require( $this->plugin_dir . 'core/admin-pages/init.php' );
+
+				add_filter( 'plugin_action_links', array( $this, 'add_action_link' ), 10, 2 );
+				add_filter( 'plugin_row_meta', array( $this, 'add_plugin_meta_links' ), 10, 4 );
+			}
+
+			add_action( 'wp_login_failed', array( 'ITSEC_Lib', 'handle_wp_login_failed' ) );
+			add_action( 'ithemes_sync_register_verbs', array( $this, 'register_sync_verbs' ) );
+
+			ITSEC_Modules::get_container()->get( Lib\Tools\Tools_Runner::class )->run();
+
+			$this->login_interstitial = new ITSEC_Lib_Login_Interstitial();
+			$this->login_interstitial->run();
+
+			if ( defined( 'ITSEC_USE_CRON' ) && ITSEC_USE_CRON !== ITSEC_Lib::use_cron() ) {
+				ITSEC_Modules::set_setting( 'global', 'use_cron', ITSEC_USE_CRON );
+			}
+
+			do_action( 'itsec_initialized' );
+
+			Lib\User_Actions_Background_Process::run_processes();
+			ITSEC_Lib_Remote_Messages::init();
+			$this->run_integrations();
+		}
+
+		/**
+		 * Register our tables with {@see wpdb}.
+		 */
+		private function setup_tables() {
+			global $wpdb;
+
+			$wpdb->global_tables = array_merge( $wpdb->global_tables, ITSEC_Schema::get_table_names() );
+		}
+
+		private function setup_scheduler() {
+
+			if ( $this->scheduler ) {
+				return;
+			}
+
+			$choices = array(
+				'ITSEC_Scheduler_Cron'      => $this->plugin_dir . 'core/lib/class-itsec-scheduler-cron.php',
+				'ITSEC_Scheduler_Page_Load' => $this->plugin_dir . 'core/lib/class-itsec-scheduler-page-load.php',
+			);
+
+			if ( ITSEC_Lib::use_cron() ) {
+				$class = 'ITSEC_Scheduler_Cron';
+			} else {
+				$class = 'ITSEC_Scheduler_Page_Load';
+			}
+
+			require_once( $choices[ $class ] );
+
+			$this->scheduler = new $class();
+			self::get_scheduler()->run();
 		}
 
 		/**
@@ -219,95 +349,6 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			}
 
 			return false;
-		}
-
-		/**
-		 * Perform initialization that requires the plugins_loaded hook to be fired.
-		 */
-		public function continue_init() {
-			global $itsec_lockout;
-
-			if ( is_wp_error( $this->setup_error ) ) {
-				if ( ! current_user_can( is_multisite() ? 'manage_network_options' : 'manage_options' ) ) {
-					return;
-				}
-
-				add_action( 'all_admin_notices', function () {
-					echo '<div class="notice notice-error">';
-					echo '<p>';
-					esc_html_e( 'Cannot run iThemes Security. Error encountered during setup. Please try deactivating and reactivating iThemes Security. Contact support if the error persists.', 'better-wp-security' );
-					echo '</p>';
-
-					echo '<ol>';
-					foreach ( ITSEC_Lib::get_error_strings( $this->setup_error ) as $string ) {
-						echo '<li>' . $string . '</li>';
-					}
-					echo '</ol>';
-					echo '</div>';
-				} );
-
-				return;
-			}
-
-			$itsec_lockout->run();
-
-			if ( is_admin() ) {
-				require( $this->plugin_dir . 'core/admin-pages/init.php' );
-
-				add_filter( 'plugin_action_links', array( $this, 'add_action_link' ), 10, 2 );
-				add_filter( 'plugin_row_meta', array( $this, 'add_plugin_meta_links' ), 10, 4 );
-			}
-
-			add_action( 'wp_login_failed', array( 'ITSEC_Lib', 'handle_wp_login_failed' ) );
-			add_action( 'ithemes_sync_register_verbs', array( $this, 'register_sync_verbs' ) );
-
-			$this->setup_scheduler();
-			ITSEC_Modules::run_active_modules();
-			ITSEC_Modules::get_container()->get( Lib\Tools\Tools_Runner::class )->run();
-
-			$this->login_interstitial = new ITSEC_Lib_Login_Interstitial();
-			$this->login_interstitial->run();
-
-			if ( defined( 'ITSEC_USE_CRON' ) && ITSEC_USE_CRON !== ITSEC_Lib::use_cron() ) {
-				ITSEC_Modules::set_setting( 'global', 'use_cron', ITSEC_USE_CRON );
-			}
-
-			do_action( 'itsec_initialized' );
-
-			ITSEC_Lib_Remote_Messages::init();
-			$this->run_integrations();
-		}
-
-		/**
-		 * Register our tables with {@see wpdb}.
-		 */
-		private function setup_tables() {
-			global $wpdb;
-
-			$wpdb->global_tables = array_merge( $wpdb->global_tables, ITSEC_Schema::TABLES );
-		}
-
-		private function setup_scheduler() {
-
-			if ( $this->scheduler ) {
-				return;
-			}
-
-			$choices = array(
-				'ITSEC_Scheduler_Cron'      => $this->plugin_dir . 'core/lib/class-itsec-scheduler-cron.php',
-				'ITSEC_Scheduler_Page_Load' => $this->plugin_dir . 'core/lib/class-itsec-scheduler-page-load.php',
-			);
-
-			if ( ITSEC_Lib::use_cron() ) {
-				$class = 'ITSEC_Scheduler_Cron';
-			} else {
-				$class = 'ITSEC_Scheduler_Page_Load';
-			}
-
-			require_once( $choices[ $class ] );
-
-			$this->scheduler = new $class();
-			self::get_scheduler()->run();
 		}
 
 		/**
@@ -467,6 +508,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			ITSEC_Modules::register_module( 'file-change', "$path/modules/file-change" );
 			ITSEC_Modules::register_module( 'file-permissions', "$path/modules/file-permissions" );
 			ITSEC_Modules::register_module( 'file-writing', "$path/modules/file-writing" );
+			ITSEC_Modules::register_module( 'firewall', "$path/modules/firewall" );
 			ITSEC_Modules::register_module( 'brute-force', "$path/modules/brute-force" );
 			ITSEC_Modules::register_module( 'network-brute-force', "$path/modules/network-brute-force" );
 
@@ -489,6 +531,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			ITSEC_Modules::register_module( 'security-check-pro', "$path/modules/security-check-pro" );
 			ITSEC_Modules::register_module( 'sync-connect', "$path/modules/sync-connect" );
 			ITSEC_Modules::register_module( 'site-scanner', "$path/modules/site-scanner" );
+			ITSEC_Modules::register_module( 'malware-scheduling', "$path/modules/malware-scheduling" );
 			ITSEC_Modules::register_module( 'hide-backend', "$path/modules/hide-backend" );
 		}
 
@@ -573,7 +616,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 */
 		public function handle_upgrade( $build = false ) {
 
-			if ( func_num_args() === 0 && self::get_saved_plugin_build() >= $this->plugin_build ) {
+			if ( func_num_args() === 0 && ! self::needs_upgrade() ) {
 				return null;
 			}
 
@@ -583,6 +626,15 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			self::get_instance()->setup_error = ITSEC_Setup::handle_upgrade( $build );
 
 			return self::get_instance()->setup_error;
+		}
+
+		/**
+		 * Checks if an upgrade routine needs to be run.
+		 *
+		 * @return bool
+		 */
+		private static function needs_upgrade(): bool {
+			return self::get_saved_plugin_build() < self::get_instance()->plugin_build;
 		}
 
 		public static function handle_activation() {
@@ -682,7 +734,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		}
 
 		/**
-		 * Is this an iThemes Security Pro installation.
+		 * Is this an Solid Security Pro installation.
 		 *
 		 * This value is not cached.
 		 *
@@ -698,6 +750,10 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 * @return string
 		 */
 		public static function get_install_type() {
+			if ( defined( 'ITSEC_FORCE_INSTALL_TYPE' ) && ITSEC_FORCE_INSTALL_TYPE === 'free' ) {
+				return 'free';
+			}
+
 			if ( self::is_pro() ) {
 				return 'pro';
 			}
@@ -727,20 +783,38 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			}
 
 			$package_details = Ithemes_Updater_Packages::get_full_details();
+			$file            = plugin_basename( self::get_plugin_file() );
 
-			if ( empty( $package_details['packages']['ithemes-security-pro/ithemes-security-pro.php']['status'] ) ) {
+			if ( empty( $package_details['packages'][ $file ]['status'] ) ) {
 				return false;
 			}
 
-			if ( empty( $package_details['packages']['ithemes-security-pro/ithemes-security-pro.php']['user'] ) ) {
+			if ( empty( $package_details['packages'][ $file ]['user'] ) ) {
 				return false;
 			}
 
-			return 'active' === $package_details['packages']['ithemes-security-pro/ithemes-security-pro.php']['status'];
+			return 'active' === $package_details['packages'][ $file ]['status'];
 		}
 
 		/**
-		 * Gets the URL iThemes Security was licensed for.
+		 * Checks if this Pro install has access to Patchstack.
+		 *
+		 * @return bool
+		 */
+		public static function has_patchstack(): bool {
+			if ( ! self::is_licensed() || 'free' === self::get_install_type() ) {
+				return false;
+			}
+
+			if ( ! function_exists( 'ithemes_updater_site_has_patchstack' ) ) {
+				return false;
+			}
+
+			return ithemes_updater_site_has_patchstack();
+		}
+
+		/**
+		 * Gets the URL Solid Security was licensed for.
 		 *
 		 * @return string
 		 */
@@ -763,6 +837,32 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		}
 
 		/**
+		 * Gets the username that is licensed.
+		 *
+		 * @return string
+		 */
+		public static function get_licensed_user() {
+			if ( ! self::is_licensed() ) {
+				return '';
+			}
+
+			if ( ! function_exists( 'ithemes_updater_get_licensed_username' ) ) {
+				return '';
+			}
+
+			return ithemes_updater_get_licensed_username( 'ithemes-security-pro' );
+		}
+
+		/**
+		 * Checks if the licensed user is a Liquid Web customer.
+		 *
+		 * @return bool
+		 */
+		public static function licensed_user_is_lw_customer() {
+			return self::get_licensed_user() === 'liquidweb';
+		}
+
+		/**
 		 * Get the current local timestamp.
 		 *
 		 * This value will be the same throughout the entire request.
@@ -780,12 +880,12 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 *
 		 * This value will be the same throughout the entire request.
 		 *
-		 * @return int
+		 * @return int|\DateTimeInterface
 		 */
-		public static function get_current_time_gmt() {
+		public static function get_current_time_gmt( bool $as_object = false ) {
 			$self = self::get_instance();
 
-			return $self->current_time_gmt;
+			return $as_object ? new \DateTimeImmutable( '@' . $self->current_time_gmt ) : $self->current_time_gmt;
 		}
 
 		/**
@@ -843,37 +943,89 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			$path   = '/settings/configure/';
 			$config = ITSEC_Modules::get_config( $module );
 
-			if ( $config ) {
-				$settings = ITSEC_Modules::get_settings_obj( $module );
-
-				if ( ! $settings || ! $settings->has_interactive_settings() ) {
-					return "/settings/modules/{$config->get_type()}#{$config->get_id()}";
-				}
-
-				if ( $config->get_type() !== 'recommended' ) {
-					$path .= $config->get_type() . '/';
-				}
-
-				$path .= $config->get_id();
+			if ( ! $config ) {
+				return $path;
 			}
 
-			return $path;
+			if ( $config->get_id() === 'global' ) {
+				return '/settings/global';
+			}
+
+			if ( in_array( $config->get_type(), [ 'custom', 'tool', 'recommended' ], true ) ) {
+				return $path;
+			}
+
+			if ( $config->get_type() === 'advanced' ) {
+				return "/settings/advanced#{$config->get_id()}";
+			}
+
+			$settings = ITSEC_Modules::get_settings_obj( $module );
+
+			if ( $config->get_status() === 'always-active' && ! $settings->show_ui() ) {
+				return $path;
+			}
+
+			return "/settings/configure/{$config->get_type()}#{$config->get_id()}";
 		}
 
 		public static function get_settings_module_url( $module ) {
 			$path = self::get_settings_module_route( $module );
 
-			return network_admin_url( 'admin.php?page=itsec&path=' . urlencode( $path ) );
+			return self::get_admin_page_url( 'settings', $path );
 		}
 
 		public static function get_url_for_settings_route( $path ) {
-			return network_admin_url( 'admin.php?page=itsec&path=' . urlencode( $path ) );
+			return self::get_admin_page_url( 'settings', $path );
 		}
 
 		public static function get_link_for_settings_route( $path ) {
 			$url = self::get_url_for_settings_route( $path );
 
 			return sprintf( '<a href="%s" data-itsec-path="%s">', esc_attr( $url ), esc_attr( $path ) );
+		}
+
+		/**
+		 * Gets the URL for a Tool.
+		 *
+		 * @deprecated 8.0.0
+		 *
+		 * @param string $tool
+		 *
+		 * @return string
+		 */
+		public static function get_tools_route( string $tool ): string {
+			_deprecated_function( __METHOD__, '7.0.0' );
+
+			return '';
+		}
+
+		public static function get_url_for_tools_route( string $tool ): string {
+			return self::get_url_for_settings_route( '/settings/tools' ) . '#' . $tool;
+		}
+
+		/**
+		 * Gets the URL for an admin page.
+		 *
+		 * @param string $page
+		 * @param string $path
+		 *
+		 * @return string
+		 */
+		public static function get_admin_page_url( string $page, string $path = '/' ) {
+			if ( $page === 'settings' || $page === '' ) {
+				$page = 'itsec';
+			} else {
+				$page = 'itsec-' . $page;
+			}
+
+			$parts = explode( '#', $path );
+			$path = $parts[0];
+			$hash = '';
+			if ( count( $parts ) > 1 ) {
+				$hash = '#' . $parts[1];
+			}
+
+			return network_admin_url( sprintf( 'admin.php?page=%s&path=%s%s', $page, urlencode( $path ), $hash ) );
 		}
 
 		/**
@@ -999,9 +1151,6 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 * @return string
 		 */
 		public static function get_storage_dir( $dir = '', $public = false ) {
-
-			require_once( self::get_core_dir() . '/lib/class-itsec-lib-directory.php' );
-
 			$wp_upload_dir = self::get_wp_upload_dir();
 
 			$storage_dir = $wp_upload_dir['basedir'];
@@ -1088,7 +1237,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 				return true;
 			}
 
-			$home_path = parse_url( get_option( 'home' ), PHP_URL_PATH );
+			$home_path = parse_url( get_option( 'home' ), PHP_URL_PATH ) ?: '';
 			$home_path = trim( $home_path, '/' );
 
 			if ( '' === $home_path ) {
@@ -1145,7 +1294,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		}
 
 		/**
-		 * Checks if iThemes Security is in development mode.
+		 * Checks if Solid Security is in development mode.
 		 *
 		 * @return bool
 		 */
@@ -1157,7 +1306,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 		 * Check to see if the define to disable all active modules is set.
 		 *
 		 * Note that the ITSEC_DISABLE_MODULES should only be used to gain access to a site that you are locked out of.
-		 * Once logged in, you should remove the define to re-enable the protections offered by iThemes Security.
+		 * Once logged in, you should remove the define to re-enable the protections offered by Solid Security.
 		 *
 		 * @return bool true if the define is set to a truthy value, false otherwise.
 		 */
@@ -1188,6 +1337,50 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 			}
 
 			return $self->version;
+		}
+
+		/**
+		 * Checks if Security was loaded as a mu-plugin.
+		 *
+		 * @return bool
+		 */
+		public static function is_loading_early(): bool {
+			return self::get_instance()->load_early;
+		}
+
+		/**
+		 * Gets the PHP version that is going to be required soon.
+		 *
+		 * @return string
+		 */
+		public static function get_next_php_requirement(): string {
+			return '7.3.0';
+		}
+
+		/**
+		 * Gets the UTM campaign based on the Install Type.
+		 *
+		 * @return string
+		 */
+		public static function get_utm_campaign(): string {
+			return self::is_pro() ? 'itsecprocta' : 'itsecfreecta';
+		}
+
+		/**
+		 * Gets a link configured for Google Analytics tracking.
+		 *
+		 * @param string $link
+		 * @param string $source
+		 * @param string $medium
+		 *
+		 * @return string
+		 */
+		public static function get_tracking_link( string $link, string $source, string $medium ): string {
+			return add_query_arg( [
+				'utm_source'   => $source,
+				'utm_medium'   => $medium,
+				'utm_campaign' => self::get_utm_campaign(),
+			], $link );
 		}
 
 		public static function is_test_suite( $suite = '' ) {

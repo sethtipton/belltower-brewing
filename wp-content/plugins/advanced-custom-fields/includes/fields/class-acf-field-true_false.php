@@ -21,17 +21,19 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 		function initialize() {
 
 			// vars
-			$this->name     = 'true_false';
-			$this->label    = __( 'True / False', 'acf' );
-			$this->category = 'choice';
-			$this->defaults = array(
+			$this->name          = 'true_false';
+			$this->label         = __( 'True / False', 'acf' );
+			$this->category      = 'choice';
+			$this->description   = __( 'A toggle that allows you to pick a value of 1 or 0 (on or off, true or false, etc). Can be presented as a stylized switch or checkbox.', 'acf' );
+			$this->preview_image = acf_get_url() . '/assets/images/field-type-previews/field-preview-true-false.png';
+			$this->doc_url       = acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/true-false/', 'docs', 'field-type-selection' );
+			$this->defaults      = array(
 				'default_value' => 0,
 				'message'       => '',
 				'ui'            => 0,
 				'ui_on_text'    => '',
 				'ui_off_text'   => '',
 			);
-
 		}
 
 
@@ -92,7 +94,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 				$switch .= '<span class="acf-switch-off">' . $field['ui_off_text'] . '</span>';
 				$switch .= '<div class="acf-switch-slider"></div>';
 				$switch .= '</div>';
-
 			}
 
 			?>
@@ -111,7 +112,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 	</label>
 </div>
 			<?php
-
 		}
 
 
@@ -127,10 +127,7 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 		*
 		*  @param   $field  - an array holding all the field's data
 		*/
-
 		function render_field_settings( $field ) {
-
-			// message
 			acf_render_field_setting(
 				$field,
 				array(
@@ -141,7 +138,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 				)
 			);
 
-			// default_value
 			acf_render_field_setting(
 				$field,
 				array(
@@ -151,21 +147,17 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 					'name'         => 'default_value',
 				)
 			);
+		}
 
-			// ui
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Stylised UI', 'acf' ),
-					'instructions' => '',
-					'type'         => 'true_false',
-					'name'         => 'ui',
-					'ui'           => 1,
-					'class'        => 'acf-field-object-true-false-ui',
-				)
-			);
-
-			// on_text
+		/**
+		 * Renders the field settings used in the "Presentation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_presentation_settings( $field ) {
 			acf_render_field_setting(
 				$field,
 				array(
@@ -182,7 +174,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 				)
 			);
 
-			// on_text
 			acf_render_field_setting(
 				$field,
 				array(
@@ -199,8 +190,18 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 				)
 			);
 
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Stylized UI', 'acf' ),
+					'instructions' => __( 'Use a stylized checkbox using select2', 'acf' ),
+					'type'         => 'true_false',
+					'name'         => 'ui',
+					'ui'           => 1,
+					'class'        => 'acf-field-object-true-false-ui',
+				)
+			);
 		}
-
 
 		/*
 		*  format_value()
@@ -221,7 +222,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 		function format_value( $value, $post_id, $field ) {
 
 			return empty( $value ) ? false : true;
-
 		}
 
 
@@ -242,21 +242,16 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 
 			// bail early if not required
 			if ( ! $field['required'] ) {
-
 				return $valid;
-
 			}
 
 			// value may be '0'
 			if ( ! $value ) {
-
 				return false;
-
 			}
 
 			// return
 			return $valid;
-
 		}
 
 
@@ -282,7 +277,6 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 
 			// return
 			return $field;
-
 		}
 
 		/**
@@ -315,13 +309,11 @@ if ( ! class_exists( 'acf_field_true_false' ) ) :
 		public function format_value_for_rest( $value, $post_id, array $field ) {
 			return (bool) $value;
 		}
-
 	}
 
 
 	// initialize
 	acf_register_field_type( 'acf_field_true_false' );
-
 endif; // class_exists check
 
 ?>

@@ -8,7 +8,7 @@ export default class Result {
 	info;
 	warning;
 
-	constructor( type, error, data, success, info, warning ) {
+	constructor( type, error, data, success = [], info = [], warning = [] ) {
 		this.type = type;
 		this.error = error;
 		this.data = data;

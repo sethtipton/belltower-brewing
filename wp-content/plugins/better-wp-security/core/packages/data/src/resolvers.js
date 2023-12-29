@@ -11,10 +11,11 @@ import { controls } from '@wordpress/data';
 /**
  * Internal dependencies
  */
-import { apiFetch, select } from './controls';
+import { apiFetch } from './controls';
 import {
 	receiveActors,
 	receiveActorTypes,
+	receiveBatchMaxItems,
 	receiveCurrentUserId,
 	receiveIndex,
 	receiveSiteInfo,
@@ -28,28 +29,31 @@ export function* getIndex() {
 	yield receiveIndex( index );
 }
 
-export const getSchema = {
-	*fulfill() {
-		yield controls.resolveSelect( 'ithemes-security/core', 'getIndex' );
-	},
-	isFulfilled( state ) {
-		return !! state.index;
-	},
-};
+export const getSchema = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
 
-export const getRoles = {
-	*fulfill() {
-		yield controls.resolveSelect( 'ithemes-security/core', 'getIndex' );
-	},
-	isFulfilled( state ) {
-		return !! state.index;
-	},
-};
+export const getRoles = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
+
+export const getRequirementsInfo = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
+
+export const getServerType = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
+
+export const getInstallType = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
+
+export const hasPatchstack = () => ( { resolveSelect } ) =>
+	resolveSelect.getIndex();
+
+export const isLiquidWebCustomer = () => ( { resolveSelect } ) => resolveSelect.getIndex();
 
 export const getUser = {
-	*fulfill( userId ) {
+	*fulfill( id ) {
+		const currentUserId = yield controls.select( 'ithemes-security/core', 'getCurrentUserId' );
 		const user = yield apiFetch( {
-			path: `/wp/v2/users/${ userId }`,
+			path: `/wp/v2/users/${ id === currentUserId ? 'me' : id }?context=edit`,
 		} );
 
 		yield receiveUser( user );
@@ -100,7 +104,7 @@ export const getActorTypes = {
 
 export const getActors = {
 	*fulfill() {
-		yield select( 'ithemes-security/core', 'getActorTypes' );
+		yield controls.select( 'ithemes-security/core', 'getActorTypes' );
 	},
 	isFulfilled( state, type ) {
 		return !! state.actors.byType[ type ];
@@ -110,7 +114,7 @@ export const getActors = {
 export const getSiteInfo = {
 	*fulfill() {
 		const response = yield apiFetch( {
-			path: '/?_fields=name,description,url,home',
+			path: '/?_fields=name,description,url,home,multisite',
 		} );
 		yield receiveSiteInfo( response );
 	},
@@ -118,3 +122,13 @@ export const getSiteInfo = {
 		return !! state.siteInfo;
 	},
 };
+
+export function* getBatchMaxItems() {
+	const response = yield apiFetch( {
+		path: '/batch/v1',
+		method: 'OPTIONS',
+	} );
+	yield receiveBatchMaxItems(
+		response.endpoints[ 0 ].args.requests.maxItems
+	);
+}

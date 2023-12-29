@@ -34,8 +34,8 @@ export default function UserRoleList( {
 									checked
 										? [ ...value, item ]
 										: value.filter(
-												( maybe ) => maybe !== item
-										  )
+											( maybe ) => maybe !== item
+										)
 								)
 							}
 						/>
@@ -54,8 +54,8 @@ export default function UserRoleList( {
 									checked
 										? [ ...value, item ]
 										: value.filter(
-												( maybe ) => maybe !== item
-										  )
+											( maybe ) => maybe !== item
+										)
 								)
 							}
 						/>

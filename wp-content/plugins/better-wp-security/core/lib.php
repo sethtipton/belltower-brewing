@@ -612,15 +612,16 @@ final class ITSEC_Lib {
 	 * @param string $password
 	 * @param array  $penalty_strings Additional strings that if found within the password, will decrease the strength.
 	 *
-	 * @return ITSEC_Zxcvbn_Results
+	 * @return array
 	 */
 	public static function get_password_strength_results( $password, $penalty_strings = array() ) {
-		if ( ! isset( $GLOBALS['itsec_zxcvbn'] ) ) {
-			require_once( ITSEC_Core::get_core_dir() . '/lib/itsec-zxcvbn-php/zxcvbn.php' );
-			$GLOBALS['itsec_zxcvbn'] = new ITSEC_Zxcvbn();
+		global $itsec_zxcvbn;
+
+		if ( ! $itsec_zxcvbn ) {
+			$itsec_zxcvbn = new \iThemesSecurity\Strauss\ZxcvbnPhp\Zxcvbn();
 		}
 
-		return $GLOBALS['itsec_zxcvbn']->test_password( $password, $penalty_strings );
+		return $itsec_zxcvbn->passwordStrength( $password, $penalty_strings );
 	}
 
 	/**
@@ -994,18 +995,21 @@ final class ITSEC_Lib {
 	 *
 	 * @author Modified from ticket #25331
 	 *
-	 * @param int    $timestamp
-	 * @param string $format Specify the format. If blank, will default to the date and time format settings.
+	 * @param int|DateTimeInterface $time   The time to use.
+	 * @param string                $format Specify the format. If blank, will default to the date and time format settings.
 	 *
 	 * @return string
 	 */
-	public static function date_format_i18n_and_local_timezone( $timestamp, $format = '' ) {
+	public static function date_format_i18n_and_local_timezone( $time, $format = '' ) {
+		if ( $time instanceof \DateTimeInterface ) {
+			$time = $time->getTimestamp();
+		}
 
 		if ( ! $format ) {
 			$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		}
 
-		return date_i18n( $format, strtotime( get_date_from_gmt( date( 'Y-m-d H:i:s', $timestamp ) ) ) );
+		return date_i18n( $format, strtotime( get_date_from_gmt( date( 'Y-m-d H:i:s', $time ) ) ) );
 	}
 
 	/**
@@ -1123,6 +1127,64 @@ final class ITSEC_Lib {
 		$modify[ array_shift( $keys ) ] = $value;
 
 		return $array;
+	}
+
+	/**
+	 * Removes items at the given locations from an array.
+	 *
+	 * This accepts a dotted path with '*' to represent wildcards.
+	 *
+	 * @param array  $array
+	 * @param string $dotted_path
+	 *
+	 * @return array
+	 */
+	public static function array_remove( array $array, string $dotted_path ): array {
+		$paths = explode( '.', $dotted_path );
+
+		return self::_array_remove( $array, $paths );
+	}
+
+	private static function _array_remove( array $array, array $paths ): array {
+		if ( ! $array ) {
+			return $array;
+		}
+
+		$path = array_shift( $paths );
+
+		if ( '*' === $path ) {
+			foreach ( $array as $k => $v ) {
+				if ( is_array( $v ) ) {
+					$array[ $k ] = self::_array_remove( $v, $paths );
+				} elseif ( ! $paths ) {
+					// If the last dotted path is a wildcard,
+					// remove all elements.
+					unset( $array[ $k ] );
+				}
+			}
+		} elseif ( isset( $array[ $path ] ) ) {
+			if ( is_array( $array[ $path ] ) && $paths ) {
+				$array[ $path ] = self::_array_remove( $array[ $path ], $paths );
+			} else {
+				unset( $array[ $path ] );
+			}
+		}
+
+		return $array;
+	}
+
+	/**
+	 * Removes any number of items from a list.
+	 *
+	 * Values are loosely compared.
+	 *
+	 * @param array $array
+	 * @param       ...$values
+	 *
+	 * @return array
+	 */
+	public static function array_pull( array $array, ...$values ): array {
+		return array_values( array_diff( $array, $values ) );
 	}
 
 	/**
@@ -1548,7 +1610,7 @@ final class ITSEC_Lib {
 	 *
 	 * @param string $header
 	 *
-	 * @return string[]
+	 * @return array[]
 	 * @example Parsing the Accept-Language header.
 	 *
 	 * "en-US,en;q=0.9,de;q=0.8" transforms to:
@@ -1975,7 +2037,17 @@ final class ITSEC_Lib {
 	 *
 	 * @return array
 	 */
-	public static function preload_rest_requests( $requests ) {
+	public static function preload_rest_requests( $requests, string $page = '' ) {
+		if ( $page ) {
+			/**
+			 * Filters the list of API requests to preload.
+			 *
+			 * @param array  $requests
+			 * @param string $page
+			 */
+			$requests = apply_filters( 'itsec_preload_requests', $requests, 'tools' );
+		}
+
 		$preload = array();
 
 		foreach ( $requests as $key => $config ) {
@@ -1998,6 +2070,18 @@ final class ITSEC_Lib {
 			if ( $response->get_status() >= 200 && $response->get_status() < 300 ) {
 				rest_send_allow_header( $response, rest_get_server(), $request );
 
+				if ( is_int( $key ) ) {
+					$key = $config['route'];
+
+					if ( ! empty( $config['query'] ) ) {
+						$key = add_query_arg( $config['query'], $key );
+					}
+
+					if ( ! empty( $config['embed'] ) ) {
+						$key = add_query_arg( '_embed', '1', $key );
+					}
+				}
+
 				$preload[ $key ] = array(
 					'body'    => rest_get_server()->response_to_data( $response, ! empty( $config['embed'] ) ),
 					'headers' => $response->get_headers()
@@ -2006,6 +2090,40 @@ final class ITSEC_Lib {
 		}
 
 		return $preload;
+	}
+
+	/**
+	 * Preloads a REST API request directly into a data store.
+	 *
+	 * This can be useful when we need the data to be immediately
+	 * available when the app renders. Typical preloading still has
+	 * a fractional delay, as it goes through an async fetch stack.
+	 *
+	 * @param string $store  The data store handle.
+	 * @param string $action The data store action.
+	 * @param string $route  The REST API route to fetch.
+	 * @param array  $query  Query parameters for the REST API route.
+	 *
+	 * @return bool
+	 */
+	public static function preload_request_for_data_store( string $store, string $action, string $route, array $query = [] ): bool {
+		$request = new WP_REST_Request( 'GET', $route );
+		$request->set_query_params( $query );
+
+		$response = rest_do_request( $request );
+
+		if ( $response->is_error() ) {
+			return false;
+		}
+
+		$data = rest_get_server()->response_to_data( $response, ! empty( $query['_embed'] ) );
+
+		return wp_add_inline_script( 'itsec-packages-data', sprintf(
+			"wp.data.dispatch( '%s' ).%s( %s )",
+			$store,
+			$action,
+			wp_json_encode( $data )
+		) );
 	}
 
 	/**
@@ -2285,6 +2403,24 @@ final class ITSEC_Lib {
 	}
 
 	/**
+	 * Get info used to help evaluate requirements according to
+	 * {@see ITSEC_Lib::evaluate_requirements()}.
+	 *
+	 * @return array[]
+	 */
+	public static function get_requirements_info(): array {
+		return [
+			'load'   => ITSEC_Core::is_loading_early() ? 'early' : 'normal',
+			'server' => [
+				'php'        => explode( '-', PHP_VERSION )[0],
+				'extensions' => [
+					'OpenSSL' => self::is_func_allowed( 'openssl_verify' ),
+				],
+			],
+		];
+	}
+
+	/**
 	 * Evaluate whether this site passes the given requirements.
 	 *
 	 * @param array $requirements
@@ -2296,7 +2432,7 @@ final class ITSEC_Lib {
 			'type'                 => 'object',
 			'additionalProperties' => false,
 			'properties'           => [
-				'version' => [
+				'version'       => [
 					'type'                 => 'object',
 					'additionalProperties' => false,
 					'properties'           => [
@@ -2310,8 +2446,37 @@ final class ITSEC_Lib {
 						],
 					],
 				],
-				'ssl'     => [
+				'ssl'           => [
 					'type' => 'boolean',
+				],
+				'feature-flags' => [
+					'type'  => 'array',
+					'items' => [
+						'type' => 'string',
+					],
+				],
+				'multisite'     => [
+					'type' => 'string',
+					'enum' => [ 'enabled', 'disabled' ],
+				],
+				'server'        => [
+					'type'       => 'object',
+					'properties' => [
+						'php'        => [
+							'type' => 'string',
+						],
+						'extensions' => [
+							'type'  => 'array',
+							'items' => [
+								'type' => 'string',
+								'enum' => [ 'OpenSSL' ],
+							],
+						],
+					],
+				],
+				'load'          => [
+					'type' => 'string',
+					'enum' => [ 'normal', 'early' ],
 				],
 			],
 		];
@@ -2335,7 +2500,7 @@ final class ITSEC_Lib {
 					if ( version_compare( ITSEC_Core::get_plugin_version(), $version, '<' ) ) {
 						$error->add(
 							'version',
-							sprintf( __( 'You must be running at least version %s of iThemes Security.', 'better-wp-security' ), $version )
+							sprintf( __( 'You must be running at least version %s of Solid Security.', 'better-wp-security' ), $version )
 						);
 					}
 
@@ -2348,6 +2513,67 @@ final class ITSEC_Lib {
 						);
 					}
 					break;
+				case 'feature-flags':
+					foreach ( $requirement as $flag ) {
+						if ( ! ITSEC_Lib_Feature_Flags::is_enabled( $flag ) ) {
+							$error->add(
+								'feature-flags',
+								sprintf(
+									__( 'The \'%s\' feature flag must be enabled.', 'better-wp-security' ),
+									( ITSEC_Lib_Feature_Flags::get_flag_config( $flag )['title'] ?? $flag ) ?: $flag
+								)
+							);
+						}
+					}
+					break;
+				case 'multisite':
+					if ( $requirement === 'enabled' && ! is_multisite() ) {
+						$error->add(
+							'multisite',
+							__( 'Multisite must be enabled.', 'better-wp-security' )
+						);
+					} elseif ( $requirement === 'disabled' && is_multisite() ) {
+						$error->add(
+							'multisite',
+							__( 'Multisite is not supported.', 'better-wp-security' )
+						);
+					}
+					break;
+				case 'server':
+					$info = self::get_requirements_info();
+
+					if ( isset( $requirement['php'] ) && version_compare( $info['server']['php'], $requirement['php'], '<' ) ) {
+						$error->add( 'server', sprintf( __( 'You must be running PHP version %s or later.', 'better-wp-security' ), $requirement['php'] ) );
+					}
+
+					$missing = array_filter( $requirement['extensions'] ?? [], function ( $extension ) use ( $info ) {
+						return empty( $info['server']['extensions'][ $extension ] );
+					} );
+
+					if ( $missing ) {
+						if ( count( $missing ) === 1 ) {
+							$message = sprintf( __( 'The %s PHP extension is required.', 'better-wp-security' ), ITSEC_Lib::first( $missing ) );
+						} else {
+							$message = wp_sprintf(
+								_n(
+									'The following PHP extension is required: %l.',
+									'The following PHP extensions are required: %l.',
+									count( $missing ),
+									'better-wp-security'
+								),
+								$missing
+							);
+						}
+
+						$error->add( 'server', $message );
+					}
+					break;
+				case 'load':
+					if ( $requirement === 'normal' && ITSEC_Core::is_loading_early() ) {
+						$error->add( 'load', __( 'Loading Solid Security via an MU-Plugin is not supported.', 'better-wp-security' ) );
+					} elseif ( $requirement === 'early' && ! ITSEC_Core::is_loading_early() ) {
+						$error->add( 'load', __( 'Loading Solid Security without an MU-Plugin is not supported.', 'better-wp-security' ) );
+					}
 			}
 		}
 
@@ -2506,18 +2732,18 @@ final class ITSEC_Lib {
 	/**
 	 * Extends a service definition, ignoring if the service has been frozen.
 	 *
-	 * @param \Pimple\Container $c
-	 * @param string            $id
-	 * @param callable          $extend
+	 * @param \iThemesSecurity\Strauss\Pimple\Container $c
+	 * @param string                                    $id
+	 * @param callable                                  $extend
 	 *
 	 * @return bool
 	 */
-	public static function extend_if_able( \Pimple\Container $c, string $id, callable $extend ): bool {
+	public static function extend_if_able( \iThemesSecurity\Strauss\Pimple\Container $c, string $id, callable $extend ): bool {
 		try {
 			$c->extend( $id, $extend );
 
 			return true;
-		} catch ( \Pimple\Exception\FrozenServiceException $e ) {
+		} catch ( \iThemesSecurity\Strauss\Pimple\Exception\FrozenServiceException $e ) {
 			return false;
 		}
 	}
@@ -2562,5 +2788,61 @@ final class ITSEC_Lib {
 		}
 
 		array_walk( $value, [ static::class, 'resolve_ref' ], $definitions );
+	}
+
+	/**
+	 * Generates a v4 UUID using a CSPRNG.
+	 *
+	 * @return string
+	 */
+	public static function generate_uuid4(): string {
+		return sprintf(
+			'%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+			wp_rand( 0, 0xffff ),
+			wp_rand( 0, 0xffff ),
+			wp_rand( 0, 0xffff ),
+			wp_rand( 0, 0x0fff ) | 0x4000,
+			wp_rand( 0, 0x3fff ) | 0x8000,
+			wp_rand( 0, 0xffff ),
+			wp_rand( 0, 0xffff ),
+			wp_rand( 0, 0xffff )
+		);
+	}
+
+	/**
+	 * Clears the WordPress auth cookies.
+	 *
+	 * This function is safe to call before plugins have been loaded.
+	 * But the request MUST exist after calling it.
+	 *
+	 * @return void
+	 */
+	public static function clear_auth_cookie() {
+		if ( ! function_exists( 'wp_clear_auth_cookie' ) ) {
+			if ( is_multisite() ) {
+				ms_cookie_constants();
+			}
+
+			// Define constants after multisite is loaded.
+			wp_cookie_constants();
+
+			require_once ABSPATH . 'wp-includes/pluggable.php';
+		}
+
+		wp_clear_auth_cookie();
+	}
+
+	public static function recursively_json_serialize( $value ) {
+		if ( $value instanceof JsonSerializable ) {
+			return $value->jsonSerialize();
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( $value as $k => $v ) {
+				$value[ $k ] = self::recursively_json_serialize( $v );
+			}
+		}
+
+		return $value;
 	}
 }

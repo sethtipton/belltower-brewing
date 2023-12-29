@@ -137,7 +137,7 @@ if ( ! class_exists( 'ACF_WPML_Compatibility' ) ) :
 				ARRAY_A
 			);
 
-			// bail ealry if no rows
+			// bail early if no rows
 			if ( ! $old_row || ! $new_row ) {
 				return;
 			}
@@ -172,7 +172,6 @@ if ( ! class_exists( 'ACF_WPML_Compatibility' ) ) :
 
 			// allow source_language_code to equal NULL
 			if ( $old_row['source_language_code'] ) {
-
 				$data['source_language_code'] = $old_row['source_language_code'];
 				$data_format[]                = '%s';
 			}
@@ -281,12 +280,14 @@ if ( ! class_exists( 'ACF_WPML_Compatibility' ) ) :
 		 */
 		function verify_ajax() {
 
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Verified elsewhere.
 			// set the language for this AJAX request
 			// this will allow get_posts to work as expected (load posts from the correct language)
 			if ( isset( $_REQUEST['lang'] ) ) {
 				global $sitepress;
-				$sitepress->switch_lang( $_REQUEST['lang'] );
+				$sitepress->switch_lang( sanitize_text_field( $_REQUEST['lang'] ) );
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		}
 
 		/**
@@ -312,7 +313,4 @@ if ( ! class_exists( 'ACF_WPML_Compatibility' ) ) :
 	}
 
 	acf_new_instance( 'ACF_WPML_Compatibility' );
-
 endif; // class_exists check
-
-

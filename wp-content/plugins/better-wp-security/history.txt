@@ -964,3 +964,92 @@
 	Bug Fix: When the Change Admin User tool is run, update any User Groups referencing the old user id.
 	Bug Fix: WordPress footer would appear in the middle of the logs page.
 	Bug Fix: Add missing translation strings file.
+8.1.0 - 2022-03-22 - Timothy Jacobs
+	Important: iThemes Security now requires WordPress 5.8 or later.
+	New Feature: Include the full iThemes Security Site Scanner in iThemes Security Free. Scheduled scans are disabled by default.
+	Tweak: Add new "Go Pro" page that includes an overview of features in iThemes Security Pro.
+	Bug Fix: Scroll to top of window when navigating.
+	Bug Fix: Allow searching for Password Requirements.
+	Bug Fix: Don't load WordPress and System Tweaks modules when the `ITSEC_DISABLE_MODULES` constant is enabled.
+	Bug Fix: Prevent incidentally loading the Two-Factor module when it is unregistered.
+	Bug Fix: Conditionally display the NGINX File Path setting.
+	Bug Fix: Allow saving Notifications when "default recipients must contain at least 1 item" error is present.
+	Bug Fix: Help styling on WordPress 5.9.
+	Bug Fix: Compatibility with plugins that expected a logged-in user during lockouts.
+8.1.1 - 2022-04-14 - Timothy Jacobs, Lisa Canini
+	Bug Fix: Error when visiting the Notifications page after activating a module with notifications for the first time.
+	Bug Fix: Update deprecated withState usages to useState.
+8.1.2 - 2022-04-26 - Timothy Jacobs, Lisa Canini
+	Tweak: Require a Title when creating a new Dashboard.
+	Bug Fix: Don't attempt to send a Site Scan notification for Clean scans preventing a fatal error after scheduled site scans.
+8.1.3 - 2022-10-12 - Timothy Jacobs, Lisa Canini, Jared Hill
+	Important: iThemes Security now requires PHP 7.3 and WordPress 5.9 or later.
+	Security: Add support for encrypting Two-Factor Mobile App secrets. Enable via Tools -> Set Encryption Key.
+	Security: Deprecate Automatic Proxy Detection. Instead, manually configure Proxy Detection or use Security Check. Fix IP spoofing attacks.
+	Enhancement: Add "Ban Lockout" button to the Active Lockouts card.
+	Bug Fix: File Logs not rotating.
+	Bug Fix: PHP warning when loading Icon Fonts in certain configurations.
+	Bug Fix: Don't attempt to Hide Backend when a Cron request is being processed.
+	Bug Fix: Prevent entering invalid date values when selecting a custom date range in the Security Dashboard.
+	Bug Fix: File Change "notify_admin" settings validation error.
+	Bug Fix: Preliminary PHP 8.1 compatibility.
+
+	Thanks to Calvin Alkan for reporting the security issues fixed in this release.
+8.1.4 - 2022-12-01 - Timothy Jacobs, Lisa Canini, Jared Hill
+	Tweak: Add "All" tab to the Features page.
+	Tweak: Don't show "Ban" buttons in Security Dashboard if the user won't be able to create a ban.
+	Bug Fix: Prevent Headers Already Sent warning when a lockout occurs during a WP Cron request on some server setups.
+	Bug Fix: Manually load Sodium Polyfill for servers that have an older version of libsodium installed.
+	Bug Fix: Error when saving the File Change settings when the "notify_admin" setting was set.
+	Bug Fix: Prevent a redirect loop when logging in on sites that take more than 5 seconds to load the Dashboard.
+8.1.5 - 2023-03-23 - Timothy Jacobs, Lisa Canini, Jared Hill
+	Security Hardening: Prevent open redirects attacks against the Enforce SSL module. This attack requires spoofing the Host header which requires additional conditions to exploit. Thanks to nlpro for reporting the issue.
+	Bug Fix: Update Password Strength library to the latest version. This fixes discrepancies between the realtime password strength estimation and the enforced password strength.
+8.1.6 - 2023-04-20 - Timothy Jacobs, Lisa Canini, Jared Hill
+	Bug Fix: Fallback to the homepage when Enforce SSL encounters a non-safelisted redirect destination.
+	Bug Fix: IP Detection on sites behind Load Balancers that appended their IP address to X-Forwarded-For and did not provide a Real IP header.
+8.1.7 - 2023-07-18 - Timothy Jacobs, Lisa Canini, Jared Hill
+	Important: Enforce encryption for Two-Factor secrets.
+	Tweak: Add Stellar and Solid banners.
+	Bug Fix: Don't require "Write to Files" to be enabled to use the "Rotate Encryption Key" tool.
+8.1.8 - 2023-08-31 - Timothy Jacobs, Lisa Canini, Jared Hill
+	News: iThemes Security is becoming Solid Security soon. Learn More: https://go.solidwp.com/security-free-notice-ithemes-becoming-solidwp
+9.0.0 - 2023-10-17 - Timothy Jacobs, Lisa Canini, Jared Hill, John Hooks
+	New: iThemes Security is now Solid Security! Learn More: https://go.solidwp.com/security-welcome-to-solidwp
+	Important: Solid Security now requires WordPress 6.2 or later.
+	New: The Firewall screen brings together the Firewall functionality Solid Security provides into one easy to use screen. More Firewall features are coming soon!
+	New: The Vulnerabilities screen identifies what vulnerable software you have on your site and guides you through next steps.
+	New: Identify risks in your site's security with the the expanded Site Scan functionality.
+	New: The User Security screen keeps you appraised of the security practices your site's users are following. Easily apply actions to multiple users in one-click like resetting passwords or logging out active sessions.
+	Enhancement: The dashboard and settings screens have been redesigned to make it easier to find what you're looking for.
+	Enhancement: The Security Summary dashboard card gives you a snapshot of the most important security issues affecting your site.
+	Enhancement: Add support for loading Solid Security via an MU-Plugin for improved performance when blocking attackers.
+	Tweak: Remove the IP Tracker Online link from the logs page.
+	Bug Fix: PHP 8.2 compatibility.
+	Bug Fix: Resolved PHP warnings when unexpected data is encountered during software updates.
+9.0.1 - 2023-10-31 - Timothy Jacobs, Lisa Canini, Jared Hill, John Hooks
+	Security: Don't disclose the login URL when using Hide Backend on a site with comments enabled and comment registration required. Thanks to Naveen Muthusamy for disclosing this issue.
+	Hardening: Check for the promote_user capability when using Privilege Escalation in addition to edit_user.
+	Tweak: Remove the iThemes Security is now Solid Security banner from admin-facing email notifications.
+	Bug Fix: Prevent the User Security page from crashing when "Show Avatars" is disabled in the WordPress discussion settings.
+	Bug Fix: Fix some filters on the User Security page not working as expected.
+	Bug Fix: Fix spacing on the Two-Factor form when backup methods are enabled.
+	Bug Fix: Fix fatal error when there is an error retrieving Patchstack license information.
+	Bug Fix: Styling issues on WordPress 6.4.
+9.0.2 - 2023-11-01 - Timothy Jacobs, Lisa Canini, Jared Hill, John Hooks
+	Bug Fix: Adding missing dist files to SVN
+9.0.3 - 2023-11-02 - Timothy Jacobs, Lisa Canini, Jared Hill, John Hooks
+	Bug Fix: Remove an extra folder containing duplicate plugin files
+9.1.0 - 2023-11-15 - Timothy Jacobs, Lisa Canini, Jared Hill
+	New: Add support for creating custom firewall rules.
+	Enhancement: Add support for configuring firewall settings from the Firewall page.
+	Bug Fix: The firewall page would appear empty when geolocation could not retrieve a country code.
+9.2.0 - 2023-12-07 - Timothy Jacobs, Lisa Canini, Jared Hill
+	New: Refreshed UI for manging per-user security settings like Two-Factor. The previous Two-Factor UI can be enabled using the SOLID_SECURITY_LEGACY_2FA_UI constant.
+	New: A new block "Solid Security User Security Settings" let's you display this UI on the front-end of your website. The [solid_security_user_profile_settings] shortcode can be used if you're not yet using the Block Editor.
+	Important: Solid Security now requires WordPress 6.3 or later.
+	Enhancement: Display a snackbar notice when sending a 2FA reminder from the Site Scan page.
+	Enhancement: Include a link directly to the Patchstack database in the Site Scanner alert email.
+	Tweak: Remove iThemes Security is now Solid Security banners from the admin.
+	Bug Fix: Trying to enable Network Brute Force from the Security messages center linked to the wrong place.
+	Bug Fix: During onboarding, a double scrollbar was displayed on some screen sizes.

@@ -1,9 +1,4 @@
 /**
- * External dependencies
- */
-import { reduce } from 'lodash';
-
-/**
  * WordPress dependencies
  */
 import { useDispatch } from '@wordpress/data';
@@ -14,8 +9,7 @@ import { __ } from '@wordpress/i18n';
  */
 import { useSingletonEffect } from '@ithemes/security-hocs';
 import { STORE_NAME } from '@ithemes/security-search';
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
-import { TOOLS_STORE_NAME } from './stores';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
 
 export default function useSearchProviders() {
 	const { registerProvider } = useDispatch( STORE_NAME );
@@ -118,10 +112,14 @@ export default function useSearchProviders() {
 									items: [],
 								};
 
+								const route = moduleRoute.includes( '#' )
+									? `${ moduleRoute },${ setting }`
+									: `${ moduleRoute }#${ setting }`;
+
 								results.groups[ module.id ].items.push( {
 									title,
 									description,
-									route: `${ moduleRoute }#${ setting }`,
+									route,
 								} );
 
 								return count++;
@@ -132,60 +130,25 @@ export default function useSearchProviders() {
 				}, 0 );
 			}
 		);
-
-		registerProvider(
-			'tools',
-			__( 'Tools', 'better-wp-security' ),
-			100,
-			( { registry, evaluate, results } ) => {
-				const tools = registry
-					.select( TOOLS_STORE_NAME )
-					.getResolvedTools();
-
-				return tools.reduce( ( total, tool ) => {
-					if ( ! tool.available ) {
-						return total;
-					}
-
-					if (
-						! evaluate.stringMatch( tool.title ) &&
-						! evaluate.stringMatch( tool.description ) &&
-						! evaluate.keywordMatch( tool.keywords )
-					) {
-						return total;
-					}
-
-					results.items.push( {
-						title: tool.title,
-						description: tool.description,
-						route: `/settings/tools#${ tool.slug }`,
-					} );
-
-					return total + 1;
-				}, 0 );
-			}
-		);
 	} );
 }
 
 function getModuleRoute( module ) {
-	if ( module.type === 'custom' || module.type === 'tool' ) {
+	if ( module.id === 'global' ) {
+		return '/settings/global';
+	}
+
+	if ( module.type === 'custom' || module.type === 'tool' || module.type === 'recommended' ) {
 		return;
 	}
 
-	const featureLink = `/settings/modules/${ module.type }#${ module.id }`;
-
-	if ( module.status.selected === 'inactive' ) {
-		return featureLink;
+	if ( module.type === 'advanced' ) {
+		return `/settings/advanced#${ module.id }`;
 	}
 
-	if ( module.settings?.interactive.length > 0 ) {
-		return module.type === 'recommended'
-			? `/settings/configure/${ module.id }`
-			: `/settings/configure/${ module.type }/${ module.id }`;
+	if ( module.status.default === 'always-active' && ! module.settings?.show_ui ) {
+		return;
 	}
 
-	if ( module.status.default !== 'always-active' ) {
-		return featureLink;
-	}
+	return `/settings/configure/${ module.type }#${ module.id }`;
 }

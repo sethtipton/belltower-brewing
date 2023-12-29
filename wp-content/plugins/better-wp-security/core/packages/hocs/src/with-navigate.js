@@ -13,7 +13,7 @@ function isModifiedEvent( event ) {
 }
 
 export default createHigherOrderComponent( ( WrappedComponent ) => {
-	return function ( { navigate, ...props } ) {
+	return function( { navigate, ...props } ) {
 		const onClick = ( event ) => {
 			try {
 				if ( props.onClick ) {

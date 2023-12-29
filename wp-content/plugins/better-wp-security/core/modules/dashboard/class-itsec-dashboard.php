@@ -1,11 +1,17 @@
 <?php
 
+use iThemesSecurity\Contracts\Import_Export_Source;
+use iThemesSecurity\Contracts\Runnable;
+use iThemesSecurity\Import_Export\Export\Export;
+use iThemesSecurity\Import_Export\Import\Import_Context;
+use iThemesSecurity\Import_Export\Import\Transformation;
+use iThemesSecurity\Lib\Result;
 use iThemesSecurity\User_Groups;
 
 /**
  * Class ITSEC_Dashboard
  */
-class ITSEC_Dashboard implements \iThemesSecurity\Contracts\Runnable {
+class ITSEC_Dashboard implements Runnable, Import_Export_Source {
 
 	const CPT_DASHBOARD = 'itsec-dashboard';
 	const META_SHARE_USER = '_itsec_dashboard_share_user';
@@ -398,6 +404,236 @@ class ITSEC_Dashboard implements \iThemesSecurity\Contracts\Runnable {
 						break;
 				}
 				break;
+			case 'firewall':
+				if ( $data['type'] === 'action' ) {
+					ITSEC_Dashboard_Util::record_event( 'firewall-block' );
+				}
+				break;
 		}
+	}
+
+	public function get_export_slug(): string {
+		return 'dashboard';
+	}
+
+	public function get_export_title(): string {
+		return __( 'Security Dashboard', 'better-wp-security' );
+	}
+
+	public function get_export_description(): string {
+		return __( 'Security dashboards and cards.', 'better-wp-security' );
+	}
+
+	public function get_export_options_schema(): array {
+		return [];
+	}
+
+	public function get_export_schema(): array {
+		return [
+			'type'  => 'array',
+			'items' => [
+				'type'       => 'object',
+				'properties' => [
+					'id'         => [
+						'type' => 'integer',
+					],
+					'created_by' => [
+						'$ref' => '#/definitions/user',
+					],
+					'created_at' => [
+						'type'   => 'string',
+						'format' => 'date-time',
+					],
+					'label'      => [
+						'type' => 'string',
+					],
+					'layout'     => [
+						'type' => 'object',
+					],
+					'shares'     => [
+						'type'       => 'object',
+						'properties' => [
+							'users' => [
+								'type'  => 'array',
+								'items' => [
+									'$ref' => '#/definitions/user',
+								],
+							],
+							'roles' => [
+								'type'  => 'array',
+								'items' => [
+									'$ref' => '#/definitions/role'
+								],
+							],
+						],
+					],
+					'cards'      => [
+						'type'       => 'array',
+						'properties' => [
+							'id'       => [
+								'type' => 'integer',
+							],
+							'type'     => [
+								'type' => 'string',
+							],
+							'size'     => [
+								'type' => 'object',
+							],
+							'position' => [
+								'type' => 'object',
+							],
+							'settings' => [
+								'type' => 'object',
+							],
+						],
+					],
+				],
+			],
+		];
+	}
+
+	public function get_transformations(): array {
+		return [
+			new class implements Transformation {
+				public function transform( Export $export, Import_Context $context ): Export {
+					$data = $export->get_data( 'dashboard' );
+
+					foreach ( $data as &$dashboard ) {
+						$dashboard['created_by']      = Export::format_user( $context->get_mapped_user( $dashboard['created_by'] ) );
+						$dashboard['shares']['users'] = $context->map_user_list( $dashboard['shares']['users'] );
+						$dashboard['shares']['roles'] = $context->map_role_list( $dashboard['shares']['roles'] );
+					}
+
+					return $export->with_data( 'dashboard', $data );
+				}
+
+				public function get_user_paths(): array {
+					return [ '*.created_by', '*.shares.users' ];
+				}
+
+				public function get_role_paths(): array {
+					return [ '*.shares.roles' ];
+				}
+			}
+		];
+	}
+
+	public function export( $options ): Result {
+		$dashboards = new \WP_Query( [
+			'post_type'      => self::CPT_DASHBOARD,
+			'no_found_rows'  => true,
+			'posts_per_page' => - 1,
+		] );
+		$cards      = new \WP_Query( [
+			'post_type'      => self::CPT_CARD,
+			'no_found_rows'  => true,
+			'posts_per_page' => - 1,
+		] );
+
+		$cards_by_dashboard = [];
+
+		foreach ( $cards->posts as $post ) {
+			$cards_by_dashboard[ $post->post_parent ][] = [
+				'id'       => $post->ID,
+				'type'     => get_post_meta( $post->ID, self::META_CARD, true ),
+				'size'     => get_post_meta( $post->ID, self::META_CARD_SIZE, true ),
+				'position' => get_post_meta( $post->ID, self::META_CARD_POSITION, true ),
+				'settings' => get_post_meta( $post->ID, self::META_CARD_SETTINGS, true ),
+			];
+		}
+
+		return Result::success( array_map( static function ( \WP_Post $dashboard ) use ( $cards_by_dashboard ) {
+			$user = get_userdata( $dashboard->post_author ) ?: null;
+
+			return [
+				'id'         => $dashboard->ID,
+				'created_by' => Export::format_user( $user ),
+				'created_at' => \ITSEC_Lib::to_rest_date( $dashboard->post_date_gmt ),
+				'label'      => get_the_title( $dashboard ),
+				'cards'      => $cards_by_dashboard[ $dashboard->ID ] ?? [],
+				'shares'     => [
+					'users' => array_map( static function ( $user_id ) {
+						return Export::format_user( get_userdata( $user_id ) ?: null );
+					}, get_post_meta( $dashboard->ID, self::META_SHARE_USER ) ),
+					'roles' => array_map( [ Export::class, 'format_role' ], get_post_meta( $dashboard->ID, self::META_SHARE_ROLE ) ),
+				],
+			];
+		}, $dashboards->posts ) );
+	}
+
+	public function import( Export $from, Import_Context $context ): Result {
+		if ( ! $dashboards = $from->get_data( $this->get_export_slug() ) ) {
+			return Result::success();
+		}
+
+		$query = new WP_Query( [
+			'post_type'      => self::CPT_DASHBOARD,
+			'posts_per_page' => 500,
+		] );
+
+		foreach ( $query->posts as $post ) {
+			wp_delete_post( $post->ID, true );
+		}
+
+		$result = Result::success();
+
+		foreach ( $dashboards as $dashboard ) {
+			$author = $context->get_mapped_user( $dashboard['created_by'] );
+
+			if ( ! $author && ITSEC_Core::current_user_can_manage() ) {
+				$author = wp_get_current_user();
+			}
+
+			if ( ! $author ) {
+				continue;
+			}
+
+			$post_id = wp_insert_post( [
+				'post_type'   => self::CPT_DASHBOARD,
+				'post_author' => $author->ID,
+				'post_status' => 'publish',
+				'post_title'  => $dashboard['label'],
+			], true );
+
+			if ( is_wp_error( $post_id ) ) {
+				$result->add_warning_message( sprintf(
+					__( 'Could not create "%1$s" dashboard for "%2$s": %3$s', 'better-wp-security' ),
+					$dashboard['label'],
+					$author->display_name,
+					$post_id->get_error_message()
+				) );
+
+				continue;
+			}
+
+			foreach ( $dashboard['shares']['users'] as $user ) {
+				if ( $mapped = $context->get_mapped_user( $user ) ) {
+					add_post_meta( $post_id, self::META_SHARE_USER, $mapped->ID );
+				}
+			}
+
+			foreach ( $dashboard['shares']['roles'] as $role ) {
+				if ( $mapped = $context->get_mapped_role( $role['slug'] ) ) {
+					add_post_meta( $post_id, self::META_SHARE_ROLE, $mapped );
+				}
+			}
+
+			foreach ( $dashboard['cards'] as $card ) {
+				wp_insert_post( [
+					'post_type'   => self::CPT_CARD,
+					'post_author' => $author->ID,
+					'post_parent' => $post_id,
+					'post_status' => 'publish',
+					'meta_input'  => array_filter( [
+						self::META_CARD          => $card['type'],
+						self::META_CARD_SIZE     => $card['size'],
+						self::META_CARD_POSITION => $card['position'],
+						self::META_CARD_SETTINGS => $card['settings'],
+					] ),
+				] );
+			}
+		}
+
+		return $result;
 	}
 }

@@ -20,17 +20,19 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 		function initialize() {
 
 			// vars
-			$this->name     = 'button_group';
-			$this->label    = __( 'Button Group', 'acf' );
-			$this->category = 'choice';
-			$this->defaults = array(
+			$this->name          = 'button_group';
+			$this->label         = __( 'Button Group', 'acf' );
+			$this->category      = 'choice';
+			$this->description   = __( 'A group of buttons with values that you specify, users can choose one option from the values provided.', 'acf' );
+			$this->preview_image = acf_get_url() . '/assets/images/field-type-previews/field-preview-button-group.png';
+			$this->doc_url       = acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/button-group/', 'docs', 'field-type-selection' );
+			$this->defaults      = array(
 				'choices'       => array(),
 				'default_value' => '',
 				'allow_null'    => 0,
 				'return_format' => 'value',
 				'layout'        => 'horizontal',
 			);
-
 		}
 
 
@@ -75,7 +77,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 					'label'   => $_label,
 					'checked' => $checked,
 				);
-
 			}
 
 			// maybe select initial value
@@ -111,7 +112,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 
 				// append
 				$html .= acf_get_radio_input( $button );
-
 			}
 
 			// close
@@ -119,7 +119,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 
 			// return
 			echo $html;
-
 		}
 
 
@@ -134,36 +133,20 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 		 *  @param   array $field The field settings array
 		 *  @return  n/a
 		 */
-
 		function render_field_settings( $field ) {
-
-			// encode choices (convert from array)
+			// Encode choices (convert from array).
 			$field['choices'] = acf_encode_choices( $field['choices'] );
 
-			// choices
 			acf_render_field_setting(
 				$field,
 				array(
 					'label'        => __( 'Choices', 'acf' ),
-					'instructions' => __( 'Enter each choice on a new line.', 'acf' ) . '<br /><br />' . __( 'For more control, you may specify both a value and label like this:', 'acf' ) . '<br /><br />' . __( 'red : Red', 'acf' ),
+					'instructions' => __( 'Enter each choice on a new line.', 'acf' ) . '<br />' . __( 'For more control, you may specify both a value and label like this:', 'acf' ) . '<br /><span class="acf-field-setting-example">' . __( 'red : Red', 'acf' ) . '</span>',
 					'type'         => 'textarea',
 					'name'         => 'choices',
 				)
 			);
 
-			// allow_null
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Allow Null?', 'acf' ),
-					'instructions' => '',
-					'name'         => 'allow_null',
-					'type'         => 'true_false',
-					'ui'           => 1,
-				)
-			);
-
-			// default_value
 			acf_render_field_setting(
 				$field,
 				array(
@@ -174,23 +157,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 				)
 			);
 
-			// layout
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Layout', 'acf' ),
-					'instructions' => '',
-					'type'         => 'radio',
-					'name'         => 'layout',
-					'layout'       => 'horizontal',
-					'choices'      => array(
-						'horizontal' => __( 'Horizontal', 'acf' ),
-						'vertical'   => __( 'Vertical', 'acf' ),
-					),
-				)
-			);
-
-			// return_format
 			acf_render_field_setting(
 				$field,
 				array(
@@ -206,9 +172,53 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 					),
 				)
 			);
-
 		}
 
+		/**
+		 * Renders the field settings used in the "Validation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_validation_settings( $field ) {
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Allow Null', 'acf' ),
+					'instructions' => '',
+					'name'         => 'allow_null',
+					'type'         => 'true_false',
+					'ui'           => 1,
+				)
+			);
+		}
+
+		/**
+		 * Renders the field settings used in the "Presentation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_presentation_settings( $field ) {
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Layout', 'acf' ),
+					'instructions' => '',
+					'type'         => 'radio',
+					'name'         => 'layout',
+					'layout'       => 'horizontal',
+					'choices'      => array(
+						'horizontal' => __( 'Horizontal', 'acf' ),
+						'vertical'   => __( 'Vertical', 'acf' ),
+					),
+				)
+			);
+		}
 
 		/*
 		*  update_field()
@@ -245,7 +255,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 		function load_value( $value, $post_id, $field ) {
 
 			return acf_get_field_type( 'radio' )->load_value( $value, $post_id, $field );
-
 		}
 
 
@@ -264,7 +273,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 		function translate_field( $field ) {
 
 			return acf_get_field_type( 'radio' )->translate_field( $field );
-
 		}
 
 
@@ -285,7 +293,6 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 		function format_value( $value, $post_id, $field ) {
 
 			return acf_get_field_type( 'radio' )->format_value( $value, $post_id, $field );
-
 		}
 
 		/**
@@ -301,17 +308,7 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 				$schema['default'] = $field['default_value'];
 			}
 
-			/**
-			 * If a user has defined keys for the buttons,
-			 * we should use the keys for the available options to POST to,
-			 * since they are what is displayed in GET requests.
-			 */
-			$button_keys = array_diff(
-				array_keys( $field['choices'] ),
-				array_values( $field['choices'] )
-			);
-
-			$schema['enum']   = empty( $button_keys ) ? $field['choices'] : $button_keys;
+			$schema['enum']   = acf_get_field_type( 'select' )->format_rest_choices( $field['choices'] );
 			$schema['enum'][] = null;
 
 			// Allow null via UI will value to empty string.
@@ -321,13 +318,9 @@ if ( ! class_exists( 'acf_field_button_group' ) ) :
 
 			return $schema;
 		}
-
 	}
 
 
 	// initialize
 	acf_register_field_type( 'acf_field_button_group' );
-
 endif; // class_exists check
-
-

@@ -1,5 +1,7 @@
 <?php
 
+use iThemesSecurity\Import_Export\Export\Export;
+use iThemesSecurity\Import_Export\Import\Import_Context;
 use iThemesSecurity\Module_Config;
 use iThemesSecurity\User_Groups;
 
@@ -213,29 +215,16 @@ abstract class ITSEC_Settings {
 
 	protected function after_save() { }
 
-	protected function handle_settings_changes( $old_settings ) {
-		$user_group_settings = ITSEC_Modules::get_container()->get( User_Groups\Settings_Registry::class );
-
-		foreach ( $user_group_settings->get_settings() as $user_group_setting ) {
-			if ( $user_group_setting->get_module() !== $this->get_id() ) {
-				continue;
-			}
-
-			$current  = ITSEC_Lib::array_get( $this->settings, $user_group_setting->get_setting() );
-			$previous = ITSEC_Lib::array_get( $old_settings, $user_group_setting->get_setting() );
-
-			if ( $previous !== $current ) {
-				ITSEC_Response::add_store_dispatch( 'ithemes-security/user-groups', 'fetchGroupsSettings' );
-				break;
-			}
-		}
-	}
+	protected function handle_settings_changes( $old_settings ) {}
 
 	public function export() {
+		_deprecated_function( __METHOD__, '7.1' );
+
 		return $this->settings;
 	}
 
 	public function import( $settings ) {
+		_deprecated_function( __METHOD__, '7.1' );
 		$this->set_all( $settings );
 	}
 
@@ -290,7 +279,7 @@ abstract class ITSEC_Settings {
 		$validator = ITSEC_Modules::get_validator( $this->get_id() );
 
 		if ( is_null( $validator ) ) {
-			$retval['errors'][] = new WP_Error( 'itsec-settings-missing-validator-for-' . $this->get_id(), sprintf( __( 'The data validator for %1$s is missing. Data for the module cannot be saved without the validator. This error could indicate a bad install of iThemes Security. Please remove the plugin and reinstall it. If this message persists, please contact support and send them this error message.', 'better-wp-security' ), $this->get_id() ) );
+			$retval['errors'][] = new WP_Error( 'itsec-settings-missing-validator-for-' . $this->get_id(), sprintf( __( 'The data validator for %1$s is missing. Data for the module cannot be saved without the validator. This error could indicate a bad install of Solid Security. Please remove the plugin and reinstall it. If this message persists, please contact support and send them this error message.', 'better-wp-security' ), $this->get_id() ) );
 		} else {
 			$validator->validate( $settings );
 

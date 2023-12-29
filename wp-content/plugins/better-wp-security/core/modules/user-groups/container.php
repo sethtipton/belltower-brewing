@@ -2,12 +2,12 @@
 
 use iThemesSecurity\User_Groups;
 use iThemesSecurity\User_Groups\REST;
-use Pimple\Container;
+use iThemesSecurity\Strauss\Pimple\Container;
 
 return static function ( Container $c ) {
 	$c['module.user-groups.files'] = [
-		'active.php'    => User_Groups\Module\Module::class,
-		'rest.php'      => REST\REST::class,
+		'active.php' => User_Groups\Module\Module::class,
+		'rest.php'   => REST\REST::class,
 	];
 
 	$c[ User_Groups\Module\Module::class ] = static function ( Container $c ) {
@@ -76,4 +76,10 @@ return static function ( Container $c ) {
 			$c[ User_Groups\Settings_Proxy::class ]
 		);
 	};
+
+	\ITSEC_Lib::extend_if_able( $c, 'import-export.sources', function ( $sources, $c ) {
+		$sources[] = $c[ User_Groups\Module\Module::class ];
+
+		return $sources;
+	} );
 };

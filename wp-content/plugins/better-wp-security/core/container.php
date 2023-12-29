@@ -5,7 +5,7 @@ namespace iThemesSecurity;
 use iThemesSecurity\Lib\REST;
 use iThemesSecurity\Lib\Site_Types;
 use ITSEC_Lib_Upgrader;
-use Pimple\Container;
+use iThemesSecurity\Strauss\Pimple\Container;
 use wpdb;
 
 return static function ( Container $c ) {
@@ -15,6 +15,12 @@ return static function ( Container $c ) {
 
 	$c[ ITSEC_Lib_Upgrader::class ] = static function () {
 		return new ITSEC_Lib_Upgrader();
+	};
+
+	$c[ \ITSEC_Modules::class ] = \ITSEC_Modules::get_instance();
+
+	$c[ \ITSEC_Lockout::class ] = static function () {
+		return $GLOBALS['itsec_lockout'];
 	};
 
 	$c[ Actor\Multi_Actor_Factory::class ] = static function ( Container $c ) {
@@ -37,6 +43,16 @@ return static function ( Container $c ) {
 	};
 
 	$c['dashboard.cards'] = static function () {
+		return [];
+	};
+
+	$c['import-export.sources'] = static function ( Container $c ) {
+		return [
+			$c[ \ITSEC_Modules::class ],
+		];
+	};
+
+	$c['rest.controllers'] = static function () {
 		return [];
 	};
 
@@ -101,6 +117,28 @@ return static function ( Container $c ) {
 		return new REST\Tools_Controller(
 			$c[ Lib\Tools\Tools_Registry::class ],
 			$c[ Lib\Tools\Tools_Runner::class ]
+		);
+	};
+
+	$c[ REST\User_Actions_Controller::class ] = static function () {
+		return new REST\User_Actions_Controller();
+	};
+
+	$c[ REST\Users_Controller_Extension::class ] = static function () {
+		return new REST\Users_Controller_Extension();
+	};
+
+	$c[ REST\Logs_Controller::class ] = static function () {
+		return new REST\Logs_Controller();
+	};
+
+	$c[ REST\Geolocation_Controller::class ] = static function () {
+		return new REST\Geolocation_Controller();
+	};
+
+	$c[ REST\Lockout_Stats_Controller::class ] = static function ( Container $c ) {
+		return new REST\Lockout_Stats_Controller(
+			$c[ \ITSEC_Lockout::class ]
 		);
 	};
 };

@@ -1,5 +1,3 @@
-/* eslint-disable @wordpress/no-global-event-listener */
-
 /**
  * WordPress dependencies
  */

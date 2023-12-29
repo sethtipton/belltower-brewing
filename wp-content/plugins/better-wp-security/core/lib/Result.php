@@ -2,6 +2,9 @@
 
 namespace iThemesSecurity\Lib;
 
+/**
+ * @template T
+ */
 final class Result {
 	const SUCCESS = 'success';
 	const ERROR = 'error';
@@ -12,7 +15,7 @@ final class Result {
 	/** @var \WP_Error */
 	private $error;
 
-	/** @var mixed */
+	/** @var T */
 	private $data;
 
 	private $success = [];
@@ -25,6 +28,13 @@ final class Result {
 		$this->type = $type;
 	}
 
+	/**
+	 * Create a "success" result.
+	 *
+	 * @param T $data
+	 *
+	 * @return static
+	 */
 	public static function success( $data = null ): self {
 		$self       = new self( self::SUCCESS );
 		$self->data = $data;
@@ -37,6 +47,55 @@ final class Result {
 		$self->error = $error;
 
 		return $self;
+	}
+
+	public static function combine( ?Result ...$results ): self {
+		return self::combine_with_success_data( null, ...array_filter( $results ) );
+	}
+
+	/**
+	 * Combine multiple result objects with data to use as the success value when applicable.
+	 *
+	 * @param T      $data
+	 * @param Result ...$results
+	 *
+	 * @return static
+	 */
+	public static function combine_with_success_data( $data, Result ...$results ): self {
+		$error   = new \WP_Error();
+		$warning = [];
+		$info    = [];
+		$success = [];
+
+		foreach ( $results as $result ) {
+			if ( ! $result->is_success() ) {
+				$error->merge_from( $result->get_error() );
+			}
+
+			$warning[] = $result->get_warning_messages();
+			$info[]    = $result->get_info_messages();
+			$success[] = $result->get_success_messages();
+		}
+
+		if ( $error->has_errors() ) {
+			$result = self::error( $error );
+		} else {
+			$result = self::success( $data );
+		}
+
+		if ( $warning ) {
+			$result->add_warning_message( ...array_merge( ...$warning ) );
+		}
+
+		if ( $info ) {
+			$result->add_info_message( ...array_merge( ...$info ) );
+		}
+
+		if ( $success ) {
+			$result->add_success_message( ...array_merge( ...$success ) );
+		}
+
+		return $result;
 	}
 
 	public static function from_response(): self {
@@ -55,6 +114,11 @@ final class Result {
 
 	public function is_success(): bool { return self::SUCCESS === $this->type; }
 
+	/**
+	 * Returns the Result data.
+	 *
+	 * @return T
+	 */
 	public function get_data() { return $this->data; }
 
 	public function get_error(): \WP_Error { return $this->error; }
@@ -85,7 +149,12 @@ final class Result {
 
 	public function as_rest_response(): \WP_REST_Response {
 		if ( $this->is_success() ) {
-			$data     = $this->get_data();
+			$data = $this->get_data();
+
+			if ( $data instanceof \JsonSerializable ) {
+				$data = $data->jsonSerialize();
+			}
+
 			$response = new \WP_REST_Response( $data, $data ? 200 : 204 );
 		} else {
 			$response = \ITSEC_Lib_REST::error_to_response( $this->get_error() );
@@ -104,5 +173,23 @@ final class Result {
 		}
 
 		return $response;
+	}
+
+	public function for_wp_cli() {
+		foreach ( $this->get_warning_messages() as $message ) {
+			\WP_CLI::warning( $message );
+		}
+
+		foreach ( $this->get_info_messages() as $message ) {
+			\WP_CLI::log( $message );
+		}
+
+		foreach ( $this->get_success_messages() as $message ) {
+			\WP_CLI::success( $message );
+		}
+
+		if ( ! $this->is_success() ) {
+			\WP_CLI::error( $this->get_error() );
+		}
 	}
 }

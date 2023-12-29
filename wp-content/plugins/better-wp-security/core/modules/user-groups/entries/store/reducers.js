@@ -88,12 +88,12 @@ export default function userGroups( state = DEFAULT_STATE, action ) {
 				},
 				matchablesById: state.matchablesById[ action.group.id ]
 					? {
-							...state.matchablesById,
-							[ action.group.id ]: {
-								...state.matchablesById[ action.group.id ],
-								label: action.group.label,
-							},
-					  }
+						...state.matchablesById,
+						[ action.group.id ]: {
+							...state.matchablesById[ action.group.id ],
+							label: action.group.label,
+						},
+					}
 					: state.matchablesById,
 			};
 		case GROUP_NOT_FOUND: {

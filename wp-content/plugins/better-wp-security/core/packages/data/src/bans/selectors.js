@@ -5,7 +5,7 @@ import createSelector from 'rememo';
 import { find, get, isObject, filter } from 'lodash';
 
 /**
- * WordPres dependencies
+ * WordPress dependencies
  */
 import { createRegistrySelector } from '@wordpress/data';
 
@@ -26,7 +26,7 @@ export const getBans = createRegistrySelector( ( select ) => () =>
 /**
  * Gets the items returned by a query.
  *
- * @param {Object} state State object.
+ * @param {Object} state   State object.
  * @param {string} queryId Query id.
  * @return {Array<Object>}
  */
@@ -55,9 +55,9 @@ export const getQueryResults = createSelector(
 /**
  * Gets the link header from a query result.
  *
- * @param {Object} state State object.
+ * @param {Object} state   State object.
  * @param {string} queryId Query id.
- * @param {string} rel Rel to search for.
+ * @param {string} rel     Rel to search for.
  * @return {{link: string, rel: string}} Link object or undefined if not found.
  */
 export function getQueryHeaderLink( state, queryId, rel ) {
@@ -67,9 +67,9 @@ export function getQueryHeaderLink( state, queryId, rel ) {
 /**
  * Gets the link headers from a query result.
  *
- * @param {Object} state State object.
+ * @param {Object} state   State object.
  * @param {string} queryId Query id.
- * @param {string} rel Rel to search for.
+ * @param {string} rel     Rel to search for.
  * @return {Array<{link: string, rel: string}>} Link object or undefined if not found.
  */
 export function getQueryHeaderLinks( state, queryId, rel ) {
@@ -79,9 +79,9 @@ export function getQueryHeaderLinks( state, queryId, rel ) {
 /**
  * Get a response header from a query.
  *
- * @param {Object} state State object.
+ * @param {Object} state   State object.
  * @param {string} queryId Query id.
- * @param {string} header Normalized header name.
+ * @param {string} header  Normalized header name.
  * @return {string|undefined} The header value, or undefined if it does not exist.
  */
 export function getQueryHeader( state, queryId, header ) {
@@ -89,10 +89,21 @@ export function getQueryHeader( state, queryId, header ) {
 }
 
 /**
+ * Gets the query parameters for a query.
+ *
+ * @param {Object} state   State object.
+ * @param {string} queryId Query id.
+ * @return {Object|undefined} The parameters, if any.
+ */
+export function getQueryParams( state, queryId ) {
+	return get( state, [ 'queryParams', queryId ] );
+}
+
+/**
  * Gets a ban by its self link.
  *
  * @param {Object} state Store data.
- * @param {string} self Self link.
+ * @param {string} self  Self link.
  * @return {Object|undefined} The ban data.
  */
 export function getBan( state, self ) {
@@ -102,7 +113,7 @@ export function getBan( state, self ) {
 /**
  * Checks if the given ban is being updated.
  *
- * @param {Object} state Store data.
+ * @param {Object} state     Store data.
  * @param {string} banOrSelf Ban object or self link.
  * @return {boolean} True if updating.
  */
@@ -115,7 +126,7 @@ export function isUpdating( state, banOrSelf ) {
 /**
  * Checks if the given ban is being deleted.
  *
- * @param {Object} state Store data.
+ * @param {Object} state     Store data.
  * @param {string} banOrSelf Ban object or self link.
  * @return {boolean} True if deleting.
  */
@@ -128,7 +139,7 @@ export function isDeleting( state, banOrSelf ) {
 /**
  * Checks if a query is in progress.
  *
- * @param {Object} state Store data.
+ * @param {Object} state   Store data.
  * @param {string} queryId The query id.
  * @return {boolean} True if querying.
  */

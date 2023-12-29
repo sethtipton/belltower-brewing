@@ -1,6 +1,8 @@
 <?php
 
-class ITSEC_Core_Admin {
+use iThemesSecurity\Contracts\Runnable;
+
+class ITSEC_Core_Admin implements Runnable {
 
 	public function run() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_notices' ) );
@@ -19,6 +21,8 @@ class ITSEC_Core_Admin {
 			wp_enqueue_script( 'itsec-core-admin-notices' );
 			wp_enqueue_style( 'itsec-core-admin-notices' );
 		}
+
+		global $pagenow;
 	}
 
 	public function enqueue_dashboard_notices_integration() {
@@ -61,8 +65,8 @@ class ITSEC_Core_Admin {
 	 * @return array
 	 */
 	public function add_plugin_meta_links( $meta ) {
-
-		$meta[] = '<a href="https://ithemes.com/security?utm_source=wordpressadmin&utm_medium=banner&utm_campaign=itsecfreecta" target="_blank" rel="noopener noreferrer">' . __( 'Get Support', 'better-wp-security' ) . '</a>';
+		$link   = ITSEC_Core::get_tracking_link( 'https://ithemes.com/security/', 'pluginspage', 'link' );
+		$meta[] = '<a href="' . $link . '" target="_blank" rel="noopener noreferrer">' . __( 'Get Support', 'better-wp-security' ) . '</a>';
 
 		return $meta;
 	}

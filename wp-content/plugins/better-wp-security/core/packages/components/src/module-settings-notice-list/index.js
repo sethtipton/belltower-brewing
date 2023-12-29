@@ -53,8 +53,8 @@ function ModuleSettingsNoticeList( { notices, onRemove } ) {
 	const createRemoveNotice = ( id ) => () => onRemove( id );
 	const snackbarNotices = SnackbarList
 		? filter( notices, {
-				type: 'snackbar',
-		  } )
+			type: 'snackbar',
+		} )
 		: [];
 
 	return (

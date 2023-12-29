@@ -59,17 +59,18 @@ final class ITSEC_WordPress_Tweaks {
 	}
 
 	public function init() {
-		$this->add_config_hooks();
+		if ( ITSEC_Core::is_temp_disable_modules_set() ) {
+			return;
+		}
 
+		$this->add_config_hooks();
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			// Don't risk blocking anything with WP_CLI.
 			return;
 		}
 
-
 		$this->settings = ITSEC_Modules::get_settings( 'wordpress-tweaks' );
-
 
 		// Functional code for the valid_user_login_type setting.
 		if ( 'email' === $this->settings['valid_user_login_type'] ) {
@@ -231,7 +232,7 @@ final class ITSEC_WordPress_Tweaks {
 			$code = is_user_logged_in() ? 403 : 401;
 		}
 
-		$error = new WP_Error( 'itsec_rest_api_access_restricted', __( 'You do not have sufficient permission to access this endpoint. Access to REST API requests is restricted by iThemes Security settings.', 'better-wp-security' ), array(
+		$error = new WP_Error( 'itsec_rest_api_access_restricted', __( 'You do not have sufficient permission to access this endpoint. Access to REST API requests is restricted by Solid Security settings.', 'better-wp-security' ), array(
 			'status' => $code,
 		) );
 
@@ -364,7 +365,7 @@ final class ITSEC_WordPress_Tweaks {
 			$code = is_user_logged_in() ? 403 : 401;
 		}
 
-		$error = new WP_Error( 'itsec_rest_api_access_restricted', __( 'You do not have sufficient permission to access this endpoint. Access to REST API requests is restricted by iThemes Security settings.', 'better-wp-security' ), array(
+		$error = new WP_Error( 'itsec_rest_api_access_restricted', __( 'You do not have sufficient permission to access this endpoint. Access to REST API requests is restricted by Solid Security settings.', 'better-wp-security' ), array(
 			'status' => $code,
 		) );
 
@@ -503,7 +504,7 @@ final class ITSEC_WordPress_Tweaks {
 	 * @param string $output
 	 * @param string $show
 	 *
-	 * @return array
+	 * @return string
 	 */
 	function remove_pingback_url( $output, $show ) {
 

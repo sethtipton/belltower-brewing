@@ -13,16 +13,11 @@ import { controls } from '@wordpress/data';
  */
 import { apiFetch } from '../controls';
 import { fetchModules, receiveSettings } from './actions';
-import { STORE_NAME } from './';
+import { STORE_NAME } from './constant';
 
-export const getModules = {
-	*fulfill() {
-		yield fetchModules();
-	},
-	isFulfilled( state ) {
-		return state.modules.length > 0;
-	},
-};
+export function *getModules() {
+	yield fetchModules();
+}
 
 export const getSettings = {
 	*fulfill( module ) {
@@ -53,9 +48,16 @@ export function* getEditedModules() {
 	yield controls.resolveSelect( STORE_NAME, 'getModules' );
 }
 
-export function* getModule() {
-	yield controls.resolveSelect( STORE_NAME, 'getModules' );
-}
+export const getModule = {
+	*fulfill() {
+		yield controls.resolveSelect( STORE_NAME, 'getModules' );
+	},
+	isFulfilled( state, module ) {
+		return state.modules.includes(
+			( maybeModule ) => maybeModule.id === module
+		);
+	},
+};
 
 export function* getEditedModule() {
 	yield controls.resolveSelect( STORE_NAME, 'getModules' );

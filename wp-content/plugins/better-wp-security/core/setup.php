@@ -70,6 +70,7 @@ final class ITSEC_Setup {
 	 */
 	public static function handle_upgrade( $build = false ) {
 		if ( ! ITSEC_Modules::get_setting( 'global', 'initial_build' ) ) {
+			ITSEC_Modules::initialize_container();
 			ITSEC_Modules::set_setting( 'global', 'initial_build', ITSEC_Core::get_plugin_build() - 1 );
 		}
 
@@ -141,6 +142,15 @@ final class ITSEC_Setup {
 
 		if ( empty( $build ) ) {
 			ITSEC_Lib::schedule_cron_test();
+
+			if ( ITSEC_Files::can_write_to_files() ) {
+				try {
+					$secret = ITSEC_Lib_Encryption::generate_secret();
+					ITSEC_Lib_Encryption::save_secret_key( $secret );
+				} catch ( RuntimeException $e ) {
+
+				}
+			}
 		} else {
 			// Existing install. Perform data upgrades.
 
@@ -206,10 +216,6 @@ final class ITSEC_Setup {
 
 		if ( $build < 4119 ) {
 			ITSEC_Files::regenerate_server_config( false );
-		}
-
-		if ( null === get_site_option( 'itsec-enable-grade-report', null ) ) {
-			update_site_option( 'itsec-enable-grade-report', ITSEC_Modules::get_setting( 'global', 'enable_grade_report' ) );
 		}
 
 		ITSEC_Core::get_scheduler()->register_events();

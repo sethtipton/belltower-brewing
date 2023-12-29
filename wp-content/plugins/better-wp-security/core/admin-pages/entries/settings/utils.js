@@ -1,25 +1,30 @@
 /**
  * External dependencies
  */
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 import { createLocation } from 'history';
-import { pickBy, get, set } from 'lodash';
-import Ajv from 'ajv';
+import { pickBy, get, set, isEmpty, every } from 'lodash';
 import classnames from 'classnames';
 
 /**
  * WordPress dependencies
  */
-import { createContext, useContext } from '@wordpress/element';
-import { useDispatch, useSelect, useRegistry } from '@wordpress/data';
-import { applyFilters } from '@wordpress/hooks';
-import { __ } from '@wordpress/i18n';
+import {
+	createContext,
+	useCallback,
+	useContext,
+} from '@wordpress/element';
+import { useDispatch, useSelect } from '@wordpress/data';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
 import { WPError } from '@ithemes/security-utils';
-import { CORE_STORE_NAME, MODULES_STORE_NAME } from '@ithemes/security-data';
+import {
+	CORE_STORE_NAME,
+	MODULES_STORE_NAME,
+} from '@ithemes/security.packages.data';
 
 export const ConfigContext = createContext( {
 	serverType: '',
@@ -34,8 +39,10 @@ export function useConfigContext() {
 export function useNavigateTo() {
 	const history = useHistory();
 
-	return ( route, mode = 'push' ) =>
-		history[ mode ]( createLocation( route ) );
+	return useCallback(
+		( route, mode = 'push' ) => history[ mode ]( createLocation( route ) ),
+		[ history ]
+	);
 }
 
 /**
@@ -55,202 +62,36 @@ export function useChildPath() {
 }
 
 /**
- * Grabs a global instance of Ajv.
- *
- * @return {Ajv} The ajv instance.
- */
-export function getAjv() {
-	if ( ! getAjv.instance ) {
-		getAjv.instance = new Ajv( { schemaId: 'id' } );
-		getAjv.instance.addMetaSchema(
-			require( 'ajv/lib/refs/json-schema-draft-04.json' )
-		);
-	}
-
-	return getAjv.instance;
-}
-
-const isConditionalSettingActive = ( definition, module, context ) => {
-	const {
-		serverType,
-		installType,
-		activeModules,
-		settings,
-		featureFlags,
-	} = context;
-
-	if (
-		definition[ 'server-type' ] &&
-		definition[ 'server-type' ] !== serverType
-	) {
-		return false;
-	}
-
-	if (
-		definition[ 'install-type' ] &&
-		definition[ 'install-type' ] !== installType
-	) {
-		return false;
-	}
-
-	if ( definition[ 'active-modules' ] ) {
-		for ( const activeModule of definition[ 'active-modules' ] ) {
-			if ( ! activeModules.includes( activeModule ) ) {
-				return false;
-			}
-		}
-	}
-
-	if ( definition[ 'feature-flags' ] ) {
-		for ( const featureFlag of definition[ 'feature-flags' ] ) {
-			if ( ! featureFlags?.includes( featureFlag ) ) {
-				return false;
-			}
-		}
-	}
-
-	if ( definition.settings ) {
-		const ajv = getAjv();
-		const validate = ajv.compile( definition.settings );
-
-		if ( ! validate( settings ) ) {
-			return false;
-		}
-	}
-
-	/**
-	 * Filters whether a conditional setting is active.
-	 *
-	 * This hook can only be used to turn a conditional setting inactive,
-	 * if it is inactive due to other conditional rules, this filter won't run.
-	 *
-	 * @param {boolean} isActive Whether the setting is active.
-	 * @param {Object} module The module definition.
-	 * @param {Object} definition The conditional setting definition.
-	 * @param {Object} context Context used to determine whether the setting is active.
-	 */
-	return applyFilters(
-		'ithemes-security.settings.isConditionalSettingActive',
-		true,
-		module,
-		definition,
-		context
-	);
-};
-
-/**
- * Makes a settings schema conditional based on the module definition.
- *
- * @param {Object} module The module definition.
- * @param {Object} context The context used to evaluate the conditional settings.
- * @param {string} context.serverType The web server type.
- * @param {string} context.installType The ITSEC installation type.
- * @param {Array<string>} context.activeModules The list of active modules.
- * @param {Array<string>} context.featureFlags The list of feature flags.
- * @param {Object} context.settings The module's setting value.
- * @param {Object} context.registry The @wordpress/data registry.
- *
- * @return {Object} The settings schema.
- */
-export function makeConditionalSettingsSchema( module, context ) {
-	const isActive = ( definition ) =>
-		isConditionalSettingActive( definition, module, context );
-	const reduceConditional = ( parent, subSchema ) => {
-		if ( ! subSchema.properties ) {
-			return subSchema;
-		}
-
-		return {
-			...subSchema,
-			properties: Object.entries( subSchema.properties ).reduce(
-				( acc, [ propName, propSchema ] ) => {
-					const conditionalKey = `${ parent }.${ propName }`;
-
-					if (
-						module.settings.conditional[ conditionalKey ] &&
-						! isActive(
-							module.settings.conditional[ conditionalKey ]
-						)
-					) {
-						return acc;
-					}
-
-					acc[ propName ] = reduceConditional(
-						conditionalKey,
-						propSchema
-					);
-
-					return acc;
-				},
-				{}
-			),
-		};
-	};
-
-	const properties = Object.entries(
-		module.settings.schema.properties
-	).reduce( ( acc, [ propName, propSchema ] ) => {
-		if ( ! module.settings.interactive.includes( propName ) ) {
-			return acc;
-		}
-
-		if (
-			module.settings.conditional[ propName ] &&
-			! isActive( module.settings.conditional[ propName ] )
-		) {
-			return acc;
-		}
-
-		acc[ propName ] = reduceConditional( propName, propSchema );
-
-		return acc;
-	}, {} );
-
-	return {
-		...module.settings.schema,
-		properties,
-	};
-}
-
-export function useConditionalSchema( module, settings ) {
-	const { serverType, installType } = useConfigContext();
-	const registry = useRegistry();
-	const { activeModules, featureFlags } = useSelect( ( select ) => ( {
-		activeModules: select( MODULES_STORE_NAME ).getActiveModules(),
-		featureFlags: select( CORE_STORE_NAME ).getFeatureFlags(),
-	} ) );
-	const context = {
-		serverType,
-		installType,
-		activeModules,
-		settings,
-		registry,
-		featureFlags,
-	};
-
-	return makeConditionalSettingsSchema( module, context );
-}
-
-/**
  * A hook to allow for convenient editing of module settings.
  *
- * @param {Object} module The module definition.
+ * @param {Object}                            module         The module definition.
  * @param {function(Object, string): boolean} [filterFields] An optional function to filter the included settings.
- * @return {{schema: Object, uiSchema: Object, setFormData: Function, formData: Object}} The settings form components.
+ * @return {{schema: Object, uiSchema: Object, hasSettings: boolean, setFormData: Function, formData: Object}} The settings form components.
  */
 export function useSettingsForm( module, filterFields ) {
-	const formData = useSelect( ( select ) =>
-		select( MODULES_STORE_NAME ).getEditedSettings( module.id )
+	const { formData, conditionalSchemaBase } = useSelect(
+		( select ) => ( {
+			formData: select( MODULES_STORE_NAME ).getEditedSettings( module.id ),
+			conditionalSchemaBase: select( MODULES_STORE_NAME ).getSettingsConditionalSchema( module.id ),
+		} ),
+		[ module.id ]
 	);
 	const { editSettings } = useDispatch( MODULES_STORE_NAME );
-	const conditionalSchema = useConditionalSchema( module, formData );
 
-	if ( filterFields ) {
-		conditionalSchema.properties = pickBy(
-			conditionalSchema.properties,
+	const conditionalSchema = filterFields ? {
+		...conditionalSchemaBase,
+		properties: pickBy(
+			conditionalSchemaBase.properties,
 			filterFields
-		);
-	}
+		),
+	} : conditionalSchemaBase;
+
+	const hasSettings = ! every(
+		conditionalSchema?.properties,
+		( propSchema ) =>
+			propSchema.type === 'object' &&
+			isEmpty( propSchema.properties )
+	);
 
 	const setFormData = ( e ) => {
 		editSettings( module.id, e.formData );
@@ -258,9 +99,39 @@ export function useSettingsForm( module, filterFields ) {
 
 	return {
 		schema: conditionalSchema,
-		uiSchema: module.settings.schema.uiSchema,
+		uiSchema: module.settings?.schema.uiSchema,
+		hasSettings,
 		formData,
 		setFormData,
+	};
+}
+
+/**
+ * A hook to retrieve the allowed settings for the current root.
+ *
+ * @param {Object} module The module definition.
+ * @return {{allowedFields: Array<string>, filterFields: ((function(object, string): boolean))}} The list of allowed fields, and a filter callback.
+ */
+export function useAllowedSettingsFields( module ) {
+	const { root } = useParams();
+
+	const allowedFields = ( () => {
+		switch ( root ) {
+			case 'import':
+				return module?.settings?.import;
+			case 'onboard':
+				return module?.settings?.onboard;
+		}
+	} )();
+	const _filterFields = useCallback(
+		( value, key ) => allowedFields.includes( key ),
+		[ allowedFields ]
+	);
+	const filterFields = allowedFields && _filterFields;
+
+	return {
+		allowedFields,
+		filterFields,
 	};
 }
 
@@ -277,7 +148,7 @@ export function getModuleTypes() {
 		},
 		{
 			slug: 'lockout',
-			label: __( 'Lockouts', 'better-wp-security' ),
+			label: __( 'Firewall', 'better-wp-security' ),
 		},
 		{
 			slug: 'site-check',
@@ -294,32 +165,114 @@ export function getModuleTypes() {
 	];
 }
 
-/**
- * Checks if a module's requirements are met.
- *
- * @param {Object} module The module definition.
- * @param {string} mode The mode to check for. Either 'activate' or 'run'.
- * @return {WPError} An empty error object if all requirements are met.
- */
-export function validateModuleRequirements( module, mode ) {
-	const error = new WPError();
+export function useModuleRequirementsValidator() {
+	const { featureFlags, siteInfo, requirementsInfo } = useSelect(
+		( select ) => ( {
+			featureFlags: select( CORE_STORE_NAME ).getFeatureFlags(),
+			siteInfo: select( CORE_STORE_NAME ).getSiteInfo(),
+			requirementsInfo: select( CORE_STORE_NAME ).getRequirementsInfo(),
+		} ),
+		[]
+	);
 
-	if ( ! module.requirements ) {
-		return error;
-	}
+	const isVersionAtLeast = ( version, atLeast ) => {
+		return version.localeCompare( atLeast, undefined, { numeric: true, sensitivity: 'base' } ) >= 0;
+	};
 
-	const isForMode = ( requirement ) =>
-		requirement.validate === mode || mode === 'activate';
+	return useCallback(
+		( module, mode ) => {
+			const error = new WPError();
 
-	if (
-		module.requirements.ssl &&
-		isForMode( module.requirements.ssl ) &&
-		document.location.protocol !== 'https:'
-	) {
-		error.add( 'ssl', __( 'Your site must support SSL.', 'better-wp-security' ) );
-	}
+			if ( ! module.requirements ) {
+				return error;
+			}
 
-	return error;
+			const isForMode = ( requirement ) =>
+				requirement.validate === mode || mode === 'activate';
+
+			if (
+				module.requirements.ssl &&
+				isForMode( module.requirements.ssl ) &&
+				document.location.protocol !== 'https:'
+			) {
+				error.add( 'ssl', __( 'Your site must support SSL.', 'better-wp-security' ), module.requirements.ssl );
+			}
+
+			if (
+				module.requirements[ 'feature-flags' ] &&
+				isForMode( module.requirements[ 'feature-flags' ] )
+			) {
+				for ( const flag of module.requirements[ 'feature-flags' ]
+					.flags ) {
+					if ( ! featureFlags.includes( flag ) ) {
+						error.add(
+							'feature-flags',
+							sprintf(
+								/* translators: The name of the feature. */
+								__(
+									"The '%s' feature flag must be enabled.",
+									'better-wp-security'
+								),
+								flag
+							),
+							module.requirements[ 'feature-flags' ]
+						);
+					}
+				}
+			}
+
+			if ( module.requirements.multisite && isForMode( module.requirements.multisite ) ) {
+				if ( module.requirements.multisite.status === 'enabled' && siteInfo?.multisite === false ) {
+					error.add( 'multisite', __( 'Multisite must be enabled.', 'better-wp-security' ), module.requirements.multisite );
+				} else if ( module.requirements.multisite.status === 'disabled' && siteInfo?.multisite === true ) {
+					error.add( 'multisite', __( 'Multisite is not supported.', 'better-wp-security' ), module.requirements.multisite );
+				}
+			}
+
+			if ( module.requirements.server && isForMode( module.requirements.server ) && requirementsInfo ) {
+				if ( module.requirements.server.php && ! isVersionAtLeast( requirementsInfo.server.php, module.requirements.server.php ) ) {
+					error.add( 'server', sprintf(
+						/* translators: The PHP version. */
+						__( 'You must be running PHP version %s or later.', 'better-wp-security' ),
+						module.requirements.server.php
+					), module.requirements.server );
+				}
+
+				const missingExtensions = ( module.requirements.server.extensions || [] )
+					.filter( ( extension ) => ! requirementsInfo.server.extensions[ extension ] );
+
+				if ( missingExtensions.length === 1 ) {
+					error.add( 'server', sprintf(
+						/* translators: PHP Extension name. */
+						__( 'The %s PHP extension is required.', 'better-wp-security' ),
+						missingExtensions[ 0 ]
+					), module.requirements.server );
+				} else if ( missingExtensions.length > 0 ) {
+					error.add( 'server', sprintf(
+						/* translators: List of PHP extensions */
+						_n(
+							'The following PHP extension is required: %l.',
+							'The following PHP extensions are required: %l.',
+							missingExtensions.length,
+							'better-wp-security'
+						).replace( '%l', '%s' ),
+						missingExtensions.join( ', ' )
+					), module.requirements.server );
+				}
+			}
+
+			if ( module.requirements.load && isForMode( module.requirements.load ) && requirementsInfo ) {
+				if ( module.requirements.load.type === 'normal' && requirementsInfo.load === 'early' ) {
+					error.add( 'load', __( 'Loading Solid Security via an MU-Plugin is not supported.', 'better-wp-security' ) );
+				} else if ( module.requirements.load.type === 'early' && requirementsInfo.load === 'normal' ) {
+					error.add( 'load', __( 'Loading Solid Security without an MU-Plugin is not supported.', 'better-wp-security' ) );
+				}
+			}
+
+			return error;
+		},
+		[ featureFlags, siteInfo, requirementsInfo ]
+	);
 }
 
 /**
@@ -327,9 +280,9 @@ export function validateModuleRequirements( module, mode ) {
  *
  * This method mutates the object.
  *
- * @param {Object} object The object to modify.
- * @param {Array<string>} path The path at which to append it.
- * @param {string} className The class to append.
+ * @param {Object}        object    The object to modify.
+ * @param {Array<string>} path      The path at which to append it.
+ * @param {string}        className The class to append.
  * @return {Object} The object.
  */
 export function appendClassNameAtPath( object, path, className ) {

@@ -107,6 +107,6 @@ final class Strength_Requirement extends Config_Password_Requirement {
 
 		$results = \ITSEC_Lib::get_password_strength_results( $password, $penalty_strings );
 
-		return $results->score;
+		return $results['score'];
 	}
 }

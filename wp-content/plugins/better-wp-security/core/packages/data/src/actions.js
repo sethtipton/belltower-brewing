@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import { apiFetch } from './controls';
+import { apiFetch, select } from './controls';
 
 /**
  * Fetch the index.
@@ -27,6 +27,42 @@ export function receiveIndex( index ) {
 		type: RECEIVE_INDEX,
 		index,
 	};
+}
+
+export function *saveCurrentUser( data, optimistic = false ) {
+	yield * saveUser( 'me', data, optimistic );
+}
+
+export function *saveUser( id, data, optimistic = false ) {
+	const currentUserId = yield select( 'ithemes-security/core', 'getCurrentUserId' );
+
+	if ( id === 'me' ) {
+		id = currentUserId;
+	}
+
+	const path = `/wp/v2/users/${ id === currentUserId ? 'me' : id }`;
+
+	yield { type: 'START_SAVING_USER', id, data, optimistic };
+	try {
+		const response = yield apiFetch( {
+			method: 'PUT',
+			path,
+			data,
+		} );
+		yield receiveUser( response );
+		yield { type: 'FINISH_SAVING_USER', id, user: response };
+	} catch ( error ) {
+		yield { type: 'FAILED_SAVING_USER', id, error };
+	}
+}
+
+export function *fetchUser( id ) {
+	const currentUserId = yield select( 'ithemes-security/core', 'getCurrentUserId' );
+	const user = yield apiFetch( {
+		path: `/wp/v2/users/${ id === currentUserId ? 'me' : id }?context=edit`,
+	} );
+
+	yield receiveUser( user );
 }
 
 export function receiveUser( user ) {
@@ -65,9 +101,25 @@ export function receiveSiteInfo( siteInfo ) {
 	};
 }
 
+export function __unstableLoadInitialFeatureFlags( flags ) {
+	return {
+		type: LOAD_INITIAL_FEATURE_FLAGS,
+		flags,
+	};
+}
+
+export function receiveBatchMaxItems( maxItems ) {
+	return {
+		type: RECEIVE_BATCH_MAX_ITEMS,
+		maxItems,
+	};
+}
+
 export const RECEIVE_INDEX = 'RECEIVE_INDEX';
 export const RECEIVE_USER = 'RECEIVE_USER';
 export const RECEIVE_CURRENT_USER_ID = 'RECEIVE_CURRENT_USER_ID';
 export const RECEIVE_ACTOR_TYPES = 'RECEIVE_ACTOR_TYPES';
 export const RECEIVE_ACTORS = 'RECEIVE_ACTORS';
 export const RECEIVE_SITE_INFO = 'RECEIVE_SITE_INFO';
+export const LOAD_INITIAL_FEATURE_FLAGS = 'LOAD_INITIAL_FEATURE_FLAGS';
+export const RECEIVE_BATCH_MAX_ITEMS = 'RECEIVE_BATCH_MAX_ITEMS';

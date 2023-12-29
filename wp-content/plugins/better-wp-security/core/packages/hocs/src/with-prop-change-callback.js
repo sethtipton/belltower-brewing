@@ -12,7 +12,7 @@ import { createHigherOrderComponent } from '@wordpress/compose';
  * Higher-order component that allows for firing an action after certain props have changed.
  *
  * @param {...string|{prop: string, cb: Function}} prop Prop to listen to, or object with prop to listener to and callback to execute.
- * @param {Function} [cb] Function to call when prop changes.
+ * @param {Function}                               [cb] Function to call when prop changes.
  *
  * @return {WPComponent} Component with prop change listeners.
  */

@@ -33,6 +33,10 @@ final class ITSEC_System_Tweaks {
 	}
 
 	public function add_hooks() {
+		if ( ITSEC_Core::is_temp_disable_modules_set() ) {
+			return;
+		}
+
 		if ( $this->hooks_added ) {
 			return;
 		}

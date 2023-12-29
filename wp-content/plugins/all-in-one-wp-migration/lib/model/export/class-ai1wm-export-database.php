@@ -30,8 +30,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Ai1wm_Export_Database {
 
 	public static function execute( $params ) {
-		global $wpdb;
-
 		// Set exclude database
 		if ( isset( $params['options']['no_database'] ) ) {
 			return $params;
@@ -91,11 +89,7 @@ class Ai1wm_Export_Database {
 		ai1wm_close( $tables_list );
 
 		// Get database client
-		if ( empty( $wpdb->use_mysqli ) ) {
-			$mysql = new Ai1wm_Database_Mysql( $wpdb );
-		} else {
-			$mysql = new Ai1wm_Database_Mysqli( $wpdb );
-		}
+		$mysql = Ai1wm_Database_Utility::create_client();
 
 		// Exclude spam comments
 		if ( isset( $params['options']['no_spam_comments'] ) ) {
@@ -111,20 +105,24 @@ class Ai1wm_Export_Database {
 		$old_table_prefixes = $old_column_prefixes = array();
 		$new_table_prefixes = $new_column_prefixes = array();
 
-		// Set table and column prefixes
+		// Set table prefixes
 		if ( ai1wm_table_prefix() ) {
-			$old_table_prefixes[] = $old_column_prefixes[] = ai1wm_table_prefix();
-			$new_table_prefixes[] = $new_column_prefixes[] = ai1wm_servmask_prefix();
+			$old_table_prefixes[] = ai1wm_table_prefix();
+			$new_table_prefixes[] = ai1wm_servmask_prefix();
 		} else {
-			// Set table prefixes based on table name
 			foreach ( $tables as $table_name ) {
 				$old_table_prefixes[] = $table_name;
 				$new_table_prefixes[] = ai1wm_servmask_prefix() . $table_name;
 			}
+		}
 
-			// Set table prefixes based on column name
+		// Set column prefixes
+		if ( strlen( ai1wm_table_prefix() ) > 1 ) {
+			$old_column_prefixes[] = ai1wm_table_prefix();
+			$new_column_prefixes[] = ai1wm_servmask_prefix();
+		} else {
 			foreach ( array( 'user_roles', 'capabilities', 'user_level', 'dashboard_quick_press_last_post_id', 'user-settings', 'user-settings-time' ) as $column_prefix ) {
-				$old_column_prefixes[] = $column_prefix;
+				$old_column_prefixes[] = ai1wm_table_prefix() . $column_prefix;
 				$new_column_prefixes[] = ai1wm_servmask_prefix() . $column_prefix;
 			}
 		}
@@ -134,6 +132,9 @@ class Ai1wm_Export_Database {
 			->set_new_table_prefixes( $new_table_prefixes )
 			->set_old_column_prefixes( $old_column_prefixes )
 			->set_new_column_prefixes( $new_column_prefixes );
+
+		// Exclude column prefixes
+		$mysql->set_reserved_column_prefixes( array( 'wp_force_deactivated_plugins', 'wp_page_for_privacy_policy' ) );
 
 		// Exclude site options
 		$mysql->set_table_where_query( ai1wm_table_prefix() . 'options', sprintf( "`option_name` NOT IN ('%s', '%s', '%s', '%s', '%s', '%s')", AI1WM_STATUS, AI1WM_SECRET_KEY, AI1WM_AUTH_USER, AI1WM_AUTH_PASSWORD, AI1WM_BACKUPS_LABELS, AI1WM_SITES_LINKS ) );

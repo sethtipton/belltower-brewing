@@ -3,6 +3,7 @@
  */
 import { isString, isEqual, map, isEmpty } from 'lodash';
 import { updatedDiff } from 'deep-object-diff';
+import { JsonPointer } from 'json-ptr';
 
 /**
  * WordPress dependencies
@@ -13,8 +14,9 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import { apiFetch, createNotice } from '../controls';
-import { STORE_NAME } from './';
+import { getAjv, WPError } from '@ithemes/security-utils';
+import { apiFetch, apiFetchBatch, createNotice } from '../controls';
+import { STORE_NAME } from './constant';
 
 export function* editModule( module, edit ) {
 	const current = yield controls.select( STORE_NAME, 'getModule', module );
@@ -63,11 +65,7 @@ export function* saveModules( modules = true ) {
 
 	try {
 		yield { type: START_SAVING_MODULES, modules };
-		responses = yield apiFetch( {
-			path: '/batch/v1',
-			method: 'POST',
-			data: { requests },
-		} );
+		responses = yield apiFetchBatch( requests );
 	} catch ( error ) {
 		yield { type: FAILED_SAVING_MODULES, modules };
 		yield createNotice( 'error', error.message );
@@ -80,13 +78,13 @@ export function* saveModules( modules = true ) {
 
 	for ( let i = 0; i < requests.length; i++ ) {
 		const module = modules[ i ];
-		const response = responses.responses[ i ];
+		const response = responses[ i ];
 
 		if ( response.status >= 400 ) {
 			errors[ module ] = response.body;
 		} else {
 			success.push( module );
-			yield receiveModule( module, response.body );
+			yield receiveModule( response.body );
 		}
 	}
 
@@ -98,7 +96,7 @@ export function* saveModules( modules = true ) {
 		yield { type: FINISH_SAVING_MODULES, modules: success };
 	}
 
-	return responses.responses;
+	return responses;
 }
 
 /**
@@ -160,14 +158,10 @@ export function* setModulesStatus( modules ) {
 		} ) ),
 	};
 
-	const responses = yield apiFetch( {
-		path: '/batch/v1',
-		method: 'POST',
-		data: batch,
-	} );
+	const responses = yield apiFetchBatch( batch );
 
-	for ( let i = 0; i < responses.responses.length; i++ ) {
-		const response = responses.responses[ i ];
+	for ( let i = 0; i < responses.length; i++ ) {
+		const response = responses[ i ];
 
 		if ( response.status >= 400 ) {
 			yield createNotice( 'error', response.body.message );
@@ -247,10 +241,11 @@ export function* resetSettingEdits( modules = true ) {
 /**
  * Resets the edited settings for a module.
  *
- * @param {boolean|string|Array<string>} modules The modules to save. By default, all dirty modules will be saved.
+ * @param {boolean|string|Array<string>} modules    The modules to save. By default, all dirty modules will be saved.
+ * @param {boolean}                      [validate] Whether to validate a module's settings before saving.
  * @return {Array<Object>} The list of saved settings responses.
  */
-export function* saveSettings( modules = true ) {
+export function* saveSettings( modules = true, validate = false ) {
 	if ( modules === true ) {
 		modules = yield controls.select( STORE_NAME, 'getDirtySettings' );
 	} else if ( isString( modules ) ) {
@@ -262,14 +257,28 @@ export function* saveSettings( modules = true ) {
 	}
 
 	const requests = [];
+	const savingModules = [];
+	const errors = {};
 
 	for ( const module of modules ) {
+		if ( validate ) {
+			const isValid = yield controls.dispatch( STORE_NAME, 'validateSettings', module );
+
+			if ( isValid !== true ) {
+				const error = new WPError( 'local_validation_failed' );
+				isValid.errorText.forEach( ( errorText ) => error.add( 'local_validation_failed', errorText ) );
+				errors[ module ] = error;
+				continue;
+			}
+		}
+
 		const settings = yield controls.select(
 			STORE_NAME,
 			'getSettingEdits',
 			module
 		);
 
+		savingModules.push( module );
 		requests.push( {
 			method: 'PATCH',
 			path: `/ithemes-security/v1/settings/${ module }`,
@@ -281,11 +290,7 @@ export function* saveSettings( modules = true ) {
 
 	try {
 		yield { type: START_SAVING_SETTINGS, modules };
-		responses = yield apiFetch( {
-			path: '/batch/v1',
-			method: 'POST',
-			data: { requests },
-		} );
+		responses = yield apiFetchBatch( requests );
 	} catch ( error ) {
 		yield { type: FAILED_SAVING_SETTINGS, modules };
 		yield createNotice( 'error', error.message );
@@ -294,11 +299,10 @@ export function* saveSettings( modules = true ) {
 	}
 
 	const success = [];
-	const errors = {};
 
 	for ( let i = 0; i < requests.length; i++ ) {
-		const module = modules[ i ];
-		const response = responses.responses[ i ];
+		const module = savingModules[ i ];
+		const response = responses[ i ];
 
 		if ( response.status >= 400 ) {
 			errors[ module ] = response.body;
@@ -319,7 +323,7 @@ export function* saveSettings( modules = true ) {
 		yield { type: FINISH_SAVING_SETTINGS, modules: success };
 	}
 
-	return responses.responses;
+	return responses;
 }
 
 export function* updateSettings( module, settings ) {
@@ -343,6 +347,52 @@ export function* updateSettings( module, settings ) {
 	yield { type: FINISH_SAVING_SETTINGS, modules: [ module ] };
 
 	return response;
+}
+
+export const validateSettings = ( moduleId ) => async ( { select, resolveSelect } ) => {
+	const schema = await resolveSelect.getSettingsConditionalSchema( moduleId );
+
+	if ( ! schema ) {
+		return true;
+	}
+
+	const settings = select.getEditedSettings( moduleId );
+	const ajv = getAjv();
+
+	const isValid = ajv.validate( schema, settings );
+
+	if ( isValid ) {
+		return true;
+	}
+
+	return {
+		errors: ajv.errors,
+		errorText: convertSchemaErrorToText( ajv.errors, moduleId, schema ),
+	};
+};
+
+function convertSchemaErrorToText( errors, moduleId, schema ) {
+	const text = [];
+
+	for ( const { message, schemaPath, dataPath } of errors ) {
+		let ptr = JsonPointer.create( schemaPath );
+		let parent = ptr.parent( schema );
+
+		while ( parent && ! parent.title ) {
+			ptr = JsonPointer.create(
+				ptr.path.slice( 0, ptr.path.length - 1 )
+			);
+			parent = ptr.parent( schema );
+		}
+
+		if ( parent?.title ) {
+			text.push( `${ parent.title } ${ message }.` );
+		} else {
+			text.push( `${ moduleId }${ dataPath } ${ message }.` );
+		}
+	}
+
+	return text;
 }
 
 function updateModule( module, status ) {

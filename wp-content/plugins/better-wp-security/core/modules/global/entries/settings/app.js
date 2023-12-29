@@ -12,7 +12,7 @@ import { useCallback } from '@wordpress/element';
  */
 import { RjsfFieldFill } from '@ithemes/security-rjsf-theme';
 import { useAsync } from '@ithemes/security-hocs';
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
 import './style.scss';
 
 function useDetectedIp() {
@@ -82,7 +82,7 @@ function useDetectedIp() {
 function ProxyIP( { label, detectIp } ) {
 	return (
 		<div className="itsec-global-detected-ip">
-			<Button isSecondary onClick={ detectIp }>
+			<Button variant="secondary" onClick={ detectIp }>
 				{ __( 'Check IP', 'better-wp-security' ) }
 			</Button>
 			<span>{ label }</span>
@@ -97,12 +97,12 @@ function AuthorizedHosts( { value, onChange, ip } ) {
 
 	return (
 		<Button
-			isSecondary
+			variant="secondary"
 			onClick={ onClick }
 			disabled={ ! ip }
 			className="itsec-global-add-authorized-ip"
 		>
-			{ __( 'Add my current IP to the authorized hosts list', 'better-wp-security' ) }
+			{ __( 'Authorize my IP address', 'better-wp-security' ) }
 		</Button>
 	);
 }

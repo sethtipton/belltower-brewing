@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from '@wordpress/element';
  * @typedef {('idle'|'pending'|'success'|'error')} Status
  *
  * @param {Function} asyncFunction The async function to execute.
- * @param {boolean} immediate Whether to immediate execute the async function.
+ * @param {boolean}  immediate     Whether to immediate execute the async function.
  * @return {{error: Error, execute: Function, value: *, status: Status}} Hook info.
  */
 export default function useAsync( asyncFunction, immediate = true ) {

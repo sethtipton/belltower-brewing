@@ -35,6 +35,12 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		add_theme_support('editor-styles');
 		add_editor_style( 'style.css' );
 
+		function custom_excerpt_more($more) {
+			return ' […] <a class="read-more" href="' . get_permalink(get_the_ID()) . '">Read More</a>';
+		}
+		add_filter('excerpt_more', 'custom_excerpt_more');
+		
+
 		/*
 		 * Let WordPress manage the document title.
 		 * By adding theme support, we declare that this theme does not use a
@@ -112,17 +118,23 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		// Disable Gutenberg Custom Gradients
 		add_theme_support( 'disable-custom-gradients' );
 
-		$btdarkgreen  = '#808166';
-		$btblack      = '#231F20';
-		$btpink       = '#E0CDC0';
-		$btlightgreen = '#BAB488';
-		$btyellow     = '#b8a881';
-		$btred        = '#BA583B';
-		$btwhite      = '#E5E5E5';
-		$btpurewhite  = '#FFFFFF';
+		$btdarkestgreen = '#515441';
+		$btdarkgreen    = '#808166';
+		$btblack        = '#231F20';
+		$btpink         = '#E0CDC0';
+		$btlightgreen   = '#BAB488';
+		$btyellow       = '#b8a881';
+		$btred          = '#BA583B';
+		$btwhite        = '#E5E5E5';
+		$btpurewhite    = '#FFFFFF';
 
 		// Editor Color Palette
 		add_theme_support( 'editor-color-palette', array(
+			array(
+				'name'  => __( 'Darkest Green', 'belltower' ),
+				'slug'  => 'darkest-green',
+				'color'	=> $btdarkestgreen,
+			),
 			array(
 				'name'  => __( 'Dark Green', 'belltower' ),
 				'slug'  => 'dark-green',
@@ -183,6 +195,16 @@ function belltower_content_width() {
 	$GLOBALS['content_width'] = apply_filters( 'belltower_content_width', 640 );
 }
 add_action( 'after_setup_theme', 'belltower_content_width', 0 );
+
+/**
+ * Set a custom Excerpt Length.
+ */
+/*
+function wpdocs_custom_excerpt_length( $length ) {
+	return 100;
+}
+add_filter( 'excerpt_length', 'wpdocs_custom_excerpt_length', 999 );
+*/
 
 /**
  * Register widget area.

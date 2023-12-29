@@ -9,26 +9,18 @@ import { map } from 'lodash';
  */
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useCallback } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
-import { HelpList } from '@ithemes/security-components';
 import {
 	ChildPages,
-	useNavigation,
-	HelpFill,
-	PageHeader,
-	Breadcrumbs,
 } from '@ithemes/security.pages.settings';
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
-import { Settings, Notification } from '../';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
+import { Settings, Notification, Onboard } from '../';
 
 export default function Page( { asyncNotifications, asyncUsersAndRoles } ) {
-	const { url, path } = useRouteMatch();
-	const { root } = useParams();
-	const { goNext } = useNavigation();
+	const { url, path, params: { root } } = useRouteMatch();
 
 	const {
 		status: notificationsStatus,
@@ -39,10 +31,11 @@ export default function Page( { asyncNotifications, asyncUsersAndRoles } ) {
 		value: usersAndRoles,
 	} = asyncUsersAndRoles;
 
-	const error = useSelect( ( select ) =>
-		select( MODULES_STORE_NAME ).getError( 'notification-center' )
+	const error = useSelect(
+		( select ) =>
+			select( MODULES_STORE_NAME ).getError( 'notification-center' ),
+		[]
 	);
-	const { saveSettings } = useDispatch( MODULES_STORE_NAME );
 
 	if (
 		( notificationsStatus !== 'success' &&
@@ -50,19 +43,6 @@ export default function Page( { asyncNotifications, asyncUsersAndRoles } ) {
 		usersAndRolesStatus !== 'success'
 	) {
 		return null;
-	}
-
-	if ( 'onboard' === root ) {
-		return (
-			<Settings
-				usersAndRoles={ usersAndRoles }
-				onSubmit={ goNext }
-				saveLabel={ __( 'Continue', 'better-wp-security' ) }
-				allowUndo={ false }
-				allowCleanSave
-				apiError={ error }
-			/>
-		);
 	}
 
 	const nav = (
@@ -87,32 +67,37 @@ export default function Page( { asyncNotifications, asyncUsersAndRoles } ) {
 			</Route>
 			<Route path={ path }>
 				{ nav }
-				<Settings
-					usersAndRoles={ usersAndRoles }
-					onSubmit={ () => saveSettings( 'notification-center' ) }
-					apiError={ error }
-				/>
+				{ root === 'settings' && (
+					<Settings
+						usersAndRoles={ usersAndRoles }
+						apiError={ error }
+					/>
+				) }
+				{ root !== 'settings' && (
+					<Onboard usersAndRoles={ usersAndRoles } apiError={ error } />
+				) }
 			</Route>
 		</Switch>
 	);
 }
 
-function NotificationPage( { notifications, usersAndRoles, apiError } ) {
+function NotificationPage( {
+	notifications,
+	usersAndRoles,
+	apiError,
+} ) {
 	const { child: notification } = useParams();
 
-	const { isDirty, isSaving, settings } = useSelect( ( select ) => ( {
-		isDirty: select( MODULES_STORE_NAME ).areSettingsDirty(
-			'notification-center'
-		),
-		isSaving: select( MODULES_STORE_NAME ).isSavingSettings(
-			'notification-center'
-		),
-		settings: select( MODULES_STORE_NAME ).getEditedSetting(
-			'notification-center',
-			'notifications'
-		),
-	} ) );
-	const { editSetting, saveSettings, resetSettingEdits } = useDispatch(
+	const { settings } = useSelect(
+		( select ) => ( {
+			settings: select( MODULES_STORE_NAME ).getEditedSetting(
+				'notification-center',
+				'notifications'
+			),
+		} ),
+		[]
+	);
+	const { editSetting } = useDispatch(
 		MODULES_STORE_NAME
 	);
 
@@ -130,41 +115,12 @@ function NotificationPage( { notifications, usersAndRoles, apiError } ) {
 	}
 
 	return (
-		<>
-			<Help notification={ notification } />
-			<Notification
-				notification={ notifications[ notification ] }
-				usersAndRoles={ usersAndRoles }
-				settings={ settings[ notification ] || {} }
-				onChange={ onChange }
-				isSaving={ isSaving }
-				isDirty={ isDirty }
-				onSubmit={ () => saveSettings( 'notification-center' ) }
-				onUndo={ () => resetSettingEdits( 'notification-center' ) }
-				apiError={ apiError }
-			/>
-		</>
-	);
-}
-
-function Help( { notification } ) {
-	const match = useRouteMatch();
-
-	return (
-		<HelpFill>
-			<PageHeader
-				title={ __( 'Notifications', 'better-wp-security' ) }
-				breadcrumbs={
-					<Breadcrumbs
-						match={ match }
-						title={ __( 'Help', 'better-wp-security' ) }
-					/>
-				}
-			/>
-			<HelpList
-				topic={ `notification-center-${ notification }` }
-				fallback="notification-center"
-			/>
-		</HelpFill>
+		<Notification
+			notification={ notifications[ notification ] }
+			usersAndRoles={ usersAndRoles }
+			settings={ settings[ notification ] || {} }
+			onChange={ onChange }
+			apiError={ apiError }
+		/>
 	);
 }

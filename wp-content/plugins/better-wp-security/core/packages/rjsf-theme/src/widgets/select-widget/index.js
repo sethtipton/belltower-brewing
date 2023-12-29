@@ -22,8 +22,8 @@ const nums = new Set( [ 'number', 'integer' ] );
  *
  * @param {Object} schema
  * @param {string} schema.type
- * @param {Array} schema.enum
- * @param {*} value
+ * @param {Array}  schema.enum
+ * @param {*}      value
  *
  * @return {*} The processed value.
  */

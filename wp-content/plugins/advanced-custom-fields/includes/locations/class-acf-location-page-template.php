@@ -70,7 +70,7 @@ if ( ! class_exists( 'ACF_Location_Page_Template' ) ) :
 			$post_templates = acf_get_post_templates();
 			return array_merge(
 				array(
-					'default' => apply_filters( 'default_page_template_title', __( 'Default Template', 'acf' ) ),
+					'default' => apply_filters( 'default_page_template_title', __( 'Default Template', 'acf' ), 'meta-box' ),
 				),
 				$post_templates['page']
 			);
@@ -79,5 +79,4 @@ if ( ! class_exists( 'ACF_Location_Page_Template' ) ) :
 
 	// Register.
 	acf_register_location_type( 'ACF_Location_Page_Template' );
-
 endif; // class_exists check.

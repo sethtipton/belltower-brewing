@@ -90,7 +90,7 @@ export default function FileTreeField( {
 						onLoad={ onLoad }
 					/>
 					<Button
-						isSecondary
+						variant="secondary"
 						disabled={ ! active }
 						className="itsec-rjsf-file-tree__select"
 						onClick={ () => onActivate( active ) }

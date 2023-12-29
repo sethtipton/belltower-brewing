@@ -1,23 +1,25 @@
 /**
  * External dependencies
  */
-import { isEmpty, reduce, zipObject, pickBy } from 'lodash';
+import { filter, intersection, isPlainObject, map, reduce } from 'lodash';
 import Ajv from 'ajv';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * WordPress dependencies
  */
-import { useDispatch, useSelect } from '@wordpress/data';
-import { __, sprintf } from '@wordpress/i18n';
-import { useMemo } from '@wordpress/element';
+import { useDispatch, useRegistry } from '@wordpress/data';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
 import { ONBOARD_STORE_NAME } from '@ithemes/security.pages.settings';
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
+import { store as uiStore } from '@ithemes/security.user-groups.ui';
 import { STORE_NAME as SEARCH_STORE_NAME } from '@ithemes/security-search';
 import { useSingletonEffect } from '@ithemes/security-hocs';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
+import { store } from '@ithemes/security.user-groups.api';
 
 function getAjv() {
 	if ( ! getAjv.instance ) {
@@ -30,116 +32,187 @@ function getAjv() {
 	return getAjv.instance;
 }
 
-export function useSettingsDefinitions( filters = {} ) {
-	const ajv = getAjv();
-	const { modules, activeModules, allSettings } = useSelect( ( select ) => ( {
-		modules: select( MODULES_STORE_NAME ).getEditedModules(),
-		activeModules: select( MODULES_STORE_NAME ).getActiveModules(),
-		allSettings: select(
-			MODULES_STORE_NAME
-		).__unstableGetAllEditedSettings(),
-	} ) );
-	const filter = ( module ) =>
-		! filters.module || filters.module === module.id;
+export function useApplyDefaultGroupSettings() {
+	const { resolveSelect } = useRegistry();
+	const { editGroupSetting } = useDispatch( uiStore );
 
-	const getPassReqGroups = () =>
-		Object.fromEntries(
-			modules
-				.filter(
-					( module ) => ! isEmpty( module.password_requirements )
-				)
-				.flatMap( ( module ) =>
-					Object.entries( module.password_requirements )
-						.filter( ( [ , definition ] ) =>
-							definition.hasOwnProperty( 'user-group' )
-						)
-						.map( ( [ requirement, definition ] ) => [
-							`requirement_settings.${ requirement }.group`,
-							{
-								title: definition.title || module.title,
-								description:
-									definition.description ||
-									module.description,
-							},
-						] )
-				)
-		);
+	return async () => {
+		const modules = await resolveSelect( MODULES_STORE_NAME ).getEditedModules();
+		const groupIds = await resolveSelect( uiStore ).getMatchableNavIds();
 
-	return useMemo(
-		() =>
-			modules.reduce( ( definitions, module ) => {
+		for ( const groupId of groupIds ) {
+			for ( const module of modules ) {
 				if ( module.status.selected !== 'active' ) {
-					return definitions;
+					continue;
 				}
 
-				if ( ! filter( module ) ) {
-					return definitions;
-				}
-
-				if (
-					module.id !== 'password-requirements' &&
-					isEmpty( module.user_groups )
-				) {
-					return definitions;
-				}
-
-				const settings = pickBy(
-					module.id === 'password-requirements'
-						? getPassReqGroups()
-						: module.user_groups,
-					( definition ) => {
-						if ( ! definition.conditional ) {
-							return true;
-						}
-
-						if ( definition.conditional[ 'active-modules' ] ) {
-							for ( const activeModule of definition.conditional[
-								'active-modules'
-							] ) {
-								if (
-									! activeModules.includes( activeModule )
-								) {
-									return false;
-								}
-							}
-						}
-
-						if ( definition.conditional.settings ) {
-							const validate = ajv.compile(
-								definition.conditional.settings
-							);
-
-							if ( ! validate( allSettings[ module.id ] ) ) {
-								return false;
-							}
-						}
-
-						return true;
+				for ( const setting in module.user_groups ) {
+					if ( ! module.user_groups.hasOwnProperty( setting ) ) {
+						continue;
 					}
-				);
 
-				if ( isEmpty( settings ) ) {
-					return definitions;
+					if ( module.user_groups[ setting ].default !== 'all' ) {
+						continue;
+					}
+
+					editGroupSetting( groupId, module.id, setting, true );
+				}
+			}
+		}
+	};
+}
+
+export function useCreateDefaultGroups() {
+	const { select, resolveSelect } = useRegistry();
+	const { createLocalGroup, editGroup, editGroupSetting, createdDefaultGroups } = useDispatch( uiStore );
+
+	return async () => {
+		if ( select( uiStore ).hasCreatedDefaultGroups() ) {
+			return select( uiStore ).getMatchableNavIds();
+		}
+
+		const defaultGroups = {
+			administrator: __( 'Administrators', 'better-wp-security' ),
+			editor: __( 'Editors', 'better-wp-security' ),
+			author: __( 'Authors', 'better-wp-security' ),
+			contributor: __( 'Contributors', 'better-wp-security' ),
+			subscriber: __( 'Subscribers', 'better-wp-security' ),
+		};
+
+		const modules = await resolveSelect( MODULES_STORE_NAME ).getEditedModules();
+		const matchables = await resolveSelect( store ).getMatchables();
+		const localIds = select( uiStore ).getLocalGroupIds();
+		const answers = select( ONBOARD_STORE_NAME ).getAnswers();
+
+		const existing = {
+			administrator: [],
+			editor: [],
+			author: [],
+			contributor: [],
+			subscriber: [],
+		};
+
+		for ( const groupId of map(
+			filter( matchables, { type: 'user-group' } ),
+			'id'
+		).concat( localIds ) ) {
+			const canonical = select( uiStore ).getEditedGroupAttribute(
+				groupId,
+				'canonical'
+			);
+
+			for ( const role of canonical ) {
+				existing[ role ].push( groupId );
+			}
+		}
+
+		const substitutions = {};
+
+		for ( const answer of answers ) {
+			if ( isPlainObject( answer.canonical_group_substitutions ) ) {
+				Object.assign(
+					substitutions,
+					answer.canonical_group_substitutions
+				);
+			}
+		}
+
+		for ( const canonicalRole in defaultGroups ) {
+			if ( ! defaultGroups.hasOwnProperty( canonicalRole ) ) {
+				continue;
+			}
+
+			const ids = existing[ canonicalRole ];
+
+			if ( substitutions.hasOwnProperty( canonicalRole ) ) {
+				if ( null === substitutions[ canonicalRole ] && ! ids.length ) {
+					continue;
 				}
 
-				definitions.push( {
-					id: module.id,
-					title: module.title,
-					description: module.description,
-					settings,
-				} );
+				ids.push( substitutions[ canonicalRole ] );
+			}
 
-				return definitions;
-			}, [] ),
-		[ modules ]
-	);
+			if ( ids.length === 0 ) {
+				const id = uuidv4();
+				createLocalGroup( id );
+				editGroup( id, {
+					label: defaultGroups[ canonicalRole ],
+					canonical: [ canonicalRole ],
+				} );
+				ids.push( id );
+			}
+
+			if ( 'subscriber' === canonicalRole ) {
+				ids.push( 'everybody-else' );
+			}
+
+			for ( const module of modules ) {
+				if ( module.status.selected !== 'active' ) {
+					continue;
+				}
+
+				for ( const setting in module.user_groups ) {
+					if ( ! module.user_groups.hasOwnProperty( setting ) ) {
+						continue;
+					}
+
+					if ( ! module.user_groups[ setting ].default ) {
+						continue;
+					}
+
+					let settingDefault = module.user_groups[ setting ].default;
+
+					if ( ! Array.isArray( settingDefault ) ) {
+						settingDefault = [ settingDefault ];
+					}
+
+					if (
+						intersection( [ 'all', canonicalRole ], settingDefault )
+							.length > 0
+					) {
+						for ( const id of ids ) {
+							editGroupSetting( id, module.id, setting, true );
+						}
+					}
+				}
+			}
+
+			for ( const answer of answers ) {
+				if ( ! answer.user_groups_settings[ canonicalRole ] ) {
+					continue;
+				}
+
+				for ( const module in answer.user_groups_settings[
+					canonicalRole
+				] ) {
+					if (
+						! answer.user_groups_settings[
+							canonicalRole
+						].hasOwnProperty( module )
+					) {
+						continue;
+					}
+
+					for ( const setting of answer.user_groups_settings[
+						canonicalRole
+					][ module ] ) {
+						for ( const id of ids ) {
+							editGroupSetting( id, module, setting, true );
+						}
+					}
+				}
+			}
+		}
+
+		createdDefaultGroups();
+
+		return select( uiStore ).getMatchableNavIds();
+	};
 }
 
 export function useCompletionSteps() {
 	const { registerCompletionStep } = useDispatch( ONBOARD_STORE_NAME );
-	const { saveGroups, saveGroupSettingsAsBatch } = useDispatch(
-		'ithemes-security/user-groups-editor'
-	);
+	const { saveGroups, saveGroupSettingsAsBatch } = useDispatch( uiStore );
 
 	useSingletonEffect( useCompletionSteps, () => {
 		registerCompletionStep( {
@@ -149,44 +222,6 @@ export function useCompletionSteps() {
 			callback() {
 				return saveGroups();
 			},
-			render: function SavingUserGroups() {
-				const groups = useSelect( ( select ) => {
-					const store = select(
-						'ithemes-security/user-groups-editor'
-					);
-
-					return ( store.getMatchableNavIds() || [] ).map( ( id ) =>
-						store.getEditedMatchableLabel( id )
-					);
-				}, [] );
-
-				if ( ! groups.length ) {
-					return (
-						<p>
-							{ __(
-								'No User Groups have been created.',
-								'better-wp-security'
-							) }
-						</p>
-					);
-				}
-
-				return (
-					<>
-						<p>
-							{ __(
-								'The following User Groups will be created:',
-								'better-wp-security'
-							) }
-						</p>
-						<ul>
-							{ groups.map( ( group, i ) => (
-								<li key={ i }>{ group }</li>
-							) ) }
-						</ul>
-					</>
-				);
-			},
 		} );
 		registerCompletionStep( {
 			id: 'savingUserGroupsSetting',
@@ -194,110 +229,6 @@ export function useCompletionSteps() {
 			priority: 20,
 			callback() {
 				return saveGroupSettingsAsBatch();
-			},
-			render: function SavingUserGroupsSettings() {
-				const definitions = useSettingsDefinitions();
-				const { ids: groupIds, labels, settings } = useSelect(
-					( select ) => {
-						const store = select(
-							'ithemes-security/user-groups-editor'
-						);
-						const ids = store.getMatchableNavIds() || [];
-
-						return {
-							ids,
-							labels: zipObject(
-								ids,
-								ids.map( ( id ) =>
-									store.getEditedMatchableLabel( id )
-								)
-							),
-							settings: zipObject(
-								ids,
-								ids.map( ( id ) =>
-									store.getEditedGroupSettings( id )
-								)
-							),
-						};
-					},
-					[]
-				);
-
-				if ( ! groupIds.length ) {
-					return (
-						<p>
-							{ __(
-								'No User Groups have been created.',
-								'better-wp-security'
-							) }
-						</p>
-					);
-				}
-
-				return (
-					<>
-						<p>
-							{ __(
-								'The following features will be enabled for each User Group:',
-								'better-wp-security'
-							) }
-						</p>
-						<ul className="itsec-secure-site-user-groups-settings-panel">
-							{ groupIds.map( ( id ) => {
-								const settingLabels = definitions.flatMap(
-									( module ) => {
-										if ( ! settings[ id ]?.[ module.id ] ) {
-											return [];
-										}
-
-										return reduce(
-											module.settings,
-											( acc, definition, setting ) => {
-												if (
-													settings[ id ][ module.id ][
-														setting
-													] === true
-												) {
-													acc.push(
-														definition.title
-													);
-												}
-
-												return acc;
-											},
-											[]
-										);
-									}
-								);
-
-								if ( ! settingLabels.length ) {
-									return (
-										<li key={ id }>
-											{ sprintf(
-												/* translators: 1. The User Group label. */
-												__( '%s: None', 'better-wp-security' ),
-												labels[ id ]
-											) }
-										</li>
-									);
-								}
-
-								return (
-									<li key={ id }>
-										<strong>{ labels[ id ] }</strong>
-										<ul>
-											{ settingLabels.map(
-												( label, i ) => (
-													<li key={ i }>{ label }</li>
-												)
-											) }
-										</ul>
-									</li>
-								);
-							} ) }
-						</ul>
-					</>
-				);
 			},
 		} );
 	} );
@@ -312,45 +243,42 @@ export function useSearchProviders() {
 			__( 'User Group Settings', 'better-wp-security' ),
 			25,
 			( { registry, evaluate, results } ) => {
-				const modules = registry
-					.select( MODULES_STORE_NAME )
-					.getEditedModules();
+				const definitions = registry
+					.select( store )
+					.getSettingDefinitions( getAjv() );
 
-				return modules.reduce( ( total, module ) => {
-					if (
-						module.status.selected !== 'active' ||
-						! module.settings?.interactive?.length
-					) {
-						return total;
-					}
+				return definitions.reduce(
+					( total, module ) =>
+						reduce(
+							module.settings,
+							( count, config, group ) => {
+								if (
+									! evaluate.stringMatch( config.title ) &&
+									! evaluate.stringMatch(
+										config.description
+									) &&
+									! evaluate.keywordMatch( config.keywords )
+								) {
+									return count;
+								}
 
-					return reduce(
-						module.user_groups,
-						( count, config, group ) => {
-							if (
-								! evaluate.stringMatch( config.title ) &&
-								! evaluate.stringMatch( config.description ) &&
-								! evaluate.keywordMatch( config.keywords )
-							) {
-								return count;
-							}
+								results.groups[ module.id ] ??= {
+									title: module.title,
+									items: [],
+								};
 
-							results.groups[ module.id ] ??= {
-								title: module.title,
-								items: [],
-							};
+								results.groups[ module.id ].items.push( {
+									title: config.title,
+									description: config.description,
+									route: `/settings/user-groups?module=${ module.id }#${ module.id }/${ group }`,
+								} );
 
-							results.groups[ module.id ].items.push( {
-								title: config.title,
-								description: config.description,
-								route: `/settings/user-groups?module=${ module.id }#${ module.id }/${ group }`,
-							} );
-
-							return count++;
-						},
-						total
-					);
-				}, 0 );
+								return count++;
+							},
+							total
+						),
+					0
+				);
 			}
 		);
 
@@ -361,7 +289,7 @@ export function useSearchProviders() {
 			( { registry, evaluate, results } ) => {
 				const groups =
 					registry
-						.select( 'ithemes-security/user-groups-editor' )
+						.select( uiStore )
 						.getAvailableGroups() || [];
 
 				return groups.reduce( ( count, group ) => {

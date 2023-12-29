@@ -90,9 +90,9 @@ export default function dashboard( state = DEFAULT_STATE, action ) {
 		case START_ADD_DASHBOARD:
 			return action.context
 				? {
-						...state,
-						adding: [ ...state.adding, action.context ],
-				  }
+					...state,
+					adding: [ ...state.adding, action.context ],
+				}
 				: state;
 		case FINISH_ADD_DASHBOARD:
 		case FAILED_ADD_DASHBOARD:

@@ -40,6 +40,29 @@
         },
         "default": [],
         "readonly": true
+      },
+      "registered_sites": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "required": [
+            "url",
+            "key"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "default": [],
+        "readonly": true
       }
     }
   },

@@ -35,7 +35,7 @@ const DEFAULT_STATE = {
 	visitedLocations: [],
 };
 
-export default function ( state = DEFAULT_STATE, action ) {
+export default function( state = DEFAULT_STATE, action ) {
 	switch ( action.type ) {
 		case RECEIVE_SITE_TYPES:
 			return {
@@ -111,9 +111,9 @@ export default function ( state = DEFAULT_STATE, action ) {
 					last( state.visitedLocations ) === action.location
 						? state.visitedLocations
 						: without(
-								state.visitedLocations,
-								action.location
-						  ).concat( action.location ),
+							state.visitedLocations,
+							action.location
+						).concat( action.location ),
 			};
 		case CLEAR_VISITED_LOCATIONS:
 			return {

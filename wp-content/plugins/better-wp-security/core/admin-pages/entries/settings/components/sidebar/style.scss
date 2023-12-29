@@ -97,11 +97,7 @@
             }
 
             a {
-                &::before {
-                    margin-right: 0;
-                }
-
-                span {
+                .itsec-settings-advanced-nav__item-title {
                     display: none;
                 }
             }

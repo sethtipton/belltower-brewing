@@ -38,6 +38,11 @@ function ai1wm_storage_path( $params ) {
 		throw new Ai1wm_Storage_Exception( __( 'Unable to locate storage path. <a href="https://help.servmask.com/knowledgebase/invalid-storage-path/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
 	}
 
+	// Validate storage path
+	if ( ai1wm_validate_file( $params['storage'] ) !== 0 ) {
+		throw new Ai1wm_Storage_Exception( __( 'Your storage directory name contains invalid characters. It cannot contain: < > : " | ? * \0. <a href="https://help.servmask.com/knowledgebase/invalid-storage-name/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
+	}
+
 	// Get storage path
 	$storage = AI1WM_STORAGE_PATH . DIRECTORY_SEPARATOR . basename( $params['storage'] );
 	if ( ! is_dir( $storage ) ) {
@@ -59,11 +64,34 @@ function ai1wm_backup_path( $params ) {
 	}
 
 	// Validate archive path
-	if ( validate_file( $params['archive'] ) !== 0 ) {
-		throw new Ai1wm_Archive_Exception( __( 'Invalid archive path. <a href="https://help.servmask.com/knowledgebase/invalid-archive-path/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
+	if ( ai1wm_validate_file( $params['archive'] ) !== 0 ) {
+		throw new Ai1wm_Archive_Exception( __( 'Your archive file name contains invalid characters. It cannot contain: < > : " | ? * \0. <a href="https://help.servmask.com/knowledgebase/invalid-archive-name/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
 	}
 
 	return AI1WM_BACKUPS_PATH . DIRECTORY_SEPARATOR . $params['archive'];
+}
+
+/**
+ * Validates a file name and path against an allowed set of rules
+ *
+ * @param  string  $file          File path
+ * @param  array   $allowed_files Array of allowed files
+ * @return integer
+ */
+function ai1wm_validate_file( $file, $allowed_files = array() ) {
+	$file = str_replace( '\\', '/', $file );
+
+	// Validates special characters that are illegal in filenames on certain
+	// operating systems and special characters requiring special escaping
+	// to manipulate at the command line
+	$invalid_chars = array( '<', '>', ':', '"', '|', '?', '*', chr( 0 ) );
+	foreach ( $invalid_chars as $char ) {
+		if ( strpos( $file, $char ) !== false ) {
+			return 1;
+		}
+	}
+
+	return validate_file( $file, $allowed_files );
 }
 
 /**
@@ -78,8 +106,8 @@ function ai1wm_archive_path( $params ) {
 	}
 
 	// Validate archive path
-	if ( validate_file( $params['archive'] ) !== 0 ) {
-		throw new Ai1wm_Archive_Exception( __( 'Invalid archive path. <a href="https://help.servmask.com/knowledgebase/invalid-archive-path/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
+	if ( ai1wm_validate_file( $params['archive'] ) !== 0 ) {
+		throw new Ai1wm_Archive_Exception( __( 'Your archive file name contains invalid characters. It cannot contain: < > : " | ? * \0. <a href="https://help.servmask.com/knowledgebase/invalid-archive-name/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ) );
 	}
 
 	// Get archive path
@@ -286,7 +314,22 @@ function ai1wm_archive_name( $params ) {
  * @return string
  */
 function ai1wm_backup_url( $params ) {
-	return AI1WM_BACKUPS_URL . '/' . ai1wm_replace_directory_separator_with_forward_slash( $params['archive'] );
+	static $backups_base_url = '';
+	if ( empty( $backups_base_url ) ) {
+		if ( Ai1wm_Backups::are_in_wp_content_folder() ) {
+			$backups_base_url = str_replace( untrailingslashit( WP_CONTENT_DIR ), '', AI1WM_BACKUPS_PATH );
+			$backups_base_url = content_url(
+				ai1wm_replace_directory_separator_with_forward_slash( $backups_base_url )
+			);
+		} else {
+			$backups_base_url = str_replace( untrailingslashit( ABSPATH ), '', AI1WM_BACKUPS_PATH );
+			$backups_base_url = site_url(
+				ai1wm_replace_directory_separator_with_forward_slash( $backups_base_url )
+			);
+		}
+	}
+
+	return $backups_base_url . '/' . ai1wm_replace_directory_separator_with_forward_slash( $params['archive'] );
 }
 
 /**
@@ -432,8 +475,8 @@ function ai1wm_archive_file( $blog_id = null ) {
 	$name[] = parse_url( get_site_url( $blog_id ), PHP_URL_HOST );
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
 			if ( $directory ) {
 				$name[] = $directory;
 			}
@@ -441,10 +484,10 @@ function ai1wm_archive_file( $blog_id = null ) {
 	}
 
 	// Add year, month and day
-	$name[] = date( 'Ymd' );
+	$name[] = date_i18n( 'Ymd' );
 
 	// Add hours, minutes and seconds
-	$name[] = date( 'His' );
+	$name[] = date_i18n( 'His' );
 
 	// Add unique identifier
 	$name[] = ai1wm_generate_random_string( 6, false );
@@ -465,8 +508,8 @@ function ai1wm_archive_folder( $blog_id = null ) {
 	$name[] = parse_url( get_site_url( $blog_id ), PHP_URL_HOST );
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
 			if ( $directory ) {
 				$name[] = $directory;
 			}
@@ -495,9 +538,9 @@ function ai1wm_archive_bucket( $blog_id = null ) {
 	}
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
-			if ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
+			if ( ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) ) {
 				$name[] = $directory;
 			}
 		}
@@ -525,9 +568,9 @@ function ai1wm_archive_vault( $blog_id = null ) {
 	}
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
-			if ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
+			if ( ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) ) {
 				$name[] = $directory;
 			}
 		}
@@ -555,8 +598,8 @@ function ai1wm_archive_project( $blog_id = null ) {
 	}
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
 			if ( $directory ) {
 				$name[] = $directory;
 			}
@@ -585,9 +628,9 @@ function ai1wm_archive_share( $blog_id = null ) {
 	}
 
 	// Add path
-	if ( ( $path = explode( '/', parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) ) {
-		foreach ( $path as $directory ) {
-			if ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) {
+	if ( ( $path = parse_url( get_site_url( $blog_id ), PHP_URL_PATH ) ) ) {
+		foreach ( explode( '/', $path ) as $directory ) {
+			if ( ( $directory = strtolower( preg_replace( '/[^A-Za-z0-9\-]/', '', $directory ) ) ) ) {
 				$name[] = $directory;
 			}
 		}
@@ -827,10 +870,26 @@ function ai1wm_content_filters( $filters = array() ) {
 	return array_merge(
 		$filters,
 		array(
+			AI1WM_BACKUPS_PATH,
 			AI1WM_BACKUPS_NAME,
 			AI1WM_PACKAGE_NAME,
 			AI1WM_MULTISITE_NAME,
 			AI1WM_DATABASE_NAME,
+		)
+	);
+}
+
+/**
+ * Get default media filters
+ *
+ * @param  array $filters List of files and directories
+ * @return array
+ */
+function ai1wm_media_filters( $filters = array() ) {
+	return array_merge(
+		$filters,
+		array(
+			AI1WM_BACKUPS_PATH,
 		)
 	);
 }
@@ -845,6 +904,7 @@ function ai1wm_plugin_filters( $filters = array() ) {
 	return array_merge(
 		$filters,
 		array(
+			AI1WM_BACKUPS_PATH,
 			AI1WM_PLUGIN_BASEDIR,
 			AI1WMZE_PLUGIN_BASEDIR,
 			AI1WMAE_PLUGIN_BASEDIR,
@@ -872,6 +932,21 @@ function ai1wm_plugin_filters( $filters = array() ) {
 	);
 
 	return $filters;
+}
+
+/**
+ * Get default theme filters
+ *
+ * @param  array $filters List of files and directories
+ * @return array
+ */
+function ai1wm_theme_filters( $filters = array() ) {
+	return array_merge(
+		$filters,
+		array(
+			AI1WM_BACKUPS_PATH,
+		)
+	);
 }
 
 /**
@@ -1403,6 +1478,8 @@ function ai1wm_write( $handle, $content ) {
 		if ( ( $meta = stream_get_meta_data( $handle ) ) ) {
 			throw new Ai1wm_Not_Writable_Exception( sprintf( __( 'Unable to write to: %s. <a href="https://help.servmask.com/knowledgebase/invalid-file-permissions/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ), $meta['uri'] ) );
 		}
+	} elseif ( null === $write_result ) {
+		return strlen( $content );
 	} elseif ( strlen( $content ) !== $write_result ) {
 		if ( ( $meta = stream_get_meta_data( $handle ) ) ) {
 			throw new Ai1wm_Quota_Exceeded_Exception( sprintf( __( 'Out of disk space. Unable to write to: %s. <a href="https://help.servmask.com/knowledgebase/out-of-disk-space/" target="_blank">Technical details</a>', AI1WM_PLUGIN_NAME ), $meta['uri'] ) );
@@ -1619,6 +1696,10 @@ function ai1wm_is_scheduled_backup() {
 	}
 
 	if ( isset( $_GET['ai1wm_manual_restore'] ) || isset( $_POST['ai1wm_manual_restore'] ) ) {
+		return false;
+	}
+
+	if ( isset( $_GET['ai1wm_manual_reset'] ) || isset( $_POST['ai1wm_manual_reset'] ) ) {
 		return false;
 	}
 
@@ -1856,6 +1937,8 @@ function ai1wm_get_htaccess() {
 	if ( is_file( AI1WM_WORDPRESS_HTACCESS ) ) {
 		return @file_get_contents( AI1WM_WORDPRESS_HTACCESS );
 	}
+
+	return '';
 }
 
 /**
@@ -1867,6 +1950,8 @@ function ai1wm_get_webconfig() {
 	if ( is_file( AI1WM_WORDPRESS_WEBCONFIG ) ) {
 		return @file_get_contents( AI1WM_WORDPRESS_WEBCONFIG );
 	}
+
+	return '';
 }
 
 /**
@@ -1878,5 +1963,158 @@ function ai1wm_get_webconfig() {
 function ai1wm_disk_free_space( $path ) {
 	if ( function_exists( 'disk_free_space' ) ) {
 		return @disk_free_space( $path );
+	}
+}
+
+/**
+ * Set response header to json end echo data
+ *
+ * @param array $data
+ * @param int $options
+ * @param int $depth
+ * @return void
+ */
+function ai1wm_json_response( $data, $options = 0 ) {
+	if ( ! headers_sent() ) {
+		header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset', 'utf-8' ) );
+	}
+
+	echo json_encode( $data, $options );
+}
+
+/**
+ * Determines if the server can encrypt backups
+ *
+ * @return boolean
+ */
+function ai1wm_can_encrypt() {
+	if ( ! function_exists( 'openssl_encrypt' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'openssl_random_pseudo_bytes' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'openssl_cipher_iv_length' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'sha1' ) ) {
+		return false;
+	}
+
+	if ( ! in_array( AI1WM_CIPHER_NAME, array_map( 'strtoupper', openssl_get_cipher_methods() ) ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Determines if the server can decrypt backups
+ *
+ * @return boolean
+ */
+function ai1wm_can_decrypt() {
+	if ( ! function_exists( 'openssl_decrypt' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'openssl_random_pseudo_bytes' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'openssl_cipher_iv_length' ) ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'sha1' ) ) {
+		return false;
+	}
+
+	if ( ! in_array( AI1WM_CIPHER_NAME, array_map( 'strtoupper', openssl_get_cipher_methods() ) ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Encrypts a string with a key
+ *
+ * @param string $string String to encrypt
+ * @param string $key    Key to encrypt the string with
+ * @return string
+ * @throws Ai1wm_Not_Encryptable_Exception
+ */
+function ai1wm_encrypt_string( $string, $key ) {
+	$iv_length = ai1wm_crypt_iv_length();
+	$key       = substr( sha1( $key, true ), 0, $iv_length );
+
+	$iv = openssl_random_pseudo_bytes( $iv_length );
+	if ( $iv === false ) {
+		throw new Ai1wm_Not_Encryptable_Exception( __( 'Unable to generate random bytes.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	$encrypted_string = openssl_encrypt( $string, AI1WM_CIPHER_NAME, $key, OPENSSL_RAW_DATA, $iv );
+	if ( $encrypted_string === false ) {
+		throw new Ai1wm_Not_Encryptable_Exception( __( 'Unable to encrypt data.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	return sprintf( '%s%s', $iv, $encrypted_string );
+}
+
+/**
+ * Returns encrypt/decrypt iv length
+ *
+ * @return int
+ * @throws Ai1wm_Not_Encryptable_Exception
+ */
+function ai1wm_crypt_iv_length() {
+	$iv_length = openssl_cipher_iv_length( AI1WM_CIPHER_NAME );
+	if ( $iv_length === false ) {
+		throw new Ai1wm_Not_Encryptable_Exception( __( 'Unable to obtain cipher length.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	return $iv_length;
+}
+
+/**
+ * Decrypts a string with a eky
+ *
+ * @param string $encrypted_string String to decrypt
+ * @param string $key              Key to decrypt the string with
+ * @return string
+ * @throws Ai1wm_Not_Encryptable_Exception
+ * @throws Ai1wm_Not_Decryptable_Exception
+ */
+function ai1wm_decrypt_string( $encrypted_string, $key ) {
+	$iv_length = ai1wm_crypt_iv_length();
+	$key       = substr( sha1( $key, true ), 0, $iv_length );
+	$iv        = substr( $encrypted_string, 0, $iv_length );
+
+	$decrypted_string = openssl_decrypt( substr( $encrypted_string, $iv_length ), AI1WM_CIPHER_NAME, $key, OPENSSL_RAW_DATA, $iv );
+	if ( $decrypted_string === false ) {
+		throw new Ai1wm_Not_Decryptable_Exception( __( 'Unable to decrypt data.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	return $decrypted_string;
+}
+
+/**
+ * Checks if decryption password is valid
+ *
+ * @param string $encrypted_signature
+ * @param string $password
+ * @return bool
+ */
+function ai1wm_is_decryption_password_valid( $encrypted_signature, $password ) {
+	try {
+		$encrypted_signature = base64_decode( $encrypted_signature );
+
+		return ai1wm_decrypt_string( $encrypted_signature, $password ) === AI1WM_SIGN_TEXT;
+	} catch ( Ai1wm_Not_Decryptable_Exception $exception ) {
+		return false;
 	}
 }

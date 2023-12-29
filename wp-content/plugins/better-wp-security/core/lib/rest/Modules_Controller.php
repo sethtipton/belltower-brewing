@@ -189,6 +189,10 @@ final class Modules_Controller extends \WP_REST_Controller {
 			if ( rest_is_field_included( 'settings.onboard', $fields ) ) {
 				$data['settings']['onboard'] = $item->get_onboard_settings();
 			}
+
+			if ( rest_is_field_included( 'settings.import', $fields ) ) {
+				$data['settings']['import'] = $item->get_import_settings();
+			}
 		}
 
 		$data = $this->add_additional_fields_to_object( $data, $request );
@@ -389,7 +393,14 @@ final class Modules_Controller extends \WP_REST_Controller {
 							'items'       => [
 								'type' => 'string',
 							],
-						]
+						],
+						'import'      => [
+							'description' => __( 'List of settings to display when importing.', 'better-wp-security' ),
+							'type'        => 'array',
+							'items'       => [
+								'type' => 'string',
+							],
+						],
 					],
 					'context'    => [ 'edit' ],
 					'readonly'   => true,

@@ -157,11 +157,11 @@ function Header( {
 				{ spinner
 					? spinner
 					: icon && (
-							<Dashicon
-								icon={ icon }
-								className="itsec-accordion__header-icon"
-							/>
-					  ) }
+						<Dashicon
+							icon={ icon }
+							className="itsec-accordion__header-icon"
+						/>
+					) }
 			</Button>
 		</Component>
 	);

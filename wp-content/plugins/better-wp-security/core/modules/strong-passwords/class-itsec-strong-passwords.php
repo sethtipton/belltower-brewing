@@ -111,7 +111,7 @@ final class ITSEC_Strong_Passwords implements Runnable {
 
 		$tries = 0;
 
-		while ( $tries < 10 && ITSEC_Lib::get_password_strength_results( $password )->score < 4 ) {
+		while ( $tries < 10 && ITSEC_Lib::get_password_strength_results( $password )['score'] < 4 ) {
 			$password = wp_generate_password( $length, $special_chars, $extra_special_chars );
 			$tries ++;
 		}

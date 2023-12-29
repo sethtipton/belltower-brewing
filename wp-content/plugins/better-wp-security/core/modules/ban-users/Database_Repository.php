@@ -10,9 +10,13 @@ use iThemesSecurity\Ban_Hosts\Filters;
 use iThemesSecurity\Ban_Hosts\Repository;
 use iThemesSecurity\Ban_Hosts\Repository_Ban;
 use iThemesSecurity\Ban_Hosts\Updatable;
+use iThemesSecurity\Contracts\Import_Export_Source;
 use iThemesSecurity\Exception\WP_Error;
+use iThemesSecurity\Import_Export\Export\Export;
+use iThemesSecurity\Import_Export\Import\Import_Context;
+use iThemesSecurity\Lib\Result;
 
-final class Database_Repository implements Repository, Creatable, Updatable, Deletable {
+final class Database_Repository implements Repository, Creatable, Updatable, Deletable, Import_Export_Source {
 	const CACHE_GROUP = 'itsec_database_bans';
 
 	/** @var Multi_Actor_Factory */
@@ -194,16 +198,16 @@ final class Database_Repository implements Repository, Creatable, Updatable, Del
 			'title'      => __( 'Add Ban', 'better-wp-security' ),
 			'required'   => [ 'host' ],
 			'properties' => [
-				'host'    => [
+				'host'       => [
 					'type'        => 'string',
-					'title'       => __( 'Host', 'better-wp-security' ),
+					'title'       => __( 'IP', 'better-wp-security' ),
 					'description' => __( 'The IP address to ban.', 'better-wp-security' ),
 					'arg_options' => [
 						'validate_callback' => 'ITSEC_Lib_REST::validate_ip',
 						'sanitize_callback' => 'ITSEC_Lib_REST::sanitize_ip',
 					],
 				],
-				'created_by'   => [
+				'created_by' => [
 					'title'       => __( 'Created By', 'better-wp-security' ),
 					'type'        => 'object',
 					'required'    => [ 'type', 'id' ],
@@ -220,7 +224,7 @@ final class Database_Repository implements Repository, Creatable, Updatable, Del
 					],
 					'description' => __( 'The actor who added the ban.', 'better-wp-security' ),
 				],
-				'comment' => [
+				'comment'    => [
 					'type'        => 'string',
 					'maxLength'   => 255,
 					'title'       => __( 'Notes', 'better-wp-security' ),
@@ -228,14 +232,13 @@ final class Database_Repository implements Repository, Creatable, Updatable, Del
 				]
 			],
 			'uiSchema'   => [
-				'created_by'   => [
+				'created_by' => [
 					'ui:widget' => 'hidden',
 				],
-				'comment' => [
-					'ui:widget'  => 'textarea',
-					'ui:options' => [
-						'rows' => 4,
-					],
+				'comment'    => [
+					'ui:widget'      => 'textarea',
+					'ui:rows'        => 2,
+					'ui:placeholder' => __( 'Made fraudulent purchases.', 'better-wp-security' ),
 				],
 			],
 		];
@@ -255,10 +258,8 @@ final class Database_Repository implements Repository, Creatable, Updatable, Del
 			],
 			'uiSchema'   => [
 				'comment' => [
-					'ui:widget'  => 'textarea',
-					'ui:options' => [
-						'rows' => 4,
-					],
+					'ui:widget' => 'textarea',
+					'ui:rows'   => 2,
 				],
 			],
 		];
@@ -378,6 +379,90 @@ final class Database_Repository implements Repository, Creatable, Updatable, Del
 		$rows = $this->wpdb->get_results( "SELECT `id`, `host` FROM {$tn}" );
 
 		return wp_list_pluck( $rows, 'host', 'id' );
+	}
+
+	public function get_export_slug(): string {
+		return 'database-bans';
+	}
+
+	public function get_export_title(): string {
+		return __( 'Banned IPs', 'better-wp-security' );
+	}
+
+	public function get_export_description(): string {
+		return __( 'List of banned IPs.', 'better-wp-security' );
+	}
+
+	public function get_export_options_schema(): array {
+		return [];
+	}
+
+	public function get_export_schema(): array {
+		return [
+			'type'  => 'array',
+			'items' => [
+				'type'       => 'object',
+				'properties' => [
+					'host'       => [
+						'type' => 'string',
+					],
+					'created_at' => [
+						'type'   => 'string',
+						'format' => 'date-time',
+					],
+					'comment'    => [
+						'type' => 'string',
+					],
+				],
+			],
+		];
+	}
+
+	public function get_transformations(): array {
+		return [];
+	}
+
+	public function export( $options ): Result {
+		try {
+			$bans = $this->get_bans( new Filters() );
+		} catch ( WP_Error $e ) {
+			return Result::error( $e->get_error() );
+		}
+
+		return Result::success( array_map( static function ( Ban $ban ) {
+			return [
+				'host'       => $ban->get_host(),
+				'created_at' => $ban->get_created_at()->format( \ITSEC_Lib_REST::DATE_FORMAT ),
+				'comment'    => $ban->get_comment(),
+			];
+		}, $bans ) );
+	}
+
+	public function import( Export $from, Import_Context $context ): Result {
+		if ( ! $bans = $from->get_data( $this->get_export_slug() ) ) {
+			return Result::success();
+		}
+
+		$result = Result::success();
+
+		foreach ( $bans as $ban ) {
+			try {
+				$this->persist( new Ban(
+					$ban['host'],
+					null,
+					$ban['comment'],
+					new \DateTimeImmutable( $ban['created_at'], new \DateTimeZone( 'UTC' ) )
+				) );
+			} catch ( \Exception $e ) {
+				$result->add_warning_message( sprintf(
+					__( 'Could not ban "%1$s": %2$s', 'better-wp-security' ),
+					$ban['host'],
+					$e->getMessage()
+				) );
+			}
+		}
+
+		return $result;
 	}
 
 	/**

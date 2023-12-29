@@ -8,6 +8,10 @@
   16.1 - Manage Themes
 ------------------------------------------------------------------------------*/
 
+.themes-php {
+	overflow-y: scroll;
+}
+
 body.js .theme-browser.search-loading {
 	display: none;
 }
@@ -169,6 +173,7 @@ body.js .theme-browser.search-loading {
 	border-radius: 3px;
 	border: none;
 	transition: opacity 0.1s ease-in-out;
+	cursor: pointer;
 }
 
 .theme-browser .theme .more-details:focus {
@@ -502,10 +507,12 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	z-index: 30;
 	box-sizing: border-box;
 	border-top: 1px solid #f0f0f1;
+	display: flex;
+	justify-content: center;
+	gap: 5px;
 }
 
-.theme-overlay .theme-actions a {
-	margin-left: 5px;
+.theme-overlay .theme-actions .button {
 	margin-bottom: 5px;
 }
 
@@ -517,26 +524,21 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 
 .broken-themes a.delete-theme,
 .theme-overlay .theme-actions .delete-theme {
-	color: #d63638;
+	color: #b32d2e;
 	text-decoration: none;
 	border-color: transparent;
 	box-shadow: none;
 	background: transparent;
 }
 
-.theme-overlay .theme-actions .delete-theme {
-	position: absolute;
-	left: 10px;
-	bottom: 5px;
-}
-
 .broken-themes a.delete-theme:hover,
 .broken-themes a.delete-theme:focus,
 .theme-overlay .theme-actions .delete-theme:hover,
 .theme-overlay .theme-actions .delete-theme:focus {
-	background: #d63638;
+	background: #b32d2e;
 	color: #fff;
-	border-color: #d63638;
+	border-color: #b32d2e;
+	box-shadow: 0 0 0 1px #b32d2e;
 }
 
 .theme-overlay .theme-actions .active-theme,
@@ -704,7 +706,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	font-size: 15px;
 	font-weight: 400;
 	line-height: 1.5;
-	margin: 30px 0 0 0;
+	margin: 30px 0 0;
 }
 
 .theme-overlay .theme-tags {
@@ -712,7 +714,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	color: #646970;
 	font-size: 13px;
 	font-weight: 400;
-	margin: 30px 0 0 0;
+	margin: 30px 0 0;
 	padding-top: 20px;
 }
 
@@ -836,7 +838,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	}
 }
 
-@media only screen and (max-width: 780px) {
+@media only screen and (max-width: 782px) {
 	body.folded .theme-overlay .theme-wrap,
 	.theme-overlay .theme-wrap {
 		top: 0; /* The adminmenu isn't fixed on mobile, so this can use the full viewport height */
@@ -866,7 +868,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	}
 
 	.theme-browser .theme .theme-actions {
-		padding: 5px 10px 4px 10px;
+		padding: 5px 10px 4px;
 	}
 
 	.theme-overlay.small-screenshot .theme-screenshots {
@@ -939,7 +941,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 	}
 
 	.theme-overlay .theme-author {
-		margin: 5px 0 15px 0;
+		margin: 5px 0 15px;
 	}
 
 	.theme-overlay .current-label {
@@ -952,7 +954,7 @@ body.folded .theme-browser ~ .theme-overlay .theme-wrap {
 		clear: both;
 		right: 0;
 		left: 0;
-		margin: -5px 0 20px 0;
+		margin: -5px 0 20px;
 		width: 100%;
 		max-width: 280px;
 	}
@@ -1848,6 +1850,22 @@ body.full-overlay-active {
 	margin: 15px 0;
 	width: 258px;
 	border: 1px solid #c3c4c7;
+	position: relative;
+	overflow: hidden;
+}
+
+.install-theme-info .theme-screenshot > img {
+	width: 100%;
+	height: auto;
+	position: absolute;
+	right: 0;
+	top: 0;
+}
+
+.install-theme-info .theme-screenshot:after {
+	content: "";
+	display: block;
+	padding-top: 66.66666666%;
 }
 
 .install-theme-info .theme-details {

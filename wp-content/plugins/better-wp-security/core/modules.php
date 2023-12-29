@@ -2,12 +2,18 @@
 
 use iThemesSecurity\Config_Settings;
 use iThemesSecurity\Config_Validator;
+use iThemesSecurity\Contracts\Import_Export_Source;
 use iThemesSecurity\Contracts\Runnable;
 use iThemesSecurity\Exception\Unsatisfied_Module_Dependencies_Exception;
+use iThemesSecurity\Import_Export\Export\Export;
+use iThemesSecurity\Import_Export\Import\Import_Context;
+use iThemesSecurity\Lib\Result;
 use iThemesSecurity\Module_Config;
-use Pimple\Container;
+use iThemesSecurity\Strauss\Pimple\Container;
+use iThemesSecurity\Strauss\Pimple\Psr11\Container as Psr11Container;
+use iThemesSecurity\Strauss\Psr\Container\ContainerInterface;
 
-final class ITSEC_Modules {
+final class ITSEC_Modules implements Import_Export_Source {
 	const DEPRECATED = [
 		'settings-page.php' => '7.0.0',
 	];
@@ -42,7 +48,7 @@ final class ITSEC_Modules {
 	/** @var Container */
 	private $pimple;
 
-	/** @var Psr\Container\ContainerInterface */
+	/** @var ContainerInterface */
 	private $container;
 
 	/** @var bool */
@@ -52,7 +58,9 @@ final class ITSEC_Modules {
 		add_action( 'itsec-lib-clear-caches', array( $this, 'reload_settings' ), 0 );
 
 		$this->pimple    = new Container();
-		$this->container = new Pimple\Psr11\Container( $this->pimple );
+		$this->container = new Psr11Container( $this->pimple );
+
+		$this->pimple[ ContainerInterface::class ] = $this->container;
 	}
 
 	/**
@@ -75,59 +83,60 @@ final class ITSEC_Modules {
 	 *
 	 * @param string $slug The unique slug to use for the module.
 	 * @param string $path The absolute path to the module.
-	 * @param string $type [optional] 'always-active', 'default-active', 'default-inactive' (default)
 	 *
 	 * @return bool True on success, false otherwise.
 	 */
-	public static function register_module( $slug, $path, $type = 'default-inactive' ) {
+	public static function register_module( $slug, $path ) {
 		$self = self::get_instance();
 		$slug = sanitize_title_with_dashes( $slug );
 
 		if ( ! is_dir( $path ) ) {
-			trigger_error( sprintf( __( 'An attempt to register the %1$s module failed since the supplied path (%2$s) is invalid. This could indicate an invalid modification or incomplete installation of the iThemes Security plugin. Please reinstall the plugin and try again.', 'better-wp-security' ), $slug, $path ) );
+			trigger_error( sprintf( __( 'An attempt to register the %1$s module failed since the supplied path (%2$s) is invalid. This could indicate an invalid modification or incomplete installation of the Solid Security plugin. Please reinstall the plugin and try again.', 'better-wp-security' ), $slug, $path ) );
 
 			return false;
 		}
 
-		if ( file_exists( $path . '/module.json' ) ) {
-			$json = file_get_contents( $path . '/module.json' );
+		if ( ! file_exists( $path . '/module.json' ) ) {
+			trigger_error( sprintf( __( 'Registering a module without a module.json definition is invalid. Module: %s.', 'better-wp-security' ), $slug ) );
 
-			if ( ! $json ) {
-				trigger_error( sprintf( __( 'An attempt to register the %1$s module failed because it\'s configuration file is empty.', 'better-wp-security' ), $slug ) );
+			return false;
+		}
+
+		$json = file_get_contents( $path . '/module.json' );
+
+		if ( ! $json ) {
+			trigger_error( sprintf( __( 'An attempt to register the %1$s module failed because it\'s configuration file is empty.', 'better-wp-security' ), $slug ) );
+
+			return false;
+		}
+
+		$config = json_decode( $json, true );
+
+		if ( ITSEC_Core::is_development() && ( $valid = static::validate_module_config( $config ) ) !== true ) {
+			trigger_error( wp_sprintf( __( 'An attempt to register the %1$s module failed because it has an invalid configuration: %2$l', 'better-wp-security' ), $slug, ITSEC_Lib::get_error_strings( $valid ) ) );
+
+			return false;
+		}
+
+		$config = new Module_Config( $config );
+		$type   = $config->get_status();
+
+		$self->module_config[ $slug ] = $config;
+
+		if ( $extends = $config->get_extends() ) {
+			$extends = self::get_config( $extends );
+
+			if ( ! $extends && ITSEC_Core::is_development() ) {
+				trigger_error( wp_sprintf( __( 'An attempt to register the %1$s module failed because it extends a non-registered module: %2$l', 'better-wp-security' ), $slug, $config->get_extends() ) );
 
 				return false;
 			}
 
-			$config = json_decode( $json, true );
+			$self->module_config[ $extends->get_id() ] = $extends->extend( $config );
 
-			if ( ITSEC_Core::is_development() && ( $valid = static::validate_module_config( $config ) ) !== true ) {
-				trigger_error( wp_sprintf( __( 'An attempt to register the %1$s module failed because it has an invalid configuration: %2$l', 'better-wp-security' ), $slug, ITSEC_Lib::get_error_strings( $valid ) ) );
-
-				return false;
+			if ( $config->get_status() === 'inherit' ) {
+				$self->inherited_modules[ $slug ] = true;
 			}
-
-			$config = new Module_Config( $config );
-			$type   = $config->get_status();
-
-			$self->module_config[ $slug ] = $config;
-
-			if ( $extends = $config->get_extends() ) {
-				$extends = self::get_config( $extends );
-
-				if ( ! $extends && ITSEC_Core::is_development() ) {
-					trigger_error( wp_sprintf( __( 'An attempt to register the %1$s module failed because it extends a non-registered module: %2$l', 'better-wp-security' ), $slug, $config->get_extends() ) );
-
-					return false;
-				}
-
-				$self->module_config[ $extends->get_id() ] = $extends->extend( $config );
-
-				if ( $config->get_status() === 'inherit' ) {
-					$self->inherited_modules[ $slug ] = true;
-				}
-			}
-		} else {
-			_doing_it_wrong( __METHOD__, sprintf( __( 'Registering a module without a module.json definition is deprecated. Module: %s.', 'better-wp-security' ), $slug ), '7.0.0' );
 		}
 
 		$self->_module_paths[ $slug ] = $path;
@@ -138,6 +147,11 @@ final class ITSEC_Modules {
 		} elseif ( 'default-active' === $type ) {
 			$self->_default_active_modules[ $slug ] = true;
 		}
+
+		// Clear cache.
+		$self->_active_modules_list = false;
+
+		self::initialize_feature_flags( $config );
 
 		return true;
 	}
@@ -159,11 +173,11 @@ final class ITSEC_Modules {
 			unset(
 				$self->_module_paths[ $slug ],
 				$self->module_config[ $slug ],
-				$self->inherited_modules[ $slug ]
+				$self->inherited_modules[ $slug ],
+				$self->_always_active_modules[ $slug ],
+				$self->_default_active_modules[ $slug ]
 			);
 			$self->_available_modules = array_keys( $self->_module_paths );
-
-			unset( $self->_always_active_modules[ $slug ], $self->_default_active_modules[ $slug ] );
 
 			return true;
 		}
@@ -499,7 +513,7 @@ final class ITSEC_Modules {
 		$self->_active_modules_list = array();
 
 		foreach ( $self->_active_modules as $module => $active ) {
-			if ( $active ) {
+			if ( $active && isset( self::get_instance()->module_config[ $module ] ) ) {
 				$self->_active_modules_list[] = $module;
 			}
 		}
@@ -563,9 +577,10 @@ final class ITSEC_Modules {
 	/**
 	 * Activate a single module using its ID
 	 *
-	 * @param string $module_id The ID of the module to activate
-	 * @param array  $args      Additional arguments to customize behavior.
-	 *     @type bool $ignore_requirements Whether to skip evaluating module requirements.
+	 * @param string $module_id           The ID of the module to activate
+	 * @param array  $args                Additional arguments to customize behavior.
+	 *
+	 * @type bool    $ignore_requirements Whether to skip evaluating module requirements.
 	 *
 	 * @return bool|WP_Error If the module can be activated, true if it was previously active and false if it was
 	 *                       previously inactive. If the module cannot be activated, a WP_Error object is returned.
@@ -787,13 +802,14 @@ final class ITSEC_Modules {
 		if ( ITSEC_Core::is_temp_disable_modules_set() ) {
 			$modules = array();
 		} else {
-			$modules = array_filter( self::get_active_modules(), function ( $module ) {
-				return ! self::validate_module_requirements( $module, 'run' )->has_errors();
-			} );
+			$modules = self::get_active_modules();
 		}
 
 		$modules = array_merge( $modules, array_keys( self::get_instance()->_always_active_modules ) );
 		$modules = array_unique( $modules );
+		$modules = array_filter( $modules, static function ( $module ) {
+			return ! self::validate_module_requirements( $module, 'run' )->has_errors();
+		} );
 
 		foreach ( self::get_instance()->inherited_modules as $slug => $_ ) {
 			if ( self::is_active( self::get_config( $slug )->get_extends() ) ) {
@@ -821,11 +837,8 @@ final class ITSEC_Modules {
 			$load( self::get_instance()->pimple );
 		}
 
-		foreach ( self::get_active_modules_to_run() as $module ) {
-			self::get_instance()->load_container_definitions( $module );
-		}
-
 		self::get_instance()->initialized_container = true;
+		self::get_instance()->load_container_definitions( 'user-groups' );
 	}
 
 	/**
@@ -833,8 +846,22 @@ final class ITSEC_Modules {
 	 */
 	public static function run_active_modules() {
 		self::initialize_container();
-		// The active.php file is for code that will only run when the module is active.
-		self::load_module_file( 'active.php', ':active' );
+
+		foreach ( self::get_active_modules_to_run() as $module ) {
+			self::get_instance()->load_container_definitions( $module );
+		}
+
+		self::load_module_file( 'active.php', 'global' );
+
+		if ( ITSEC_Core::is_loading_early() ) {
+			self::load_module_file( 'active.php', ':active-early' );
+
+			add_action( 'plugins_loaded', function () {
+				self::load_module_file( 'active.php', ':active-normal' );
+			}, - 95 );
+		} else {
+			self::load_module_file( 'active.php', ':active' );
+		}
 	}
 
 	/**
@@ -879,7 +906,7 @@ final class ITSEC_Modules {
 	/**
 	 * Get the container.
 	 *
-	 * @return \Psr\Container\ContainerInterface
+	 * @return ContainerInterface
 	 */
 	public static function get_container() {
 		if ( ! self::get_instance()->initialized_container ) {
@@ -953,7 +980,92 @@ final class ITSEC_Modules {
 			$check['ssl'] = true;
 		}
 
+		if ( isset( $requirements['feature-flags'] ) && ( $mode === 'activate' || $requirements['feature-flags']['validate'] === $mode ) ) {
+			$check['feature-flags'] = $requirements['feature-flags']['flags'];
+		}
+
+		if ( isset( $requirements['multisite'] ) && ( $mode === 'activate' || $requirements['multisite']['validate'] === $mode ) ) {
+			$check['multisite'] = $requirements['multisite']['status'];
+		}
+
+		if ( isset( $requirements['server'] ) && ( $mode === 'activate' || $requirements['server']['validate'] === $mode ) ) {
+			$check['server'] = [
+				'php'        => $requirements['server']['php'] ?? null,
+				'extensions' => $requirements['server']['extensions'] ?? [],
+			];
+		}
+
+		if ( isset( $requirements['load'] ) && ( $mode === 'activate' || $requirements['load']['validate'] === $mode ) ) {
+			$check['load'] = $requirements['load']['type'];
+		}
+
 		return ITSEC_Lib::evaluate_requirements( $check );
+	}
+
+	public function get_export_slug(): string {
+		return 'modules';
+	}
+
+	public function get_export_title(): string {
+		return __( 'Features', 'better-wp-security' );
+	}
+
+	public function get_export_description(): string {
+		return __( 'List of active modules.', 'better-wp-security' );
+	}
+
+	public function get_export_options_schema(): array {
+		return [];
+	}
+
+	public function get_export_schema(): array {
+		return [
+			'type'                 => 'object',
+			'additionalProperties' => [
+				'type' => 'string',
+				'enum' => [ 'active', 'inactive' ],
+			],
+		];
+	}
+
+	public function get_transformations(): array {
+		return [];
+	}
+
+	public function export( $options ): Result {
+		$data = [];
+
+		foreach ( self::get_available_modules() as $module ) {
+			if ( ! self::is_always_active( $module ) ) {
+				$data[ $module ] = self::is_active( $module ) ? 'active' : 'inactive';
+			}
+		}
+
+		return Result::success( $data );
+	}
+
+	public function import( Export $from, Import_Context $context ): Result {
+		$result = Result::success();
+
+		if ( ! $from->has_data( $this->get_export_slug() ) ) {
+			return $result;
+		}
+
+		foreach ( $from->get_data( $this->get_export_slug() ) as $module => $status ) {
+			$success = true;
+
+			if ( $status === 'active' && ! self::is_active( $module ) ) {
+				$success = self::activate( $module );
+			} elseif ( $status === 'inactive' && self::is_active( $module ) ) {
+				$success = self::deactivate( $module );
+			}
+
+			if ( is_wp_error( $success ) ) {
+				$result->add_warning_message( ...ITSEC_Lib::get_error_strings( $success ) );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -973,6 +1085,31 @@ final class ITSEC_Modules {
 		}
 
 		return rest_validate_value_from_schema( $config, $self->module_schema, 'config' );
+	}
+
+	/**
+	 * Initializes the module's feature flags.
+	 *
+	 * @param Module_Config $config
+	 */
+	private static function initialize_feature_flags( Module_Config $config ) {
+		if ( ! $config->get_feature_flags() ) {
+			return;
+		}
+
+		$flags = $config->get_feature_flags();
+
+		if ( self::is_active( $config->get_id() ) ) {
+			$register = array_keys( $flags );
+		} else {
+			$register = $config->get_requirements()['feature-flags']['flags'] ?? [];
+		}
+
+		foreach ( $register as $flag ) {
+			if ( isset( $flags[ $flag ] ) ) {
+				ITSEC_Lib_Feature_Flags::register_flag( $flag, $flags[ $flag ] );
+			}
+		}
 	}
 
 	/**
@@ -1001,6 +1138,18 @@ final class ITSEC_Modules {
 
 		if ( ':active' === $modules ) {
 			return self::get_active_modules_to_run();
+		}
+
+		if ( ':active-early' === $modules ) {
+			return array_filter( self::get_active_modules_to_run(), function ( $module ) {
+				return self::get_instance()->module_config[ $module ]->can_load_early();
+			} );
+		}
+
+		if ( ':active-normal' === $modules ) {
+			return array_filter( self::get_active_modules_to_run(), function ( $module ) {
+				return ! self::get_instance()->module_config[ $module ]->can_load_early();
+			} );
 		}
 
 		if ( is_string( $modules ) ) {

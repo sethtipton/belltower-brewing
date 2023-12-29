@@ -9,21 +9,20 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 		 *
 		 * @date    5/03/2014
 		 * @since   5.0.0
-		 *
-		 * @param   void
-		 * @return  void
 		 */
 		function initialize() {
-
-			// Props.
-			$this->name     = 'user';
-			$this->label    = __( 'User', 'acf' );
-			$this->category = 'relational';
-			$this->defaults = array(
-				'role'          => '',
-				'multiple'      => 0,
-				'allow_null'    => 0,
-				'return_format' => 'array',
+			$this->name          = 'user';
+			$this->label         = __( 'User', 'acf' );
+			$this->category      = 'relational';
+			$this->description   = __( 'Allows the selection of one or more users which can be used to create relationships between data objects.', 'acf' );
+			$this->preview_image = acf_get_url() . '/assets/images/field-type-previews/field-preview-user.png';
+			$this->doc_url       = acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/user/', 'docs', 'field-type-selection' );
+			$this->defaults      = array(
+				'role'                 => '',
+				'multiple'             => 0,
+				'allow_null'           => 0,
+				'return_format'        => 'array',
+				'bidirectional_target' => array(),
 			);
 
 			// Register filter variations.
@@ -46,11 +45,10 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 		 * @return  void
 		 */
 		function render_field_settings( $field ) {
-
 			acf_render_field_setting(
 				$field,
 				array(
-					'label'        => __( 'Filter by role', 'acf' ),
+					'label'        => __( 'Filter by Role', 'acf' ),
 					'instructions' => '',
 					'type'         => 'select',
 					'name'         => 'role',
@@ -59,28 +57,6 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 					'ui'           => 1,
 					'allow_null'   => 1,
 					'placeholder'  => __( 'All user roles', 'acf' ),
-				)
-			);
-
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Allow Null?', 'acf' ),
-					'instructions' => '',
-					'name'         => 'allow_null',
-					'type'         => 'true_false',
-					'ui'           => 1,
-				)
-			);
-
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Select multiple values?', 'acf' ),
-					'instructions' => '',
-					'name'         => 'multiple',
-					'type'         => 'true_false',
-					'ui'           => 1,
 				)
 			);
 
@@ -99,6 +75,50 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 					'layout'       => 'horizontal',
 				)
 			);
+
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Select Multiple', 'acf' ),
+					'instructions' => 'Allow content editors to select multiple values',
+					'name'         => 'multiple',
+					'type'         => 'true_false',
+					'ui'           => 1,
+				)
+			);
+		}
+
+		/**
+		 * Renders the field settings used in the "Validation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_validation_settings( $field ) {
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Allow Null', 'acf' ),
+					'instructions' => '',
+					'name'         => 'allow_null',
+					'type'         => 'true_false',
+					'ui'           => 1,
+				)
+			);
+		}
+
+		/**
+		 * Renders the field settings used in the "Advanced" tab.
+		 *
+		 * @since 6.2
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		public function render_field_advanced_settings( $field ) {
+			acf_render_bidirectional_field_settings( $field );
 		}
 
 		/**
@@ -274,18 +294,19 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 		/**
 		 * Filters the field value before it is saved into the database.
 		 *
-		 * @date    23/01/13
 		 * @since   3.6.0
 		 *
 		 * @param   mixed $value The field value.
 		 * @param   mixed $post_id The post ID where the value is saved.
 		 * @param   array $field The field array containing all settings.
-		 * @return  mixed
+		 *
+		 * @return mixed $value The modified value.
 		 */
-		function update_value( $value, $post_id, $field ) {
+		public function update_value( $value, $post_id, $field ) {
 
 			// Bail early if no value.
 			if ( empty( $value ) ) {
+				acf_update_bidirectional_values( array(), $post_id, $field, 'user' );
 				return $value;
 			}
 
@@ -300,6 +321,8 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 			} else {
 				$value = acf_idval( $value );
 			}
+
+			acf_update_bidirectional_values( acf_get_array( $value ), $post_id, $field, 'user' );
 
 			// Return value.
 			return $value;
@@ -316,13 +339,15 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 		 */
 		function ajax_query() {
 
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			// Modify Request args.
 			if ( isset( $_REQUEST['s'] ) ) {
-				$_REQUEST['search'] = $_REQUEST['s'];
+				$_REQUEST['search'] = sanitize_text_field( $_REQUEST['s'] );
 			}
 			if ( isset( $_REQUEST['paged'] ) ) {
-				$_REQUEST['page'] = $_REQUEST['paged'];
+				$_REQUEST['page'] = absint( $_REQUEST['paged'] );
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 			// Add query hooks.
 			add_action( 'acf/ajax/query_users/init', array( $this, 'ajax_query_init' ), 10, 2 );
@@ -351,7 +376,7 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 			}
 
 			// Verify that this is a legitimate request using a separate nonce from the main AJAX nonce.
-			if ( ! isset( $_REQUEST['user_query_nonce'] ) || ! wp_verify_nonce( $_REQUEST['user_query_nonce'], 'acf/fields/user/query' . $query->field['key']) ) {
+			if ( ! isset( $_REQUEST['user_query_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( $_REQUEST['user_query_nonce'] ), 'acf/fields/user/query' . $query->field['key'] ) ) {
 				$query->send( new WP_Error( 'acf_invalid_request', __( 'Invalid request.', 'acf' ), array( 'status' => 404 ) ) );
 			}
 		}
@@ -601,11 +626,9 @@ if ( ! class_exists( 'ACF_Field_User' ) ) :
 		public function format_value_for_rest( $value, $post_id, array $field ) {
 			return acf_format_numerics( $value );
 		}
-
 	}
 
 
 	// initialize
 	acf_register_field_type( 'ACF_Field_User' );
-
 endif; // class_exists check

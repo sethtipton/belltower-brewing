@@ -4,7 +4,7 @@
 import { Markup } from 'interweave';
 import { Link } from 'react-router-dom';
 
-export default function ( { transform, ...rest } ) {
+export default function( { transform, ...rest } ) {
 	return (
 		<Markup
 			{ ...rest }

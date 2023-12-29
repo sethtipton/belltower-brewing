@@ -85,13 +85,13 @@ export default function app( state = DEFAULT_STATE, action ) {
 			].includes( action.context )
 				? state
 				: {
-						...state,
-						editingCards: true,
-						view: {
-							page: 'view-dashboard',
-							attr: { id: action.created.id },
-						},
-				  };
+					...state,
+					editingCards: true,
+					view: {
+						page: 'view-dashboard',
+						attr: { id: action.created.id },
+					},
+				};
 		case OPEN_EDIT_CARDS:
 			return {
 				...state,

@@ -7,7 +7,7 @@ import classnames from 'classnames';
  * WordPress dependencies
  */
 import { useInstanceId } from '@wordpress/compose';
-import { Icon, check, minus } from '@wordpress/icons';
+import { Icon, check, reset } from '@wordpress/icons';
 import { BaseControl, VisuallyHidden } from '@wordpress/components';
 
 /**
@@ -66,7 +66,7 @@ export default function CheckboxControl( {
 				) }
 				{ indeterminate && (
 					<Icon
-						icon={ minus }
+						icon={ reset }
 						className="components-checkbox-control__checked"
 						role="presentation"
 					/>

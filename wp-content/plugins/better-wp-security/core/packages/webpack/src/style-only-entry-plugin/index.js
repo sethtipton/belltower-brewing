@@ -14,7 +14,7 @@ function StyleOnlyEntryPlugin( styleTests ) {
 	} );
 }
 
-StyleOnlyEntryPlugin.prototype.isFileStyle = function ( file ) {
+StyleOnlyEntryPlugin.prototype.isFileStyle = function( file ) {
 	for ( const test of this.styleTests ) {
 		if ( test.test( file ) ) {
 			return true;
@@ -24,7 +24,7 @@ StyleOnlyEntryPlugin.prototype.isFileStyle = function ( file ) {
 	return false;
 };
 
-StyleOnlyEntryPlugin.prototype.apply = function ( compiler ) {
+StyleOnlyEntryPlugin.prototype.apply = function( compiler ) {
 	compiler.hooks.emit.tap( 'style-only-entry-plugin', ( compilation ) => {
 		for ( const chunk of compilation.chunks ) {
 			if (

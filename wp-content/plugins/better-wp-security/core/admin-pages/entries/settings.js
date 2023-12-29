@@ -14,9 +14,15 @@ setLocaleData( { '': {} }, 'better-wp-security' );
 import { createHistory } from './settings/history';
 import App from './settings/app.js';
 
+const history = createHistory( document.location, { page: 'itsec' } );
+
 domReady( () => {
-	const history = createHistory( document.location, { page: 'itsec' } );
 	const containerEl = document.getElementById( 'itsec-settings-root' );
+
+	if ( ! containerEl ) {
+		return;
+	}
+
 	const serverType = containerEl.dataset.serverType;
 	const installType = containerEl.dataset.installType;
 	const onboardComplete = containerEl.dataset.onboard === '1';
@@ -33,13 +39,20 @@ domReady( () => {
 } );
 
 export * from './settings/components';
-export { ToolFill } from './settings/pages/tools';
+export { OnboardSiteTypeBeforeFill } from './settings/pages/site-type/chooser';
 export {
 	Page,
 	ChildPages,
 	useNavigation,
 	useCurrentPage,
 } from './settings/page-registration';
-export { useNavigateTo, useConfigContext } from './settings/utils';
+export {
+	useNavigateTo,
+	useConfigContext,
+	useModuleRequirementsValidator,
+	useSettingsForm,
+	useAllowedSettingsFields,
+} from './settings/utils';
+export { SingleModulePage } from './settings/pages/configure';
 export { STORE_NAME as ONBOARD_STORE_NAME } from './settings/stores/onboard';
-export { STORE_NAME as TOOLS_STORE_NAME } from './settings/stores/tools';
+export { history };

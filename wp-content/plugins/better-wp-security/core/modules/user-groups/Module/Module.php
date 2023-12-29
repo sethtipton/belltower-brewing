@@ -2,16 +2,22 @@
 
 namespace iThemesSecurity\User_Groups\Module;
 
+use iThemesSecurity\Contracts\Import_Export_Source;
 use iThemesSecurity\Contracts\Runnable;
+use iThemesSecurity\Import_Export\Export\Export;
+use iThemesSecurity\Import_Export\Import\Import_Context;
+use iThemesSecurity\Import_Export\Import\Transformation;
+use iThemesSecurity\Lib\Result;
 use iThemesSecurity\Module_Config;
 use iThemesSecurity\User_Groups\Everybody_Else;
+use iThemesSecurity\User_Groups\Match_Target;
 use iThemesSecurity\User_Groups\Repository\Repository;
 use iThemesSecurity\User_Groups\Settings_Proxy;
 use iThemesSecurity\User_Groups\Settings_Registration;
 use iThemesSecurity\User_Groups\Settings_Registry;
 use iThemesSecurity\User_Groups\User_Group;
 
-class Module implements Runnable {
+class Module implements Runnable, Import_Export_Source {
 
 	/** @var Repository */
 	private $repository;
@@ -40,6 +46,8 @@ class Module implements Runnable {
 		add_filter( 'map_meta_cap', [ $this, 'map_meta_cap' ], 10, 4 );
 		add_action( 'itsec_create_user_group', [ $this, 'initialize_settings' ], 10, 2 );
 		add_action( 'itsec_change_admin_user_id', [ $this, 'on_change_admin_user_id' ], 10, 3 );
+		add_filter( 'itsec_rest_user_actions_schema', [ $this, 'add_user_actions' ] );
+		add_action( 'itsec_user_action_add-user-groups', [ $this, 'apply_add_user_groups_action' ], 10, 3 );
 	}
 
 	public function trigger_setting_registration() {
@@ -140,5 +148,174 @@ class Module implements Runnable {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Registers the "Add User Groups" action.
+	 *
+	 * @param array $schema
+	 *
+	 * @return array
+	 */
+	public function add_user_actions( $schema ) {
+		$schema['properties']['actions']['properties']['add-user-groups'] = [
+			'type'  => 'array',
+			'items' => [
+				'type'   => 'string',
+				'format' => 'uuid',
+			],
+		];
+
+		return $schema;
+	}
+
+	/**
+	 * Applies the "Add User Groups" action to the selected user.
+	 *
+	 * @param \WP_User $user
+	 * @param \WP_User $requested_by
+	 * @param array    $uuids
+	 *
+	 * @return void
+	 */
+	public function apply_add_user_groups_action( \WP_User $user, \WP_User $requested_by, array $uuids ) {
+		foreach ( $uuids as $uuid ) {
+			try {
+				$user_group = $this->repository->get( $uuid );
+				if ( ! $user_group->matches( Match_Target::for_user( $user ) ) ) {
+					$user_group->add_user( $user );
+					$this->repository->persist( $user_group );
+				}
+			} catch ( \Throwable $e ) {
+				// There isn't any way for the user to action this. For now we'll swallow it.
+			}
+		}
+	}
+
+	public function get_export_slug(): string {
+		return 'user-groups';
+	}
+
+	public function get_export_title(): string {
+		return __( 'User Groups', 'better-wp-security' );
+	}
+
+	public function get_export_description(): string {
+		return __( 'List of created User Groups', 'better-wp-security' );
+	}
+
+	public function get_export_options_schema(): array {
+		return [];
+	}
+
+	public function get_export_schema(): array {
+		return [
+			'type'  => 'array',
+			'items' => [
+				'type'       => 'object',
+				'properties' => [
+					'id'        => [
+						'type' => 'string',
+					],
+					'label'     => [
+						'type' => 'string',
+					],
+					'users'     => [
+						'type'  => 'array',
+						'items' => [
+							'$ref' => '#/definitions/user',
+						],
+					],
+					'roles'     => [
+						'type'  => 'array',
+						'items' => [
+							'$ref' => '#/definitions/role',
+						],
+					],
+					'canonical' => [
+						'type'  => 'array',
+						'items' => [
+							'type' => 'string',
+						],
+					],
+					'min_role'  => [
+						'type' => 'string',
+					],
+				],
+			],
+		];
+	}
+
+	public function get_transformations(): array {
+		return [
+			new class implements Transformation {
+				public function transform( Export $export, Import_Context $context ): Export {
+					$data = $export->get_data( 'user-groups' );
+
+					foreach ( $data as &$user_group ) {
+						$user_group['users'] = $context->map_user_list( $user_group['users'] );
+						$user_group['roles'] = $context->map_role_list( $user_group['roles'] );
+					}
+
+					return $export->with_data( 'user-groups', $data );
+				}
+
+				public function get_user_paths(): array {
+					return [ '*.users' ];
+				}
+
+				public function get_role_paths(): array {
+					return [ '*.roles' ];
+				}
+			}
+		];
+	}
+
+	public function export( $options ): Result {
+		return Result::success( array_map( static function ( User_Group $group ) {
+			return [
+				'id'        => $group->get_id(),
+				'label'     => $group->get_label(),
+				'users'     => array_map( [ Export::class, 'format_user' ], $group->get_users() ),
+				'roles'     => array_map( [ Export::class, 'format_role' ], $group->get_roles() ),
+				'canonical' => $group->get_canonical_roles(),
+				'min_role'  => $group->get_min_role(),
+			];
+		}, $this->repository->all() ) );
+	}
+
+	public function import( Export $from, Import_Context $context ): Result {
+		array_map( [ $this->repository, 'delete' ], $this->repository->all() );
+
+		$result = Result::success();
+
+		foreach ( $from->get_data( $this->get_export_slug() ) as $config ) {
+			$user_group = new User_Group( $config['id'] );
+			$user_group->set_label( $config['label'] );
+			$user_group->set_canonical_roles( $config['canonical'] );
+			$user_group->set_min_role( $config['min_role'] );
+
+			foreach ( $config['roles'] as $role ) {
+				$user_group->add_role( $role['slug'] );
+			}
+
+			foreach ( $config['users'] as $user ) {
+				if ( $user = get_userdata( $user['id'] ) ) {
+					$user_group->add_user( $user );
+				}
+			}
+
+			try {
+				$this->repository->persist( $user_group );
+			} catch ( \Exception $e ) {
+				$result->add_warning_message( sprintf(
+					__( 'Could not import \'%1$s\' User Group: %2$s', 'better-wp-security' ),
+					$config['label'],
+					$e->getMessage()
+				) );
+			}
+		}
+
+		return $result;
 	}
 }

@@ -12,7 +12,7 @@
         "type": "array",
         "items": {
           "type": "string",
-          "format": "file"
+          "format": "relative-file-path"
         },
         "uniqueItems": true,
         "default": [],
@@ -80,7 +80,8 @@
         "type": "object",
         "additionalProperties": {
           "type": "string",
-          "pattern": "^[a-f0-9]{32}$"
+          "pattern": "^[a-f0-9]{32}$",
+          "format": "file-path"
         },
         "default": {},
         "readonly": true
@@ -121,5 +122,14 @@
     "compare_file_hashes": {
       "install-type": "pro"
     }
-  }
+  },
+  "import-export": {
+    "exclude-settings": [
+      "expected_hashes",
+      "last_scan"
+    ]
+  },
+  "removed-settings": [
+    "notify_admin"
+  ]
 }

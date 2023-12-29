@@ -1,3 +1,4 @@
+$color__btdarkestgreen: #515441;
 $color__btdarkgreen: #808166;
 $color__btblack: #231F20;
 $color__btpink: #E0CDC0;
@@ -27,6 +28,10 @@ $color__border-button-hover: #ccc #bbb #aaa;
 $color__border-button-focus: #aaa #bbb #bbb;
 $color__border-input: #ccc;
 $color__border-abbr: #666;
+
+.has-darkest-green-color {color:$color__btdarkestgreen;}
+a.has-darkest-green-color:hover {color:$color__btdarkestgreen;}
+.has-darkest-green-bg {background-color:$color__btdarkestgreen;}
 
 .has-dark-green-color {color:$color__btdarkgreen;}
 a.has-dark-green-color:hover {color:$color__btdarkgreen;}

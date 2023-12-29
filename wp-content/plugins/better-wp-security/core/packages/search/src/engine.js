@@ -21,7 +21,7 @@ export default class Engine {
 	/**
 	 * Constructs a search engine instance.
 	 *
-	 * @param {string} search The search term.
+	 * @param {string} search   The search term.
 	 * @param {Object} registry The current registry.
 	 */
 	constructor( search, registry ) {

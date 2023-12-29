@@ -4,25 +4,20 @@ namespace iThemesSecurity\Ban_Users;
 
 use iThemesSecurity\Actor\Multi_Actor_Factory;
 use iThemesSecurity\Ban_Hosts\Filters;
-use Pimple\Container;
-use Pimple\Exception\FrozenServiceException;
+use iThemesSecurity\Strauss\Pimple\Container;
 
 return static function ( Container $c ) {
 	$c['module.ban-users.files'] = [
 		'rest.php' => REST::class,
 	];
 
-	try {
-		$c->extend( 'ban-hosts.repositories', static function ( $repositories ) {
-			if ( \ITSEC_Modules::get_setting( 'ban-users', 'enable_ban_lists' ) ) {
-				$repositories[] = Database_Repository::class;
-			}
+	\ITSEC_Lib::extend_if_able( $c, 'ban-hosts.repositories', static function ( $repositories ) {
+		if ( \ITSEC_Modules::get_setting( 'ban-users', 'enable_ban_lists' ) ) {
+			$repositories[] = Database_Repository::class;
+		}
 
-			return $repositories;
-		} );
-	} catch ( FrozenServiceException $e ) {
-
-	}
+		return $repositories;
+	} );
 
 	$c[ Database_Repository::class ] = static function ( Container $c ) {
 		return new Database_Repository(
@@ -47,7 +42,7 @@ return static function ( Container $c ) {
 			],
 			[
 				'events' => 'blacklist-recaptcha',
-				'label'  => __( 'Recaptcha', 'better-wp-security' ),
+				'label'  => __( 'CAPTCHA', 'better-wp-security' ),
 			],
 		], [
 			'circle_label'    => _x( 'Banned', 'Total Banned IPs', 'better-wp-security' ),
@@ -59,4 +54,9 @@ return static function ( Container $c ) {
 		return $cards;
 	} );
 
+	\ITSEC_Lib::extend_if_able( $c, 'import-export.sources', function ( $sources, $c ) {
+		$sources[] = $c[ Database_Repository::class ];
+
+		return $sources;
+	} );
 };

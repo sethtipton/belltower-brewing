@@ -14,6 +14,7 @@ import { controls } from '@wordpress/data';
  * Internal dependencies
  */
 import { getSchemaLink } from '@ithemes/security-utils';
+import { apiFetchBatch } from '@ithemes/security.packages.data';
 import { apiFetch } from './controls';
 
 export const path = '/ithemes-security/v1/user-groups';
@@ -178,7 +179,7 @@ export function* createGroup( group ) {
 /**
  * Updates a user group.
  *
- * @param {string} id Group id id to update.
+ * @param {string} id    Group id id to update.
  * @param {Object} group Group data.
  * @return {IterableIterator<*>} Iterator
  */
@@ -231,10 +232,14 @@ export function* deleteGroup( id ) {
 /**
  * Saves a set of groups in a batch.
  *
- * @param {{create: Array<Object>, update: Array<Object>}} groups Groups to save.
+ * @param {{create: Array<Object>, update: Array<Object>, delete: Array<string>}} groups Groups to save.
  * @return {Error|{responses: Array<Object>, byId: Object<Object>}} An error, or an object with the list of responses, and responses by id.
  */
-export function* saveGroups( { create = [], update = [] } ) {
+export function* saveGroups( {
+	create = [],
+	update = [],
+	delete: toDelete = [],
+} ) {
 	const requests = [];
 
 	for ( const group of update ) {
@@ -255,15 +260,19 @@ export function* saveGroups( { create = [], update = [] } ) {
 		yield startCreateGroup( group );
 	}
 
+	for ( const group of toDelete ) {
+		requests.push( {
+			method: 'DELETE',
+			path: `${ path }/${ group }`,
+		} );
+		yield startDeleteGroup( group );
+	}
+
 	let responses;
 	const byId = {};
 
 	try {
-		responses = yield apiFetch( {
-			path: '/batch/v1',
-			method: 'POST',
-			data: { requests },
-		} );
+		responses = yield apiFetchBatch( requests );
 	} catch ( error ) {
 		for ( const group of update ) {
 			yield failedUpdateGroup( group.id, error );
@@ -273,14 +282,21 @@ export function* saveGroups( { create = [], update = [] } ) {
 			yield failedCreateGroup( group, error );
 		}
 
+		for ( const group of toDelete ) {
+			yield failedDeleteGroup( group, error );
+		}
+
 		return error;
 	}
 
 	for ( let i = 0; i < requests.length; i++ ) {
 		const request = requests[ i ];
 		const group = request.body;
-		const response = responses.responses[ i ];
-		const id = group.id || response.body.id;
+		const response = responses[ i ];
+		const id =
+			group?.id ||
+			response.body?.id ||
+			request.path.replace( `${ path }/`, '' );
 
 		if ( id ) {
 			byId[ id ] = response;
@@ -289,12 +305,16 @@ export function* saveGroups( { create = [], update = [] } ) {
 		if ( response.status >= 400 ) {
 			if ( request.method === 'PUT' ) {
 				yield failedUpdateGroup( id, response.body );
+			} else if ( request.method === 'DELETE' ) {
+				yield failedDeleteGroup( id, response.body );
 			} else {
 				yield failedCreateGroup( group, response.body );
 			}
 		} else {
 			if ( request.method === 'PUT' ) {
 				yield finishUpdateGroup( id, response.body );
+			} else if ( request.method === 'DELETE' ) {
+				yield finishDeleteGroup( id );
 			} else {
 				yield finishCreateGroup( group, response.body );
 			}
@@ -302,13 +322,13 @@ export function* saveGroups( { create = [], update = [] } ) {
 		}
 	}
 
-	return { responses: responses.responses, byId };
+	return { responses, byId };
 }
 
 /**
  * Updates a user group.
  *
- * @param {Object} id Id of group.
+ * @param {Object} id       Id of group.
  * @param {Object} settings New settings.
  * @return {IterableIterator<*>} Iterator
  */
@@ -356,11 +376,7 @@ export function* saveGroupSettingsAsBatch( groupedSettings ) {
 	let responses;
 
 	try {
-		responses = yield apiFetch( {
-			path: '/batch/v1',
-			method: 'POST',
-			data: { requests },
-		} );
+		responses = yield apiFetchBatch( requests );
 	} catch ( error ) {
 		for ( const groupId of ids ) {
 			yield failedUpdateGroupSettings( groupId, error );
@@ -373,7 +389,7 @@ export function* saveGroupSettingsAsBatch( groupedSettings ) {
 
 	for ( let i = 0; i < requests.length; i++ ) {
 		const groupId = ids[ i ];
-		const response = responses.responses[ i ];
+		const response = responses[ i ];
 		byId[ groupId ] = response.body;
 
 		if ( response.status >= 400 ) {
@@ -384,7 +400,7 @@ export function* saveGroupSettingsAsBatch( groupedSettings ) {
 		}
 	}
 
-	return { responses: responses.responses, byId };
+	return { responses, byId };
 }
 
 export function* fetchGroupsSettings( groupIds = [] ) {

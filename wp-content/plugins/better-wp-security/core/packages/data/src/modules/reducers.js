@@ -34,7 +34,7 @@ const DEFAULT_STATE = {
 	errors: {},
 };
 
-export default function ( state = DEFAULT_STATE, action ) {
+export default function( state = DEFAULT_STATE, action ) {
 	switch ( action.type ) {
 		case RECEIVE_MODULES:
 			return {
@@ -104,7 +104,8 @@ export default function ( state = DEFAULT_STATE, action ) {
 				...state,
 				savingModules: without(
 					state.savingModules,
-					...Object.keys( action.errors )
+					...Object.keys( action.errors || {} ),
+					...( action.modules || [] )
 				),
 				errors: {
 					...state.errors,
@@ -173,7 +174,8 @@ export default function ( state = DEFAULT_STATE, action ) {
 				...state,
 				savingSettings: without(
 					state.savingSettings,
-					...Object.keys( action.errors )
+					...Object.keys( action.errors || {} ),
+					...( action.modules || [] )
 				),
 				errors: {
 					...state.errors,

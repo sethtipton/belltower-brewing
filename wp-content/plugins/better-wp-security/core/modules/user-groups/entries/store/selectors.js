@@ -2,12 +2,19 @@
  * External dependencies
  */
 import createSelector from 'rememo';
-import { map, filter, isObject, get } from 'lodash';
+import { map, filter, isObject, get, isEmpty, pickBy } from 'lodash';
+import memize from 'memize';
 
 /**
  * WordPress dependencies
  */
 import { createRegistrySelector } from '@wordpress/data';
+
+/**
+ * Internal dependencies
+ */
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
+import { STORE_NAME } from './constant';
 
 /**
  * Get the list of matchables.
@@ -28,7 +35,7 @@ export const getMatchables = createSelector(
  * Gets the type of a matchable.
  *
  * @param {Object} state Store state.
- * @param {string} id Matchable id.
+ * @param {string} id    Matchable id.
  *
  * @return {string} Either 'user-group' or 'meta'.
  */
@@ -40,7 +47,7 @@ export function getMatchableType( state, id ) {
  * Gets the label for a matchable.
  *
  * @param {Object} state Store state.
- * @param {string} id Matchable id.
+ * @param {string} id    Matchable id.
  *
  * @return {string} The matchable's label.
  */
@@ -82,7 +89,7 @@ export function getQueriedObjectIds( state, queryId ) {
  * Checks if this group could not be found.
  *
  * @param {Object} state The store state.
- * @param {string} id The group id.
+ * @param {string} id    The group id.
  * @return {boolean} True if not found.
  */
 export function isGroupNotFound( state, id ) {
@@ -110,7 +117,7 @@ export function getGroup( state, id ) {
  */
 export const getGroupAttribute = createRegistrySelector(
 	( select ) => ( state, id, attribute ) => {
-		const group = select( 'ithemes-security/user-groups' ).getGroup( id );
+		const group = select( STORE_NAME ).getGroup( id );
 
 		return group ? group[ attribute ] : undefined;
 	}
@@ -160,9 +167,7 @@ export function getGroupSettings( state, id ) {
  */
 export const getGroupSetting = createRegistrySelector(
 	( select ) => ( state, id, module, setting ) => {
-		const settings = select(
-			'ithemes-security/user-groups'
-		).getGroupSettings( id );
+		const settings = select( STORE_NAME ).getGroupSettings( id );
 
 		return get( settings, [ module, setting ] );
 	}
@@ -182,9 +187,9 @@ export function isUpdatingSettings( state, id ) {
 /**
  * Is a bulk patch in progress.
  *
- * @param {Object} state
+ * @param {Object}        state
  * @param {Array<string>} groupIds
- * @param {Object} patch
+ * @param {Object}        patch
  * @return {boolean} True if bulk patching.
  */
 export function isBulkPatchingSettings( state, groupIds, patch ) {
@@ -238,3 +243,121 @@ export function getGroupsBySetting( state ) {
 
 	return bySetting;
 }
+
+function _getPassReqGroups( modules ) {
+	return Object.fromEntries(
+		modules
+			.filter( ( module ) => ! isEmpty( module.password_requirements ) )
+			.flatMap( ( module ) =>
+				Object.entries( module.password_requirements )
+					.filter( ( [ , definition ] ) =>
+						definition.hasOwnProperty( 'user-group' )
+					)
+					.map( ( [ requirement, definition ] ) => [
+						`requirement_settings.${ requirement }.group`,
+						{
+							title: definition.title || module.title,
+							description:
+								definition.description || module.description,
+						},
+					] )
+			)
+	);
+}
+
+const _getSettingDefinitions = memize(
+	(
+		ajv,
+		filters,
+		{ skipConditions = false },
+		modules,
+		activeModules,
+		allSettings
+	) => {
+		const includeModule = ( module ) =>
+			! filters.module || filters.module === module.id;
+
+		return modules.reduce( ( definitions, module ) => {
+			if ( module.status.selected !== 'active' ) {
+				return definitions;
+			}
+
+			if ( ! includeModule( module ) ) {
+				return definitions;
+			}
+
+			if (
+				module.id !== 'password-requirements' &&
+				isEmpty( module.user_groups )
+			) {
+				return definitions;
+			}
+
+			const settings = pickBy(
+				module.id === 'password-requirements'
+					? _getPassReqGroups( modules )
+					: module.user_groups,
+				( definition ) => {
+					if ( ! definition.conditional || skipConditions ) {
+						return true;
+					}
+
+					if ( definition.conditional[ 'active-modules' ] ) {
+						for ( const activeModule of definition.conditional[
+							'active-modules'
+						] ) {
+							if ( ! activeModules.includes( activeModule ) ) {
+								return false;
+							}
+						}
+					}
+
+					if ( definition.conditional.settings ) {
+						const validate = ajv.compile(
+							definition.conditional.settings
+						);
+
+						if ( ! validate( allSettings[ module.id ] ) ) {
+							return false;
+						}
+					}
+
+					return true;
+				}
+			);
+
+			if ( isEmpty( settings ) ) {
+				return definitions;
+			}
+
+			definitions.push( {
+				id: module.id,
+				title: module.title,
+				description: module.description,
+				settings,
+			} );
+
+			return definitions;
+		}, [] );
+	},
+	{ maxSize: 1 }
+);
+
+const EMPTY_OBJECT = {};
+
+export const getSettingDefinitions = createRegistrySelector(
+	( select ) => (
+		state,
+		ajv,
+		filters = EMPTY_OBJECT,
+		options = EMPTY_OBJECT
+	) =>
+		_getSettingDefinitions(
+			ajv,
+			filters,
+			options,
+			select( MODULES_STORE_NAME ).getEditedModules(),
+			select( MODULES_STORE_NAME ).getActiveModules(),
+			select( MODULES_STORE_NAME ).__unstableGetAllEditedSettings()
+		)
+);

@@ -2,11 +2,13 @@
  * External dependencies
  */
 import { omit, isArray } from 'lodash';
+import classnames from 'classnames';
 
 /**
  * WordPress dependencies
  */
-import { CheckboxControl } from '@wordpress/components';
+import { CheckboxControl, VisuallyHidden } from '@wordpress/components';
+import './style.scss';
 
 export default function CheckboxGroupControl( {
 	value,
@@ -16,6 +18,9 @@ export default function CheckboxGroupControl( {
 	help,
 	disabled,
 	readOnly,
+	className,
+	style,
+	hideLabelFromVision,
 } ) {
 	let isChecked, update;
 
@@ -26,8 +31,8 @@ export default function CheckboxGroupControl( {
 				checked
 					? [ ...value, option.value ]
 					: value.filter(
-							( maybeValue ) => maybeValue !== option.value
-					  )
+						( maybeValue ) => maybeValue !== option.value
+					)
 			);
 	} else {
 		isChecked = ( option ) => value[ option.value ] || false;
@@ -36,28 +41,44 @@ export default function CheckboxGroupControl( {
 	}
 
 	return (
-		<fieldset className="components-base-control">
+		<fieldset
+			className={ classnames(
+				'components-base-control',
+				className,
+				style && `itsec-components-checkbox-group-control--style-${ style }`
+			) }
+		>
 			<div className="components-base-control__field">
-				<legend className="components-base-control__label">
-					{ label }
-				</legend>
+				{ hideLabelFromVision && <VisuallyHidden>{ label }</VisuallyHidden> }
+				{ ! hideLabelFromVision && (
+					<legend className="components-base-control__label">
+						{ label }
+					</legend>
+				) }
 				{ help && (
 					<p className="components-base-control__help">{ help }</p>
 				) }
-				{ options.map( ( option ) => (
-					<CheckboxControl
-						{ ...omit( option, [
-							'value',
-							'disabled',
-							'readOnly',
-						] ) }
-						key={ option.value }
-						checked={ isChecked( option ) }
-						onChange={ update( option ) }
-						disabled={ disabled || option.disabled }
-						readOnly={ readOnly || option.readOnly }
-					/>
-				) ) }
+				<div className="itsec-components-checkbox-group-control__options">
+					{ options.map( ( option ) => (
+						<CheckboxControl
+							{ ...omit( option, [
+								'value',
+								'disabled',
+								'readOnly',
+							] ) }
+							key={ option.value }
+							checked={ isChecked( option ) }
+							onChange={ update( option ) }
+							disabled={ disabled || option.disabled }
+							readOnly={ readOnly || option.readOnly }
+							className={
+								isChecked( option ) &&
+								'itsec-components-checkbox-group-control__option--is-checked'
+							}
+							__nextHasNoMarginBottom
+						/>
+					) ) }
+				</div>
 			</div>
 		</fieldset>
 	);

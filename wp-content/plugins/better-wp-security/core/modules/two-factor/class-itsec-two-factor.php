@@ -47,21 +47,33 @@ class ITSEC_Two_Factor {
 	private function __construct() {
 		add_action( 'itsec_login_interstitial_init', array( $this, 'register_interstitial' ) );
 
-		add_action( 'show_user_profile', array( $this, 'user_two_factor_options' ) );
+		if ( $this->is_legacy_ui_enabled() ) {
+			add_action( 'show_user_profile', array( $this, 'user_two_factor_options' ) );
+			add_action( 'personal_options_update', array( $this, 'user_two_factor_options_update' ) );
+		}
+
 		add_action( 'edit_user_profile', array( $this, 'user_two_factor_options' ) );
-		add_action( 'personal_options_update', array( $this, 'user_two_factor_options_update' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'user_two_factor_options_update' ) );
+
 		add_filter( 'authenticate', array( $this, 'block_xmlrpc' ), 100 );
+		add_filter( 'itsec_is_user_using_two_factor', array( $this, 'mark_user_as_using_2fa' ), 10, 2 );
+		add_action( 'itsec_passwordless_login_initialize_interstitial', array( $this, 'pwls_skip_2fa' ), 10, 2 );
+		add_filter( 'itsec_user_security_profile_data', array( $this, 'add_2fa_security_profile_data' ), 10, 2 );
 
 		add_action( 'ithemes_sync_register_verbs', array( $this, 'register_sync_verbs' ) );
 		add_filter( 'itsec-filter-itsec-get-everything-verbs', array( $this, 'register_sync_get_everything_verbs' ) );
 
 		add_action( 'load-profile.php', array( $this, 'add_profile_page_styling' ) );
 		add_action( 'load-user-edit.php', array( $this, 'add_profile_page_styling' ) );
+		add_action( 'itsec_enqueue_profile', array( $this, 'enqueue_profile' ) );
+
+		add_filter( 'itsec_rest_user_actions_schema', array( $this, 'add_user_actions' ) );
+		add_action( 'itsec_user_action_send-2fa-reminder', array( $this, 'apply_send_reminder_action' ), 10, 2 );
 
 		add_filter( 'itsec_notifications', array( $this, 'register_notifications' ) );
 		add_filter( 'itsec_two-factor-email_notification_strings', array( $this, 'two_factor_email_method_strings' ) );
 		add_filter( 'itsec_two-factor-confirm-email_notification_strings', array( $this, 'two_factor_confirm_email_method_strings' ) );
+		add_filter( 'itsec_two-factor-reminder_notification_strings', array( $this, 'two_factor_reminder_strings' ) );
 
 		$this->matcher = ITSEC_Modules::get_container()->get( Matcher::class );
 		$this->load_helper();
@@ -139,8 +151,8 @@ class ITSEC_Two_Factor {
 		wp_nonce_field( 'user_two_factor_options', '_nonce_user_two_factor_options', false );
 		?>
 		<h3 id="two-factor-user-options"><?php esc_html_e( 'Two-Factor Authentication Options', 'better-wp-security' ); ?></h3>
-		<p><?php esc_html_e( 'Enabling two-factor authentication greatly increases the security of your user account on this site. With two-factor authentication enabled, after you login with your username and password, you will be asked for an authentication code before you can successfully log in.', 'better-wp-security' ); ?>
-			<strong> <?php esc_html_e( 'Two-factor authentication codes can come from an app that runs on your mobile device, an email that is sent to you after you login with your username and password, or from a pre-generated list of codes.', 'better-wp-security' ); ?></strong> <?php esc_html_e( 'The settings below allow you to configure which of these authentication code providers are enabled for your user.', 'better-wp-security' ); ?>
+		<p><?php esc_html_e( 'Enabling two-factor authentication greatly increases the security of your user account on this site. With two-factor authentication enabled, after you submit your username and password, you will be asked for an additional authentication code to complete your login.', 'better-wp-security' ); ?>
+			<strong> <?php esc_html_e( 'Two-factor authentication codes can come from an app that runs on your mobile device, an email that is sent to you after you log in with your username and password, or from a pre-generated list of codes.', 'better-wp-security' ); ?></strong> <?php esc_html_e( 'The settings below allow you to configure which of these authentication code providers are enabled for your user.', 'better-wp-security' ); ?>
 		</p>
 
 		<table class="two-factor-methods-table widefat wp-list-table striped">
@@ -261,6 +273,58 @@ class ITSEC_Two_Factor {
 	}
 
 	/**
+	 * Marks a user as using Two-Factor.
+	 *
+	 * @param bool    $is_using
+	 * @param WP_User $user
+	 *
+	 * @return bool
+	 */
+	public function mark_user_as_using_2fa( $is_using, WP_User $user ) {
+		if ( ! $is_using ) {
+			$is_using = (bool) $this->get_primary_provider_for_user( $user->ID );
+		}
+
+		return $is_using;
+	}
+
+	/**
+	 * Conditionally skips the Two-Factor interstitial when using Passwordless Login
+	 * if the user's primary provider is Email.
+	 *
+	 * @param ITSEC_Login_Interstitial_Session $session
+	 * @param array                            $args
+	 */
+	public function pwls_skip_2fa( ITSEC_Login_Interstitial_Session $session, $args ) {
+		if (
+			$args['method'] === 'magic' &&
+			self::get_instance()->get_primary_provider_for_user( $session->get_user()->ID ) instanceof Two_Factor_Email
+		) {
+			$session->add_completed_interstitial( '2fa' );
+		}
+	}
+
+	/**
+	 * Adds Two-Factor data to the User Security Profile card.
+	 *
+	 * @param array   $data
+	 * @param WP_User $user
+	 *
+	 * @return array
+	 */
+	public function add_2fa_security_profile_data( $data, WP_User $user ) {
+		if ( $this->get_available_providers_for_user( $user, false ) ) {
+			$data['two_factor'] = 'enabled';
+		} elseif ( $this->get_available_providers_for_user( $user, true ) ) {
+			$data['two_factor'] = 'enforced-not-configured';
+		} else {
+			$data['two_factor'] = 'not-enabled';
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Update the list of enabled Two Factor providers for a user.
 	 *
 	 * @param array    $enabled_providers
@@ -288,6 +352,12 @@ class ITSEC_Two_Factor {
 		} else {
 			// Only site-enabled providers can be enabled for a user
 			$enabled_providers = array_intersect( $enabled_providers, array_keys( $providers ) );
+		}
+
+		if ( ! $enabled_providers ) {
+			delete_user_meta( $user_id, $this->_enabled_providers_user_meta_key );
+
+			return true;
 		}
 
 		return (bool) update_user_meta( $user_id, $this->_enabled_providers_user_meta_key, $enabled_providers );
@@ -617,6 +687,28 @@ class ITSEC_Two_Factor {
 	}
 
 	/**
+	 * Checks if the legacy 2FA UI should be shown on profile pages.
+	 *
+	 * @return bool
+	 */
+	public function is_legacy_ui_enabled() {
+		if ( defined( 'SOLID_SECURITY_LEGACY_2FA_UI' ) && SOLID_SECURITY_LEGACY_2FA_UI ) {
+			return true;
+		}
+
+		$this->load_helper();
+		$providers = $this->helper->get_enabled_provider_instances();
+
+		foreach ( $providers as $provider ) {
+			if ( ! $provider instanceof ITSEC_Two_Factor_Provider_On_Boardable ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Register the 2fa interstitial.
 	 *
 	 * @param ITSEC_Lib_Login_Interstitial $lib
@@ -639,6 +731,110 @@ class ITSEC_Two_Factor {
 
 		$this->load_helper();
 		$this->helper->get_enabled_provider_instances();
+	}
+
+	/**
+	 * Adds the Two Factor onboard URL to the profile JS code.
+	 *
+	 * @return void
+	 */
+	public function enqueue_profile() {
+		if ( $this->is_legacy_ui_enabled() ) {
+			return;
+		}
+
+		wp_add_inline_script( 'itsec-two-factor-profile', sprintf(
+			"itsec['two-factor'].profile.initialize( %s )",
+			wp_json_encode( [
+				'twoFactorOnboard' => site_url( 'wp-login.php?itsec_after_interstitial=2fa-on-board', 'login' ),
+			] ),
+		) );
+	}
+
+	/**
+	 * Filters the Schema for User Actions to include the 2FA reminders.
+	 *
+	 * @param array $schema
+	 *
+	 * @return array
+	 */
+	public function add_user_actions( $schema ) {
+		$schema['properties']['actions']['properties']['send-2fa-reminder'] = [
+			'type' => 'boolean',
+			'enum' => [ true ],
+		];
+
+		return $schema;
+	}
+
+	/**
+	 * Sends a user a Two-Factor setup reminder.
+	 *
+	 * @param WP_User $user
+	 * @param WP_User $actioned_by
+	 *
+	 * @return void
+	 */
+	public function apply_send_reminder_action( WP_User $user, WP_User $actioned_by ) {
+		$this->send_setup_reminder( $user, $actioned_by );
+	}
+
+	/**
+	 * Send a Two-Factor setup reminder.
+	 *
+	 * @param WP_User      $recipient User to send the reminder to.
+	 * @param WP_User|null $requester Person requesting the user setup 2fa. Used to personalize the message.
+	 *
+	 * @return true|WP_Error
+	 */
+	public function send_setup_reminder( WP_User $recipient, WP_User $requester = null ) {
+		$nc   = ITSEC_Core::get_notification_center();
+		$mail = $nc->mail();
+		$mail->set_recipients( array( $recipient->user_email ) );
+
+		$mail->add_user_header(
+			esc_html__( 'Two Factor Reminder', 'better-wp-security' ),
+			sprintf( esc_html__( 'Two Factor Authentication Reminder for %s', 'better-wp-security' ), '<b>' . get_bloginfo( 'name', 'display' ) . '</b>' ),
+		);
+
+		$message = ITSEC_Core::get_notification_center()->get_message( 'two-factor-reminder' );
+		$message = ITSEC_Lib::replace_tags( $message, array(
+			'username'               => $recipient->user_login,
+			'display_name'           => $recipient->display_name,
+			'requester_username'     => $requester ? $requester->user_login : __( 'administrator', 'better-wp-security' ),
+			'requester_display_name' => $requester ? $requester->display_name : __( 'Administrator', 'better-wp-security' ),
+			'site_title'             => get_bloginfo( 'name', 'display' ),
+		) );
+		$mail->add_text( $message );
+
+		$configure_2fa_url = ITSEC_Mail::filter_admin_page_url( add_query_arg( ITSEC_Lib_Login_Interstitial::SHOW_AFTER_LOGIN, '2fa-on-board', ITSEC_Lib::get_login_url() ) );
+
+		$mail->add_button( esc_html__( 'Setup now', 'better-wp-security' ), $configure_2fa_url );
+
+		$blog_link = ITSEC_Core::get_tracking_link(
+			'https://ithemes.com/blog/ithemes-security-pro-feature-spotlight-two-factor-authentication/',
+			'2faemail',
+			'link'
+		);
+
+		$mail->add_list( array(
+			esc_html__( 'Enabling two-factor authentication greatly increases the security of your user account on this site.', 'better-wp-security' ),
+			esc_html__( 'With two-factor authentication enabled, after you submit your username and password, you will be asked for an additional authentication code to complete your login.', 'better-wp-security' ),
+			sprintf(
+			/* translators: %1$s is the opening link tag, %2$s is the closing link tag. */
+				esc_html__( '%1$sLearn more about Two Factor Authentication%2$s.', 'better-wp-security' ),
+				'<a style="color: #3C1596; text-decoration: underline;" href="' . $blog_link . '">',
+				'</a>'
+			)
+		), true );
+
+		$mail->add_user_footer();
+
+		if ( $nc->send( 'two-factor-reminder', $mail ) ) {
+			return true;
+		}
+
+		return new WP_Error( 'send_failed', __( 'There was a problem sending the E-Mail reminder. Please try again.', 'better-wp-security' ) );
 	}
 
 	/**
@@ -669,6 +865,15 @@ class ITSEC_Two_Factor {
 			'tags'             => array( 'username', 'display_name', 'site_title' ),
 			'module'           => 'two-factor',
 			'optional'         => true,
+		);
+
+		$notifications['two-factor-reminder'] = array(
+			'subject_editable' => true,
+			'message_editable' => true,
+			'schedule'         => ITSEC_Notification_Center::S_NONE,
+			'recipient'        => ITSEC_Notification_Center::R_USER,
+			'tags'             => array( 'username', 'display_name', 'requester_username', 'requester_display_name', 'site_title' ),
+			'module'           => 'two-factor',
 		);
 
 		return $notifications;
@@ -730,6 +935,29 @@ Click the button to continue or manually enter the authentication code below to 
 				'display_name' => __( 'The recipient’s WordPress display name.', 'better-wp-security' ),
 				'site_title'   => __( 'The WordPress Site Title. Can be changed under Settings → General → Site Title', 'better-wp-security' ),
 			)
+		);
+	}
+
+	/**
+	 * Get the translated strings for the Two Factor Reminder email.
+	 *
+	 * @return array
+	 */
+	public function two_factor_reminder_strings() {
+		return array(
+			'label'       => __( 'Two-Factor Reminder Notice', 'better-wp-security' ),
+			'description' => __( 'The User Security Check module allows you to remind users to setup two-factor authentication for their accounts.', 'better-wp-security' ),
+			'subject'     => __( 'Please Set Up Two Factor Authentication', 'better-wp-security' ),
+			'tags'        => array(
+				'username'               => __( 'The recipient’s WordPress username.', 'better-wp-security' ),
+				'display_name'           => __( 'The recipient’s WordPress display name.', 'better-wp-security' ),
+				'requester_username'     => __( 'The requester’s WordPress username.', 'better-wp-security' ),
+				'requester_display_name' => __( 'The requester’s WordPress display name.', 'better-wp-security' ),
+				'site_title'             => __( 'The WordPress Site Title. Can be changed under Settings → General → Site Title', 'better-wp-security' )
+			),
+			'message'     => __( 'Hi {{ $display_name }},
+			
+{{ $requester_display_name }} from {{ $site_title }} has asked that you set up Two Factor Authentication.', 'better-wp-security' ),
 		);
 	}
 

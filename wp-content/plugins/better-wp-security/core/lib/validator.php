@@ -46,6 +46,10 @@ abstract class ITSEC_Validator {
 		$this->settings          = $settings;
 		$this->previous_settings = ITSEC_Modules::get_settings( $this->get_id() );
 
+		$this->can_save = true;
+		$this->errors   = [];
+		$this->messages = [];
+
 		$this->sanitize_settings();
 
 		if ( $this->run_validate_matching_fields ) {
@@ -173,7 +177,7 @@ abstract class ITSEC_Validator {
 		$id = $this->get_id();
 
 		if ( ! isset( $this->settings[ $var ] ) ) {
-			$this->add_error( new WP_Error( "itsec-validator-missing-var-$id-$var", sprintf( __( 'A validation check for %1$s failed. The %2$s value is missing. This could be due to a problem with the iThemes Security installation or an invalid modification. Please reinstall iThemes Security and try again.', 'better-wp-security' ), $id, $name ) ) );
+			$this->add_error( new WP_Error( "itsec-validator-missing-var-$id-$var", sprintf( __( 'A validation check for %1$s failed. The %2$s value is missing. This could be due to a problem with the Solid Security installation or an invalid modification. Please reinstall Solid Security and try again.', 'better-wp-security' ), $id, $name ) ) );
 
 			return false;
 		}

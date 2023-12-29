@@ -8,9 +8,9 @@ import { useRef, useEffect } from '@wordpress/element';
 /**
  * Uses an event listener callback.
  *
- * @param {string} type The dom event to listen for.
- * @param {Function} listener The handler function to call.
- * @param {Element|Window} element The element to listen for effects on.
+ * @param {string}         type     The dom event to listen for.
+ * @param {Function}       listener The handler function to call.
+ * @param {Element|Window} element  The element to listen for effects on.
  */
 export default function useEventListener( type, listener, element = window ) {
 	const savedHandler = useRef();

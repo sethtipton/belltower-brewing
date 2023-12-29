@@ -15,7 +15,7 @@ import { omit } from 'lodash';
  * query path argument's value.
  *
  * @param {Location} initialLocation The initial document.location.
- * @param {Object} fixedQuery The query parameters that should be fixed.
+ * @param {Object}   fixedQuery      The query parameters that should be fixed.
  *
  * @return {Object} React-router history object with `get location` modified.
  */

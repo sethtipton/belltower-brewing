@@ -47,14 +47,14 @@ function Notice( {
 							key={ index }
 							href={ url }
 							isSmall={ ! isLink && ! url }
-							isLink={ isLink || url }
+							variant={ ( url || isLink ) && 'link' }
 							onClick={
 								url
 									? undefined
 									: () => {
-											onRemove();
-											onClick();
-									  }
+										onRemove();
+										onClick();
+									}
 							}
 							className={ classnames(
 								'notice__action',

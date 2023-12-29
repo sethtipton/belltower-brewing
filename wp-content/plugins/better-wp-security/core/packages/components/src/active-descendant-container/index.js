@@ -79,9 +79,9 @@ function scrollIntoView( parent, element ) {
 		parent.scrollTop =
 			element.offsetTop -
 			parent.offsetTop -
-			parent.clientHeight / 2 -
+			( parent.clientHeight / 2 ) -
 			parentBorderTopWidth +
-			element.clientHeight / 2;
+			( element.clientHeight / 2 );
 		parent.scrollLeft = 0;
 	}
 }

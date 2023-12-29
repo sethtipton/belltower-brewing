@@ -1,18 +1,22 @@
 <?php
 
 if ( ! class_exists( 'acf_field' ) ) :
-
+	#[AllowDynamicProperties]
 	class acf_field {
 
-		// vars
-		var $name = '',
-		$label    = '',
-		$category = 'basic',
-		$defaults = array(),
-		$l10n     = array(),
-		$public   = true;
-
-		public $show_in_rest = true;
+		// field information properties.
+		public $name          = '';
+		public $label         = '';
+		public $category      = 'basic';
+		public $description   = '';
+		public $doc_url       = false;
+		public $tutorial_url  = false;
+		public $preview_image = false;
+		public $pro           = false;
+		public $defaults      = array();
+		public $l10n          = array();
+		public $public        = true;
+		public $show_in_rest  = true;
 
 		/*
 		*  __construct
@@ -35,10 +39,15 @@ if ( ! class_exists( 'acf_field' ) ) :
 			// register info
 			acf_register_field_type_info(
 				array(
-					'label'    => $this->label,
-					'name'     => $this->name,
-					'category' => $this->category,
-					'public'   => $this->public,
+					'label'         => $this->label,
+					'name'          => $this->name,
+					'category'      => $this->category,
+					'description'   => $this->description,
+					'doc_url'       => $this->doc_url,
+					'tutorial_url'  => $this->tutorial_url,
+					'preview_image' => $this->preview_image,
+					'pro'           => $this->pro,
+					'public'        => $this->public,
 				)
 			);
 
@@ -73,6 +82,9 @@ if ( ! class_exists( 'acf_field' ) ) :
 			$this->add_action( 'acf/field_group/admin_head', array( $this, 'field_group_admin_head' ), 10, 0 );
 			$this->add_action( 'acf/field_group/admin_footer', array( $this, 'field_group_admin_footer' ), 10, 0 );
 
+			foreach ( acf_get_combined_field_type_settings_tabs() as $tab_key => $tab_label ) {
+				$this->add_field_action( "acf/field_group/render_field_settings_tab/{$tab_key}", array( $this, "render_field_{$tab_key}_settings" ), 9, 1 );
+			}
 		}
 
 
@@ -92,7 +104,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 		function initialize() {
 
 			/* do nothing */
-
 		}
 
 
@@ -121,7 +132,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// add
 			add_filter( $tag, $function_to_add, $priority, $accepted_args );
-
 		}
 
 
@@ -148,7 +158,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// add
 			$this->add_filter( $tag, $function_to_add, $priority, $accepted_args );
-
 		}
 
 
@@ -177,7 +186,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// add
 			add_action( $tag, $function_to_add, $priority, $accepted_args );
-
 		}
 
 
@@ -204,7 +212,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// add
 			$this->add_action( $tag, $function_to_add, $priority, $accepted_args );
-
 		}
 
 
@@ -230,7 +237,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// merge in defaults but keep order of $field keys
 			foreach ( $this->defaults as $k => $v ) {
-
 				if ( ! isset( $field[ $k ] ) ) {
 					$field[ $k ] = $v;
 				}
@@ -238,7 +244,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// return
 			return $field;
-
 		}
 
 
@@ -267,7 +272,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 
 			// return
 			return $l10n;
-
 		}
 
 		/**
@@ -342,9 +346,6 @@ if ( ! class_exists( 'acf_field' ) ) :
 		public function format_value_for_rest( $value, $post_id, array $field ) {
 			return $value;
 		}
-
 	}
 
 endif; // class_exists check
-
-

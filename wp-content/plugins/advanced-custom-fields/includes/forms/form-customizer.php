@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'acf_form_customizer' ) ) :
-
+	#[AllowDynamicProperties]
 	class acf_form_customizer {
 
 
@@ -36,7 +36,6 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 			// save
 			add_filter( 'widget_update_callback', array( $this, 'save_widget' ), 10, 4 );
-
 		}
 
 
@@ -65,7 +64,6 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 			// actions
 			add_action( 'acf/input/admin_footer', array( $this, 'admin_footer' ), 1 );
-
 		}
 
 
@@ -87,7 +85,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 		function save_widget( $instance, $new_instance, $old_instance, $widget ) {
 
-			// bail ealry if not valid (customize + acf values + nonce)
+			// bail early if not valid (customize + acf values + nonce)
 			if ( ! isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) || ! acf_verify_nonce( 'widget' ) ) {
 				return $instance;
 			}
@@ -115,7 +113,6 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 				// update
 				$data['fields'][ $field['name'] ] = $field['key'];
-
 			}
 
 			// append data to instance
@@ -123,7 +120,6 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 			// return
 			return $instance;
-
 		}
 
 
@@ -147,7 +143,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			$data     = array();
 			$settings = $customizer->settings();
 
-			// bail ealry if no settings
+			// bail early if no settings
 			if ( empty( $settings ) ) {
 				return false;
 			}
@@ -178,17 +174,15 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 				// append
 				$data[] = $setting;
-
 			}
 
-			// bail ealry if no settings
+			// bail early if no settings
 			if ( empty( $data ) ) {
 				return false;
 			}
 
 			// return
 			return $data;
-
 		}
 
 
@@ -210,7 +204,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			// get customizer settings (widgets)
 			$settings = $this->settings( $customizer );
 
-			// bail ealry if no settings
+			// bail early if no settings
 			if ( empty( $settings ) ) {
 				return;
 			}
@@ -224,10 +218,9 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 				// append acf_value to preview_values
 				$this->preview_values[ $data['post_id'] ] = $data['values'];
 				$this->preview_fields[ $data['post_id'] ] = $data['fields'];
-
 			}
 
-			// bail ealry if no preview_values
+			// bail early if no preview_values
 			if ( empty( $this->preview_values ) ) {
 				return;
 			}
@@ -235,7 +228,6 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			// add filters
 			add_filter( 'acf/pre_load_value', array( $this, 'pre_load_value' ), 10, 3 );
 			add_filter( 'acf/pre_load_reference', array( $this, 'pre_load_reference' ), 10, 3 );
-
 		}
 
 		/**
@@ -305,7 +297,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			// get customizer settings (widgets)
 			$settings = $this->settings( $customizer );
 
-			// bail ealry if no settings
+			// bail early if no settings
 			if ( empty( $settings ) ) {
 				return;
 			}
@@ -322,9 +314,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 				// remove [acf] data from saved widget array
 				$id_data = $setting->id_data();
 				add_filter( 'pre_update_option_' . $id_data['base'], array( $this, 'pre_update_option' ), 10, 3 );
-
 			}
-
 		}
 
 
@@ -343,7 +333,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 
 		function pre_update_option( $value, $option, $old_value ) {
 
-			// bail ealry if no value
+			// bail early if no value
 			if ( empty( $value ) ) {
 				return $value;
 			}
@@ -352,19 +342,17 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			// WP saves all widgets (of the same type) as an array of widgets
 			foreach ( $value as $i => $widget ) {
 
-				// bail ealry if no acf
+				// bail early if no acf
 				if ( ! isset( $widget['acf'] ) ) {
 					continue;
 				}
 
 				// remove widget
 				unset( $value[ $i ]['acf'] );
-
 			}
 
 			// return
 			return $value;
-
 		}
 
 
@@ -426,7 +414,7 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 			var bit = signature[i];
 			
 			
-			// bail ealry if acf is found
+			// bail early if acf is found
 			if( bit.indexOf('acf') !== -1 ) continue;
 			
 			
@@ -458,13 +446,10 @@ if ( ! class_exists( 'acf_form_customizer' ) ) :
 })(jQuery);	
 </script>
 			<?php
-
 		}
-
 	}
 
 	new acf_form_customizer();
-
 endif;
 
 ?>

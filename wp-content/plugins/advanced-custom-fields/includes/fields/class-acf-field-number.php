@@ -21,9 +21,12 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 		function initialize() {
 
 			// vars
-			$this->name     = 'number';
-			$this->label    = __( 'Number', 'acf' );
-			$this->defaults = array(
+			$this->name          = 'number';
+			$this->label         = __( 'Number', 'acf' );
+			$this->description   = __( 'An input limited to numerical values.', 'acf' );
+			$this->preview_image = acf_get_url() . '/assets/images/field-type-previews/field-preview-number.png';
+			$this->doc_url       = acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/number/', 'docs', 'field-type-selection' );
+			$this->defaults      = array(
 				'default_value' => '',
 				'min'           => '',
 				'max'           => '',
@@ -32,7 +35,6 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 				'prepend'       => '',
 				'append'        => '',
 			);
-
 		}
 
 
@@ -63,18 +65,14 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 			// prepend
 			if ( $field['prepend'] !== '' ) {
-
 				$field['class'] .= ' acf-is-prepended';
 				$html           .= '<div class="acf-input-prepend">' . acf_esc_html( $field['prepend'] ) . '</div>';
-
 			}
 
 			// append
 			if ( $field['append'] !== '' ) {
-
 				$field['class'] .= ' acf-is-appended';
 				$html           .= '<div class="acf-input-append">' . acf_esc_html( $field['append'] ) . '</div>';
-
 			}
 
 			// atts (value="123")
@@ -99,7 +97,6 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 			// return
 			echo $html;
-
 		}
 
 
@@ -128,41 +125,17 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 					'name'         => 'default_value',
 				)
 			);
+		}
 
-			// placeholder
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Placeholder Text', 'acf' ),
-					'instructions' => __( 'Appears within the input', 'acf' ),
-					'type'         => 'text',
-					'name'         => 'placeholder',
-				)
-			);
-
-			// prepend
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Prepend', 'acf' ),
-					'instructions' => __( 'Appears before the input', 'acf' ),
-					'type'         => 'text',
-					'name'         => 'prepend',
-				)
-			);
-
-			// append
-			acf_render_field_setting(
-				$field,
-				array(
-					'label'        => __( 'Append', 'acf' ),
-					'instructions' => __( 'Appears after the input', 'acf' ),
-					'type'         => 'text',
-					'name'         => 'append',
-				)
-			);
-
-			// min
+		/**
+		 * Renders the field settings used in the "Validation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_validation_settings( $field ) {
 			acf_render_field_setting(
 				$field,
 				array(
@@ -173,7 +146,6 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 				)
 			);
 
-			// max
 			acf_render_field_setting(
 				$field,
 				array(
@@ -183,8 +155,27 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 					'name'         => 'max',
 				)
 			);
+		}
 
-			// max
+		/**
+		 * Renders the field settings used in the "Presentation" tab.
+		 *
+		 * @since 6.0
+		 *
+		 * @param array $field The field settings array.
+		 * @return void
+		 */
+		function render_field_presentation_settings( $field ) {
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Placeholder Text', 'acf' ),
+					'instructions' => __( 'Appears within the input', 'acf' ),
+					'type'         => 'text',
+					'name'         => 'placeholder',
+				)
+			);
+
 			acf_render_field_setting(
 				$field,
 				array(
@@ -195,8 +186,26 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 				)
 			);
 
-		}
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Prepend', 'acf' ),
+					'instructions' => __( 'Appears before the input', 'acf' ),
+					'type'         => 'text',
+					'name'         => 'prepend',
+				)
+			);
 
+			acf_render_field_setting(
+				$field,
+				array(
+					'label'        => __( 'Append', 'acf' ),
+					'instructions' => __( 'Appears after the input', 'acf' ),
+					'type'         => 'text',
+					'name'         => 'append',
+				)
+			);
+		}
 
 		/*
 		*  validate_value
@@ -215,9 +224,7 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 			// remove ','
 			if ( acf_str_exists( ',', $value ) ) {
-
 				$value = str_replace( ',', '', $value );
-
 			}
 
 			// if value is not numeric...
@@ -225,14 +232,11 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 				// allow blank to be saved
 				if ( ! empty( $value ) ) {
-
 					$valid = __( 'Value must be a number', 'acf' );
-
 				}
 
 				// return early
 				return $valid;
-
 			}
 
 			// convert
@@ -240,21 +244,16 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 			// min
 			if ( is_numeric( $field['min'] ) && $value < floatval( $field['min'] ) ) {
-
 				$valid = sprintf( __( 'Value must be equal to or higher than %d', 'acf' ), $field['min'] );
-
 			}
 
 			// max
 			if ( is_numeric( $field['max'] ) && $value > floatval( $field['max'] ) ) {
-
 				$valid = sprintf( __( 'Value must be equal to or lower than %d', 'acf' ), $field['max'] );
-
 			}
 
 			// return
 			return $valid;
-
 		}
 
 
@@ -278,21 +277,16 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 
 			// no formatting needed for empty value
 			if ( empty( $value ) ) {
-
 				return $value;
-
 			}
 
 			// remove ','
 			if ( acf_str_exists( ',', $value ) ) {
-
 				$value = str_replace( ',', '', $value );
-
 			}
 
 			// return
 			return $value;
-
 		}
 
 		/**
@@ -333,13 +327,9 @@ if ( ! class_exists( 'acf_field_number' ) ) :
 		public function format_value_for_rest( $value, $post_id, array $field ) {
 			return acf_format_numerics( $value );
 		}
-
 	}
 
 
 	// initialize
 	acf_register_field_type( 'acf_field_number' );
-
 endif; // class_exists check
-
-

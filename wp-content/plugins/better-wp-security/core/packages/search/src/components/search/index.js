@@ -8,7 +8,7 @@ import { isEmpty, map, noop } from 'lodash';
 /**
  * WordPress dependencies
  */
-import { TextControl, VisuallyHidden } from '@wordpress/components';
+import { VisuallyHidden } from '@wordpress/components';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	useState,
@@ -25,6 +25,11 @@ import {
 } from '@wordpress/compose';
 import { ENTER, SPACE, DOWN } from '@wordpress/keycodes';
 import { speak } from '@wordpress/a11y';
+
+/**
+ * iThemes dependencies
+ */
+import { SearchControl } from '@ithemes/ui';
 
 /**
  * Internal dependencies
@@ -103,16 +108,15 @@ export default forwardRef( function Search(
 			{ ...useFocusOutside( () => setIsSearching( false ) ) }
 		>
 			<div>
-				<TextControl
-					type="search"
-					placeholder={ __( 'Search', 'better-wp-security' ) }
-					label={ __( 'Search', 'better-wp-security' ) }
-					hideLabelFromVision
+				<SearchControl
 					value={ query }
 					onChange={ onChange }
 					onFocus={ () => setIsSearching( true ) }
 					onKeyDown={ onKeyDown }
 					ref={ useMergeRefs( [ ref, searchRef ] ) }
+					placeholder={ __( 'Search for features, settings, and more', 'better-wp-security' ) }
+					omitSeparators
+					size="large"
 				/>
 				{ ( isSearching || showResults ) && query.length >= 3 && (
 					<SearchResults
@@ -130,7 +134,7 @@ export default forwardRef( function Search(
 	);
 } );
 
-const SearchResults = forwardRef( function (
+const SearchResults = forwardRef( function(
 	{ results, exitSearch, onPick },
 	ref
 ) {
@@ -181,7 +185,7 @@ const SearchResults = forwardRef( function (
 				id={ id }
 				active={ active && idPrefix + active }
 				onNavigate={ ( result ) =>
-					setActive( result.substr( idPrefix.length ) )
+					setActive( result.substring( idPrefix.length ) )
 				}
 				onKeyDown={ onKeyDown }
 				onFocus={ onFocus }

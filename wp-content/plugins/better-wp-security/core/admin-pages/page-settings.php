@@ -4,17 +4,8 @@ add_action( 'admin_enqueue_scripts', function () {
 		'/ithemes-security/v1/site-types'                    => [
 			'route' => '/ithemes-security/v1/site-types',
 		],
-		'/ithemes-security/v1?context=help'                  => [
-			'route' => '/ithemes-security/v1',
-			'query' => [ 'context' => 'help' ],
-		],
 		'/ithemes-security/v1/user-matchables?_embed=1'      => [
 			'route' => '/ithemes-security/v1/user-matchables',
-			'embed' => true,
-		],
-		'/ithemes-security/v1/modules?context=edit&_embed=1' => [
-			'route' => '/ithemes-security/v1/modules',
-			'query' => [ 'context' => 'edit' ],
 			'embed' => true,
 		],
 		'/ithemes-security/v1/tools'                         => [

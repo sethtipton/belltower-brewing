@@ -70,13 +70,13 @@ export default function cards( state = DEFAULT_STATE, action ) {
 						)
 							? state.byDashboard[ action.dashboardId ]
 							: [
-									...get(
-										state,
-										[ 'byDashboard', action.dashboardId ],
-										[]
-									),
-									action.card.id,
-							  ],
+								...get(
+									state,
+									[ 'byDashboard', action.dashboardId ],
+									[]
+								),
+								action.card.id,
+							],
 				},
 			};
 		case RECEIVE_DASHBOARD_CARD_QUERY_ARGS:
@@ -124,9 +124,9 @@ export default function cards( state = DEFAULT_STATE, action ) {
 			return ! action.context
 				? state
 				: {
-						...state,
-						adding: [ ...state.adding, action.context ],
-				  };
+					...state,
+					adding: [ ...state.adding, action.context ],
+				};
 		case FINISH_ADD_DASHBOARD_CARD:
 		case FAILED_ADD_DASHBOARD_CARD:
 			return {

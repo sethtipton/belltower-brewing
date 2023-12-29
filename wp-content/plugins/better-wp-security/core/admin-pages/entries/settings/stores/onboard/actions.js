@@ -12,7 +12,7 @@ import { __, sprintf } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
 import { apiFetch, createNotice, awaitPromise, doAction } from '../controls';
 import { STORE_NAME } from './';
 
@@ -89,14 +89,21 @@ export function* repeatQuestion() {
 
 export function* applyAnswerResponse() {
 	const answers = yield controls.select( STORE_NAME, 'getAnswers' );
+	const modules = yield controls.resolveSelect( MODULES_STORE_NAME, 'getModules' );
 
 	for ( const answer of answers ) {
 		for ( const module of answer.modules ) {
-			yield controls.dispatch( MODULES_STORE_NAME, 'editModule', module, {
-				status: {
-					selected: 'active',
-				},
-			} );
+			const config = modules.find( ( { id } ) => id === module );
+
+			if ( config?.side_effects ) {
+				yield controls.dispatch( MODULES_STORE_NAME, 'activateModule', module );
+			} else {
+				yield controls.dispatch( MODULES_STORE_NAME, 'editModule', module, {
+					status: {
+						selected: 'active',
+					},
+				} );
+			}
 		}
 
 		for ( const module in answer.settings ) {
@@ -121,7 +128,7 @@ export function* resetOnboarding() {
 	yield doAction( 'onboard.reset' );
 }
 
-export function* completeOnboarding() {
+export function* completeOnboarding( { root } ) {
 	const throwIf = ( maybeError ) => {
 		if ( maybeError instanceof Error ) {
 			throw maybeError;
@@ -135,6 +142,10 @@ export function* completeOnboarding() {
 
 	try {
 		for ( const step of steps ) {
+			if ( step.activeCallback && ! step.activeCallback( { root } ) ) {
+				continue;
+			}
+
 			yield { type: SET_COMPLETION_STEP, step };
 			const callback = step.callback();
 
@@ -154,6 +165,7 @@ export function* completeOnboarding() {
 
 		yield { type: SET_COMPLETION_STEP, step: true };
 	} catch ( error ) {
+		yield { type: SET_COMPLETION_STEP, step: false };
 		yield createNotice(
 			'error',
 			sprintf(
@@ -198,16 +210,16 @@ export function registerCompletionStep( {
 	id,
 	label,
 	priority,
-	render,
 	callback,
+	activeCallback,
 } ) {
 	return {
 		type: REGISTER_COMPLETION_STEP,
 		id,
 		label,
 		priority,
-		render,
 		callback,
+		activeCallback,
 	};
 }
 

@@ -17,7 +17,7 @@ import { useDispatch, useSelect } from '@wordpress/data';
 import { useAsync } from '@ithemes/security-hocs';
 import { Page as RegisterPage } from '@ithemes/security.pages.settings';
 import { STORE_NAME as SEARCH_STORE_NAME } from '@ithemes/security-search';
-import { MODULES_STORE_NAME } from '@ithemes/security-data';
+import { MODULES_STORE_NAME } from '@ithemes/security.packages.data';
 import { Page } from './components';
 import './style.scss';
 
@@ -35,6 +35,7 @@ export default function App() {
 		select( MODULES_STORE_NAME ).getActiveModules()
 	);
 	const asyncNotifications = useAsync(
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		useCallback( fetchNotifications(), [ modules ] )
 	);
 	const asyncUsersAndRoles = useAsync( fetchUsersAndRoles );
@@ -44,9 +45,9 @@ export default function App() {
 		<RegisterPage
 			id="notification-center"
 			title={ __( 'Notifications', 'better-wp-security' ) }
-			icon="bell"
+			icon="email-alt"
 			priority={ 20 }
-			roots={ [ 'onboard', 'settings' ] }
+			roots={ [ 'onboard', 'import', 'settings' ] }
 			key={ asyncNotifications.status + asyncUsersAndRoles.status }
 		>
 			{ () => (
@@ -92,5 +93,5 @@ function useSearchProviders( notifications ) {
 				);
 			}
 		);
-	}, [ notifications ] );
+	}, [ notifications, registerProvider ] );
 }

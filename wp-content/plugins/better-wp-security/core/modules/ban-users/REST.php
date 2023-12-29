@@ -46,7 +46,7 @@ final class REST implements Runnable {
 			'uiSchema'   => [
 				'bans' => [
 					'ui:field'       => 'TextareaListField',
-					'ui:rows'        => 10,
+					'ui:rows'        => 7,
 					'ui:placeholder' => '127.0.0.1 # This is my note',
 				],
 			]
@@ -111,6 +111,9 @@ final class REST implements Runnable {
 			'rel'              => 'create-form',
 			'href'             => rest_url( 'ithemes-security/rpc/ban-users/add-many' ),
 			'submissionSchema' => \ITSEC_Lib_REST::sanitize_schema_for_output( $this->schema ),
+			'targetHints'      => [
+				'allow' => \ITSEC_Core::current_user_can_manage() ? [ 'POST' ] : [],
+			],
 			'title'            => $this->schema['title'],
 		];
 
