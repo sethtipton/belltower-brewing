@@ -10,6 +10,6 @@ jobs:
     - name: 📂 Sync files
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
-        server: ftp.sethipton.com
+        server: ftp.sethtipton.com
         username: sethipt
         password: 9u!yKBs2E9y
