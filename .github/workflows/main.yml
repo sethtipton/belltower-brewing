@@ -12,4 +12,4 @@ jobs:
       with:
         server: ftp.sethtipton.com
         username: sethtipt@162.241.217.135
-        password: 9u!yKBs2E9y
+        password: ${{ secrets.SSH_PRIVATE_KEY }}
