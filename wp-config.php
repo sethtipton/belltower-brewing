@@ -6,13 +6,13 @@ define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settin
 // END iThemes Security - Do not modify or remove this line
 
 function is_local_environment() {
-	echo 'Current HTTP_HOST: ' . $_SERVER['HTTP_HOST']; // Debugging line
+	//echo 'Current HTTP_HOST: ' . $_SERVER['HTTP_HOST']; // Debugging line
 	$local_domains = ['localhost', '127.0.0.1', 'localhost:10003', '127.0.0.1:8080', 'your-local-domain.com'];
 	return in_array($_SERVER['HTTP_HOST'], $local_domains);
 }
 
 if (is_local_environment()) {
-	echo "Local environment detected.";
+	//echo "Local environment detected.";
 
 	/**
 	 * The base configuration for WordPress
@@ -91,7 +91,7 @@ if (is_local_environment()) {
 
 }else {
 
-	echo "production environment detected.";
+	//echo "production environment detected.";
 	define( 'ITSEC_ENCRYPTION_KEY', 'T0NxckNXfkF4IERPZEg/a2xnVVRNUXlfMGxEWjYvPHR4PDkxSFd4TGxFSkUxT3Y0ZCNhdShSKj59QikmR19fcw==' );
 
 	/**
