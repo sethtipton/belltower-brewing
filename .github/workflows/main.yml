@@ -13,3 +13,9 @@ jobs:
         server: ftp.sethtipton.com
         username: sethtipt
         password: ${{ secrets.SSH_PRIVATE_KEY }}
+        server-dir: public_html/belltowerbrewing/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          **/wp-content/plugins/**
