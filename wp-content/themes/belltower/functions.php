@@ -186,7 +186,7 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 				'post_type' => 'post',
 				'post_status' => 'publish',
 				'category_name' => 'events',
-				'posts_per_page' => 5,
+				'posts_per_page' => 10,
 				'paged' => $paged,
 				'meta_key' => 'event_date', // ACF field name
 				'orderby' => 'meta_value', // Order by the meta value
