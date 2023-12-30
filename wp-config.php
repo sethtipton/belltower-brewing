@@ -1,15 +1,18 @@
 <?php
 
+// BEGIN iThemes Security - Do not modify or remove this line
+// iThemes Security Config Details: 2
+define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
+// END iThemes Security - Do not modify or remove this line
+
 function is_local_environment() {
-	$local_domains = ['localhost', '127.0.0.1', 'your-local-domain.com'];
+	//echo 'Current HTTP_HOST: ' . $_SERVER['HTTP_HOST']; // Debugging line
+	$local_domains = ['localhost', '127.0.0.1', 'localhost:10003', '127.0.0.1:8080', 'your-local-domain.com'];
 	return in_array($_SERVER['HTTP_HOST'], $local_domains);
 }
 
 if (is_local_environment()) {
-	// BEGIN iThemes Security - Do not modify or remove this line
-	// iThemes Security Config Details: 2
-	define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
-	// END iThemes Security - Do not modify or remove this line
+	//echo "Local environment detected.";
 
 	/**
 	 * The base configuration for WordPress
@@ -85,12 +88,10 @@ if (is_local_environment()) {
 
 	/** Sets up WordPress vars and included files. */
 	require_once ABSPATH . 'wp-settings.php';
-}else {
-	// BEGIN iThemes Security - Do not modify or remove this line
-	// iThemes Security Config Details: 2
-	define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
-	// END iThemes Security - Do not modify or remove this line
 
+}else {
+
+	//echo "production environment detected.";
 	define( 'ITSEC_ENCRYPTION_KEY', 'T0NxckNXfkF4IERPZEg/a2xnVVRNUXlfMGxEWjYvPHR4PDkxSFd4TGxFSkUxT3Y0ZCNhdShSKj59QikmR19fcw==' );
 
 	/**
@@ -187,7 +188,5 @@ if (is_local_environment()) {
 
 	/** Sets up WordPress vars and included files. */
 	require_once ABSPATH . 'wp-settings.php';
-
-
 
 }
