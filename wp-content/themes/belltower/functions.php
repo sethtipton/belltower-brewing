@@ -177,6 +177,80 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 			),
 		) );
 
+
+		function display_events_by_date() {
+			ob_start(); // Start output buffering
+		
+			$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+			$args = array(
+				'post_type' => 'post',
+				'post_status' => 'publish',
+				'category_name' => 'events',
+				'posts_per_page' => 5,
+				'paged' => $paged,
+				'meta_key' => 'event_date', // ACF field name
+				'orderby' => 'meta_value', // Order by the meta value
+				'order' => 'ASC', // Ascending order
+				'meta_query' => array(
+					array(
+						'key' => 'event_date',
+						'value' => date('Ymd'), // Current date in Ymd format
+						'compare' => '>=', // Show events from today onwards
+						'type' => 'DATE'
+					),
+				),
+			);
+			$arr_posts = new WP_Query($args);
+		
+			if ($arr_posts->have_posts()) :
+				echo '<ul class="wp-block-latest-posts__list wp-block-latest-posts event-feed cwidth">'; // Start of the list
+				while ($arr_posts->have_posts()) : $arr_posts->the_post();
+					$post_link = esc_url(get_permalink());
+					$title = get_the_title();
+		
+					// Check if title is empty and provide default
+					$title = $title ? $title : __('(no title)');
+		
+					echo '<li>';
+					// Featured Image
+					if (has_post_thumbnail()) {
+						$featured_image = get_the_post_thumbnail(null, 'full', array('class' => 'wp-block-latest-posts__featured-image alignleft'));
+						echo sprintf('<a href="%1$s">%2$s</a>', $post_link, $featured_image);
+					}
+		
+					// Title
+					echo sprintf('<a class="wp-block-latest-posts__post-title" href="%1$s">%2$s</a>', $post_link, esc_html($title));
+		
+					// Post Meta (Date, Author)
+					// Adjust or remove these sections based on your requirements
+					echo '<div class="wp-block-latest-posts__post-meta">';
+					//echo '<span class="post-date">' . get_the_date() . '</span>';
+
+					// Retrieve the event_date field
+					$event_date = get_field('event_date');
+					$formatted_date = $event_date ? date_i18n('F j, Y', strtotime($event_date)) : '';
+					if ($formatted_date) {
+						echo '<div class="event-date">' . esc_html($formatted_date) . '</div>';
+					}
+		
+					// Excerpt
+					echo '<div class="wp-block-latest-posts__post-excerpt">';
+					echo get_the_excerpt();
+					echo '</div>';
+		
+					echo '</li>';
+				endwhile;
+				echo '</ul>'; // End of the list
+			endif;
+		
+			wp_reset_postdata(); // Reset post data
+		
+			return ob_get_clean(); // Return the buffered output
+		}
+		add_shortcode('events_by_date', 'display_events_by_date');
+		
+		
+
 	}
 endif;
 add_action( 'after_setup_theme', 'belltower_setup' );

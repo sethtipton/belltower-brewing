@@ -12,18 +12,30 @@ get_header();
 
 	<main id="primary" class="site-main default-page events-page">
 
-	<!--
+<!-- 
 		<div class="events-feed">
 			<?php
-			$paged = (get_query_var( 'paged' )) ? get_query_var( 'paged' ) : 1;
+			$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 			$args = array(
 				'post_type' => 'post',
 				'post_status' => 'publish',
 				'category_name' => 'events',
 				'posts_per_page' => 5,
 				'paged' => $paged,
+				'meta_key' => 'event_date', // ACF field name
+				'orderby' => 'meta_value', // Order by the meta value
+				'order' => 'ASC', // Ascending order
+				'meta_query' => array(
+					array(
+						'key' => 'event_date',
+						'value' => date('Ymd'), // Current date in Ymd format
+						'compare' => '>=', // Show events from today onwards
+						'type' => 'DATE'
+					),
+				),
 			);
-			$arr_posts = new WP_Query( $args );
+			$arr_posts = new WP_Query($args);
+
 		
 			if ( $arr_posts->have_posts() ) :
 		
@@ -56,8 +68,7 @@ get_header();
 			endif;
 			?>
 		</div>
-	-->
-
+-->
 		<?php
 		while ( have_posts() ) :
 			the_post();

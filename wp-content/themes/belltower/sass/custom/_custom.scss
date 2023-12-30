@@ -975,6 +975,10 @@ body.blog {
 	&:hover {opacity: 0.8;}
 }
 
+.event-feed {
+	//background:purple;
+}
+
 @media (max-width:$btcwidth) {
 	.cwidth {
 		padding-left: $btsitePadding;
