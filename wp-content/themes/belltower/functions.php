@@ -230,7 +230,7 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 					$event_date = get_field('event_date');
 					$formatted_date = $event_date ? date_i18n('F j, Y', strtotime($event_date)) : '';
 					if ($formatted_date) {
-						echo '<div class="event-date">' . esc_html($formatted_date) . '</div>';
+						echo '<div class="event-date">Join Us on ' . esc_html($formatted_date) . '</div>';
 					}
 		
 					// Excerpt
