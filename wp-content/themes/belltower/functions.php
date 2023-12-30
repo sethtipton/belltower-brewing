@@ -214,7 +214,8 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 					echo '<li>';
 					// Featured Image
 					if (has_post_thumbnail()) {
-						$featured_image = get_the_post_thumbnail(null, 'full', array('class' => 'wp-block-latest-posts__featured-image alignleft'));
+						$featured_image = get_the_post_thumbnail(null, 'full', array('class' => 'wp-block-latest-posts__featured-image alignleft', 'style' => 'max-width: 450px; height: auto;',
+					));
 						echo sprintf('<a href="%1$s">%2$s</a>', $post_link, $featured_image);
 					}
 		
