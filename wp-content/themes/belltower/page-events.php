@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Events Page
+ * Template Name: Upcoming Events
  *
  * @link https://developer.wordpress.org/themes/basics/template-hierarchy/
  *

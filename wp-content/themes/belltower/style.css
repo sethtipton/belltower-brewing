@@ -635,7 +635,9 @@ a {
       position: absolute;
       top: 100%;
       left: -999em;
-      z-index: 99999; }
+      z-index: 99999;
+      flex-flow: wrap;
+      padding-top: 1em; }
       .main-navigation ul ul ul {
         left: -999em;
         top: 0; }
