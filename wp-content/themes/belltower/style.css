@@ -1454,6 +1454,19 @@ body.page-id-1168 .fullheightimg {
 	}
 }
 */
+a.googlecal {
+  background: #808166;
+  color: #E5E5E5;
+  padding: 0.3em;
+  text-decoration: none;
+  position: relative; }
+  a.googlecal:hover {
+    color: #fff;
+    color: #b8a881;
+    text-decoration: underline; }
+  a.googlecal:visited {
+    color: #E5E5E5; }
+
 .home-head {
   background-repeat: no-repeat;
   background-size: cover;

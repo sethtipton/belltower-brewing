@@ -643,6 +643,21 @@ body.page-id-1168 .fullheightimg {margin-bottom:0;}
 }
 */
 
+a.googlecal {
+	background:$color__btdarkgreen;
+	color:$color__btwhite;
+	padding:0.3em;
+	text-decoration: none;
+	position: relative;
+	&:hover {
+		color:#fff;
+		color:$color__btyellow;
+		text-decoration: underline;
+	}
+	&:visited {
+		color:$color__btwhite;
+	}
+}
 .home-head {
 	background-repeat: no-repeat;
 	background-size: cover;

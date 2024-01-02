@@ -238,6 +238,11 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 					echo '<div class="wp-block-latest-posts__post-excerpt">';
 					echo get_the_excerpt();
 					echo '</div>';
+
+					if(get_field('google_calendar_link')): 
+						$limitWidth = get_field('google_calendar_link');
+						echo '<a class="googlecal" target="_blank" href="' . esc_url($limitWidth) . '">Add this event to you Google calendar</a>';
+					endif;
 		
 					echo '</li>';
 				endwhile;
