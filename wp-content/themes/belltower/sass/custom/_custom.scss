@@ -772,6 +772,19 @@ body.page-id-1168 .fullheightimg {margin-bottom:0;}
 	max-height: none;
 }
 
+.wp-block-button__link{
+	color:#fff;
+	background-color:$color__btdarkestgreen;
+	border-radius:9999px;
+	box-shadow:none;
+	text-decoration:none;
+	padding:calc(.667em + 2px) calc(1.333em + 2px);
+	font-size: 1.2rem;
+	line-height: 1.5;
+	&:visited {color:$color__btpurewhite;}
+	&:hover {color:$color__btyellow;}
+}
+
 .wp-block-file {
 	a {
 		color:$color__btdarkgreen;
