@@ -17,6 +17,14 @@ get_header();
 
 			get_template_part( 'template-parts/content', get_post_type() );
 
+			// Check if the 'google_calendar_link' field has a value
+			if(get_field('google_calendar_link')): 
+				$googleCalendarLink = get_field('google_calendar_link');
+				echo '<div class="googlecalwrap cwidth">';
+				echo '<a class="googlecal" target="_blank" href="' . esc_url($googleCalendarLink) . '">Add this event to your Google calendar</a>';
+				echo '</div>';
+			endif;
+
 			the_post_navigation(
 				array(
 					'prev_text' => '<span class="nav-subtitle">' . esc_html__( 'Previous:', 'belltower' ) . '</span> <span class="nav-title">%title</span>',

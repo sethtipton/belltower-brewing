@@ -1044,8 +1044,10 @@ ul li {
       display: inline; }
     .btpost-page .entry-content .wp-block-image.block-align-left {
       display: inline; }
-  .btpost-page .entry-footer .cat-links {
+  .btpost-page .entry-footer {
     display: none; }
+    .btpost-page .entry-footer .cat-links {
+      display: none; }
   .btpost-page .post-navigation .nav-links a {
     color: #808166; }
   .btpost-page .post-navigation .nav-title {
@@ -1054,6 +1056,9 @@ ul li {
     font-size: 1.2rem; }
   .btpost-page .comments-area a {
     color: #808166; }
+  .btpost-page .googlecalwrap {
+    margin-top: -4vh;
+    margin-bottom: 6vh; }
 
 #pixel-to-watch {
   position: absolute;

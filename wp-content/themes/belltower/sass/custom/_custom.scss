@@ -214,6 +214,7 @@ ul li {margin: $u30txtPadding1 0;}
 		}
 	}
 	.entry-footer {
+		display:none;
 		//width:60%;
 		.cat-links {display:none;}
 	}
@@ -229,7 +230,14 @@ ul li {margin: $u30txtPadding1 0;}
 			color:$color__btdarkgreen;
 		}
 	}
+	.googlecalwrap{
+		margin-top: -4vh;
+		margin-bottom: 6vh;
+	}
+	//background-color: purple;
 }
+
+
 
 //Scroll Trigger
 #pixel-to-watch {
