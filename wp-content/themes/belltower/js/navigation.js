@@ -4,7 +4,6 @@
  * Handles toggling the navigation menu for small screens and enables TAB key
  * navigation support for dropdown menus.
  */
-console.log('Snarf');
  const doc = document;
  const docbody = doc.body;
  const btpage = doc.getElementById('primary');
