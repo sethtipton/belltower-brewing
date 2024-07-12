@@ -1423,7 +1423,6 @@ h1 {
 }
 .main-navigation ul {
   justify-content: space-between;
-  max-height: 100px;
   padding-top: clamp(1px, 2vh, 30px);
   padding-bottom: clamp(1px, 2vh, 30px);
   align-items: center;
