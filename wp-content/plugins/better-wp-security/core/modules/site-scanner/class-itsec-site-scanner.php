@@ -194,6 +194,13 @@ class ITSEC_Site_Scanner implements Runnable {
 		foreach ( $vulnerabilities->get_data() as $vulnerability ) {
 			$vulnerability->unresolve();
 			$this->vulnerabilities->persist( $vulnerability );
+			/**
+			 * Fires when a vulnerability has been seen.
+			 *
+			 * @param Vulnerability       $model
+			 * @param Vulnerability_Issue $issue
+			 */
+			do_action( 'itsec_vulnerability_was_seen', $vulnerability, $vulnerability->as_issue() );
 		}
 	}
 

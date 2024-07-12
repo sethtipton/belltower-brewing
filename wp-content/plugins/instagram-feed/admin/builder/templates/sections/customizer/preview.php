@@ -5,7 +5,7 @@
 		 *
 		 * @since 4.0
 		 */
-		do_action('sbi_admin_notices');
+		// do_action('sbi_admin_notices');
 
 		$feed_id = ! empty( $_GET['feed_id'] ) ? (int)$_GET['feed_id'] : 0;
 	?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,10 @@ class Ai1wm_Export_Clean {
 
 		// Delete storage files
 		Ai1wm_Directory::delete( ai1wm_storage_path( $params ) );
+
+		if ( isset( $params['ai1wm_export_cancel'] ) ) {
+			do_action( 'ai1wm_status_export_canceled', $params );
+		}
 
 		// Exit in console
 		if ( defined( 'WP_CLI' ) ) {

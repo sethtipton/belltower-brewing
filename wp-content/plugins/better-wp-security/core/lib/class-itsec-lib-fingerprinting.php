@@ -3,11 +3,6 @@
 use iThemesSecurity\User_Groups\Matcher;
 use iThemesSecurity\User_Groups;
 
-require_once( dirname( __FILE__ ) . '/fingerprinting/class-itsec-fingerprint.php' );
-require_once( dirname( __FILE__ ) . '/fingerprinting/class-itsec-fingerprint-comparison.php' );
-require_once( dirname( __FILE__ ) . '/fingerprinting/class-itsec-fingerprint-value.php' );
-require_once( dirname( __FILE__ ) . '/fingerprinting/interface-itsec-fingerprint-source.php' );
-
 class ITSEC_Lib_Fingerprinting {
 
 	/** @var ITSEC_Fingerprint_Source[] */
@@ -170,7 +165,7 @@ class ITSEC_Lib_Fingerprinting {
 
 		/** @var User_Groups\Matcher $matcher */
 		$matcher = ITSEC_Modules::get_container()->get( Matcher::class );
-		$applies = $matcher->matches( User_Groups\Match_Target::for_user( $user ), $group);
+		$applies = $matcher->matches( User_Groups\Match_Target::for_user( $user ), $group );
 
 		if ( $had_filter ) {
 			add_filter( 'user_has_cap', array( 'ITSEC_Fingerprinting', 'restrict_capabilities' ), 10, 4 );
@@ -187,15 +182,15 @@ class ITSEC_Lib_Fingerprinting {
 	 * @return ITSEC_Fingerprint_Source[]
 	 */
 	public static function get_sources() {
-		if ( ! self::$sources ) {
-			$sources = array();
+		if ( ! is_array( self::$sources ) ) {
+			self::$sources = array();
 
 			/**
 			 * Filter the available fingerprint sources.
 			 *
 			 * @param ITSEC_Fingerprint_Source[] $sources
 			 */
-			$sources = apply_filters( 'itsec_fingerprint_sources', $sources );
+			$sources = apply_filters( 'itsec_fingerprint_sources', array() );
 
 			foreach ( $sources as $source ) {
 				self::$sources[ $source->get_slug() ] = $source;

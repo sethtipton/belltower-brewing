@@ -2478,6 +2478,9 @@ final class ITSEC_Lib {
 					'type' => 'string',
 					'enum' => [ 'normal', 'early' ],
 				],
+				'ip'            => [
+					'type' => 'boolean',
+				],
 			],
 		];
 
@@ -2574,8 +2577,21 @@ final class ITSEC_Lib {
 					} elseif ( $requirement === 'early' && ! ITSEC_Core::is_loading_early() ) {
 						$error->add( 'load', __( 'Loading Solid Security without an MU-Plugin is not supported.', 'better-wp-security' ) );
 					}
+					break;
+				case 'ip':
+					if ( ! ITSEC_Lib_IP_Detector::is_configured() ) {
+						$error->add( 'ip', __( 'You must select an IP Detection method in Global Settings.', 'better-wp-security' ) );
+					}
+					break;
 			}
 		}
+
+		/**
+		 * Fires when a requirements error is encountered.
+		 *
+		 * @param WP_Error $error
+		 */
+		do_action( 'itsec_requirements_error', $error );
 
 		return $error;
 	}

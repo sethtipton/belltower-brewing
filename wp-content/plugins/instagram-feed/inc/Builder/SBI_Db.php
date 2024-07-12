@@ -340,11 +340,12 @@ class SBI_Db {
 	/**
 	 * Query the to get feeds list for Elementor
 	 *
+	 * @param bool $default - if true, add a default option.
 	 * @return array
 	 *
 	 * @since 6.0
 	 */
-	public static function elementor_feeds_query() {
+	public static function elementor_feeds_query($default = false) {
 		global $wpdb;
 		$feeds_elementor  = array();
 		$feeds_table_name = $wpdb->prefix . 'sbi_feeds';
@@ -358,6 +359,11 @@ class SBI_Db {
 				$feeds_elementor[ $feed->id ] = $feed->feed_name;
 			}
 		}
+
+		if ( $default ){
+			$feeds_elementor[0] = esc_html__( 'Choose a Feed', 'instagram-feed' );
+		}
+
 		return $feeds_elementor;
 	}
 

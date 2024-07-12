@@ -2,6 +2,7 @@
 
 namespace Smashballoon\Stubs\Services;
 
-interface ServiceProviderInterface {
-	public function register();
+interface ServiceProviderInterface
+{
+    public function register();
 }

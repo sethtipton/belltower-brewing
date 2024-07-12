@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,10 @@ class Ai1wm_Database_Utility {
 	 */
 	public static function create_client() {
 		global $wpdb;
+
+		if ( $wpdb instanceof WP_SQLite_DB ) {
+			return new Ai1wm_Database_Sqlite( $wpdb );
+		}
 
 		if ( PHP_MAJOR_VERSION >= 7 ) {
 			return new Ai1wm_Database_Mysqli( $wpdb );

@@ -1,4 +1,21 @@
 <div v-if="selected === 'app-3'">
+    <div class="sb-tab-box sb-legacy-css-box sb-reset-box-style clearfix" v-if="sbi_settings.legacyCSSSettings">
+        <div class="tab-label">
+            <h3>{{advancedTab.legacyCSSBox.title}}</h3>
+        </div>
+
+        <div class="sbi-tab-form-field">
+            <div class="sb-form-field">
+                <label for="legacy-css-settings" class="sbi-checkbox">
+                    <input type="checkbox" id="legacy-css-settings" v-model="model.advanced.enqueue_legacy_css">
+                    <span class="toggle-track">
+                        <div class="toggle-indicator"></div>
+                    </span>
+                </label>
+                <span class="help-text" v-html="advancedTab.legacyCSSBox.helpText"></span>
+            </div>
+        </div>
+    </div>
     <div class="sb-tab-box sb-ajax-box sb-reset-box-style clearfix">
         <div class="tab-label">
             <h3>{{advancedTab.ajaxBox.title}}</h3>

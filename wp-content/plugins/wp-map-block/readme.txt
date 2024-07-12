@@ -2,10 +2,10 @@
 Contributors: tusharimran, academylms
 Donate link: https://www.buymeacoffee.com/academylms
 Tags: block, map block, google maps, openstreet map, gutenberg, leaflet, gutenberg block, gutenberg editor, google maps for gutenberg, maps for gutenberg, gutenberg maps
-Requires at least: 5.4
-Tested up to: 6.2
+Requires at least: 6.0
+Tested up to: 6.5
 Requires PHP: 5.6
-Stable tag: 1.4.8
+Stable tag: 1.4.10
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -60,10 +60,6 @@ WP Map Block is the ideal solution for you if you're using the Gutenberg editor 
 
 **🔑 API key not required:** To place the map on your site. Simply select the map block and place it on any page of your site. The vast majority of Google Map plugins now available on the market need the use of API keys in order to activate the map; however, our plugin does not.
 
-<strong>Want To Contribute To The Plugin?</strong>
-
-You may now contribute to the plugin on Github: <a href="https://github.com/imrantushar/wp-map-block" target="_blank" rel="">WP Map Block on Github</a>
-
 
 == Installation ==
 
@@ -117,6 +113,13 @@ Change the way you are writing the address or make it more specific. Make sure t
 
 
 == Changelog ==
+
+= 1.4.10 – 2024-05-22 =
+- Added: WP 6.5 Compatibility
+- Fixed: Default Marker data not saved issue
+
+= 1.4.9 – 2024-02-03 =
+- Fixed: Plugin Conflict
 
 = 1.4.8 – 2023-03-31 =
 - Updated: Readme and Plugin Links updated

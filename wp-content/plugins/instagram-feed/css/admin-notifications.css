@@ -81,11 +81,11 @@
   margin: -15px 0px 3px 0;
   display: flex;
 }
-
 .sbi-btn {
   transition: all 0.15s ease-in-out;
   letter-spacing: 0.2px;
 }
+
 .sbi-btn-green{
   background: #1da867!important;
   color: #fff!important;

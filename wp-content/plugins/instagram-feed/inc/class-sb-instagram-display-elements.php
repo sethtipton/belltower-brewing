@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die( '-1' );
 }
 
+use InstagramFeed\Helpers\Util;
+
 class SB_Instagram_Display_Elements {
 
 	/**
@@ -337,8 +339,14 @@ class SB_Instagram_Display_Elements {
 	 * @since 6.0
 	 */
 	public static function get_sbi_images_style( $settings ) {
+
+		
 		if ( ! empty( $settings['imagepadding'] ) ) {
-			return ' style="padding: ' . (int) $settings['imagepadding'] . esc_attr( $settings['imagepaddingunit'] ) . ';"';
+			if ( ! is_admin() && Util::sbi_legacy_css_enabled() ) {
+				return ' style="padding: ' . (int) $settings['imagepadding'] . esc_attr( $settings['imagepaddingunit'] ) . ';"';
+			} else {
+				return ' style="gap: ' . (int) $settings['imagepadding'] * 2 . esc_attr( $settings['imagepaddingunit'] ) . ';"';
+			}
 		}
 		return '';
 	}
@@ -413,7 +421,7 @@ class SB_Instagram_Display_Elements {
 
 	public static function get_follow_hover_color( $settings ) {
 		if ( ! empty( $settings['followhovercolor'] ) && $settings['followhovercolor'] !== '#359dff' ) {
-			return $settings['followhovercolor'];
+			return esc_attr($settings['followhovercolor']);
 		}
 		return '';
 	}
@@ -444,7 +452,7 @@ class SB_Instagram_Display_Elements {
 
 	public static function get_load_button_hover_color( $settings ) {
 		if ( ! empty( $settings['buttonhovercolor'] ) && $settings['buttonhovercolor'] !== '#000' ) {
-			return $settings['buttonhovercolor'];
+			return esc_attr($settings['buttonhovercolor']);
 		}
 		return '';
 	}
@@ -539,7 +547,7 @@ class SB_Instagram_Display_Elements {
 		} else {
 			$feed_id_addition = ! empty( $settings['colorpalette'] ) && $settings['colorpalette'] === 'custom' ? '_' . $settings['feed'] : '';
 			$palette_class    = ! empty( $settings['colorpalette'] ) && $settings['colorpalette'] !== 'inherit' ? ' sbi' . $context . '_palette_' . $settings['colorpalette'] . $feed_id_addition : '';
-			return $palette_class;
+			return esc_attr($palette_class);
 		}
 	}
 
@@ -553,7 +561,7 @@ class SB_Instagram_Display_Elements {
 	 * @since 6.0
 	 */
 	public static function palette_type( $settings ) {
-		return ! empty( $settings['colorpalette'] ) ? $settings['colorpalette'] : 'inherit';
+		return ! empty( $settings['colorpalette'] ) ? esc_attr($settings['colorpalette']) : 'inherit';
 	}
 
 	/**
@@ -623,6 +631,15 @@ class SB_Instagram_Display_Elements {
 			)
 		);
 
+		$atts .= self::print_element_attribute(
+			$customizer,
+			array(
+				'attr'        => 'data-item-padding',
+				'vue_content' => '$parent.customizerFeedData.settings.imagepadding',
+				'php_content' => $settings['imagepadding'],
+			)
+		);
+
 		return $atts;
 	}
 
@@ -682,7 +699,7 @@ class SB_Instagram_Display_Elements {
 			sbi_doing_customizer( $settings ),
 			array(
 				'attr'        => 'title',
-				'vue_content' => '\'@\' + $parent.getHeaderUserName()',
+				'vue_content' => '$parent.getHeaderUserNameTitle()',
 				'php_content' => '@' . esc_attr( $username ),
 			)
 		);
@@ -1207,13 +1224,14 @@ class SB_Instagram_Display_Elements {
 	 */
 	public static function vue_check_header_enabled( $settings, $header_type, $vue_args ) {
 		$customizer = sbi_doing_customizer( $settings );
-		$result_vue = '';
-		if ( $customizer ) {
-			$result_vue = '$parent.valueIsEnabled($parent.customizerFeedData.settings.showheader) ' . $vue_args['condition'];
-			$result_vue = ' v-if=" ' . $result_vue . '" ';
+		$vue_args = !empty($vue_args['condition']) ? $vue_args['condition'] : false;
+		
+		if ( $customizer && $vue_args ) {
+			$result_vue = '$parent.valueIsEnabled($parent.customizerFeedData.settings.showheader) ' . esc_attr($vue_args);
+			return ' v-if=" ' . esc_attr($result_vue) . '" ';
 		}
 
-		return $result_vue;
+		return '';
 	}
 
 	/**
@@ -1227,8 +1245,11 @@ class SB_Instagram_Display_Elements {
 	 */
 	public static function should_show_element_vue( $settings, $setting_name, $custom_condition = false ) {
 		$customizer = sbi_doing_customizer( $settings );
+		$setting_name = !empty($setting_name) ? $setting_name : false;
+		$custom_condition = $custom_condition != false ? $custom_condition : '';
+
 		if ( $customizer ) {
-			return ' v-if="$parent.valueIsEnabled($parent.customizerFeedData.settings.' . $setting_name . ')' . ( $custom_condition != false ? $custom_condition : '' ) . '" ';
+			return ' v-if="$parent.valueIsEnabled($parent.customizerFeedData.settings.' . esc_attr($setting_name) . ')' . ( esc_attr($custom_condition) ) . '" ';
 		}
 		return '';
 	}
@@ -1245,7 +1266,7 @@ class SB_Instagram_Display_Elements {
 	 */
 	public static function should_print_element_vue( $customizer, $content ) {
 		if ( $customizer ) {
-			return ' v-html="' . $content . '" ';
+			return ' v-html="' . esc_html($content) . '" ';
 		}
 		return '';
 	}
@@ -1262,7 +1283,7 @@ class SB_Instagram_Display_Elements {
 	 */
 	public static function create_condition_vue( $customizer, $condition ) {
 		if ( $customizer ) {
-			return ' v-if="' . $condition . '" ';
+			return ' v-if="' .  esc_attr($condition)  . '" ';
 		}
 		return '';
 	}
@@ -1278,10 +1299,11 @@ class SB_Instagram_Display_Elements {
 	 * @since 6.0
 	 */
 	public static function print_element_attribute( $customizer, $args ) {
+		$print_element = ' ' . sanitize_key($args['attr']) . '="' . esc_attr($args['php_content']) . '"';
 		if ( $customizer ) {
-			return ' :' . $args['attr'] . '="' . $args['vue_content'] . '"';
+			$print_element = ' :' . sanitize_key($args['attr']) . '="' . esc_attr($args['vue_content']) . '"';
 		}
-		return ' ' . $args['attr'] . '="' . $args['php_content'] . '"';
+		return $print_element;
 	}
 
 	/**

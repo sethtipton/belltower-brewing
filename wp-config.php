@@ -7,7 +7,7 @@ define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settin
 
 function is_local_environment() {
 	//echo 'Current HTTP_HOST: ' . $_SERVER['HTTP_HOST']; // Debugging line
-	$local_domains = ['localhost', '127.0.0.1', 'localhost:10003', '127.0.0.1:8080', 'your-local-domain.com'];
+	$local_domains = ['localhost', '127.0.0.1', 'localhost:10003', '127.0.0.1:8080', 'your-local-domain.com', 'belltower.local'];
 	return in_array($_SERVER['HTTP_HOST'], $local_domains);
 }
 

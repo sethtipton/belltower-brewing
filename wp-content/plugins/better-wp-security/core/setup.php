@@ -1,5 +1,7 @@
 <?php
 
+use iThemesSecurity\Strauss\StellarWP\Telemetry\Uninstall as Telemetry_Uninstall;
+
 /**
  * Plugin activation, upgrade, deactivation and uninstall
  *
@@ -86,6 +88,10 @@ final class ITSEC_Setup {
 		}
 
 		ITSEC_Modules::initialize_container();
+
+		if ( ITSEC_Core::get_install_type() === 'pro' ) {
+			ITSEC_Modules::load_module_file( 'active.php', 'security-check-pro' );
+		}
 
 		// Determine build number of current data if it was not passed in.
 
@@ -379,6 +385,7 @@ final class ITSEC_Setup {
 		ITSEC_Schema::remove_database_tables();
 		ITSEC_Lib_Directory::remove( ITSEC_Core::get_storage_dir() );
 		ITSEC_Lib::clear_caches();
+		Telemetry_Uninstall::run( 'solid-security' );
 	}
 
 	private static function get_version_being_uninstalled() {

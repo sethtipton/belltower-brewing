@@ -20,7 +20,6 @@ $maybe_carousel_icon = $media_type === 'carousel' ? SB_Instagram_Display_Element
 $maybe_video_icon = $media_type === 'video' ? SB_Instagram_Display_Elements::get_icon( 'video', $icon_type ) : '';
 $media_url = SB_Instagram_Display_Elements::get_optimum_media_url( $post, $settings, $resized_images );
 $media_full_res = SB_Instagram_Parse::get_media_url( $post );
-$sbi_photo_style_element = SB_Instagram_Display_Elements::get_sbi_photo_style_element( $post, $settings ); // has already been escaped
 $media_all_sizes_json = SB_Instagram_Parse::get_media_src_set( $post, $resized_images );
 
 /**
@@ -48,7 +47,7 @@ $img_screenreader = apply_filters( 'sbi_img_screenreader', $img_screenreader, $p
 ?>
 <div class="sbi_item sbi_type_<?php echo esc_attr( $media_type ); ?><?php echo esc_attr( $classes ); ?>" id="sbi_<?php echo esc_html( $post_id ); ?>" data-date="<?php echo esc_html( $timestamp ); ?>">
     <div class="sbi_photo_wrap">
-        <a class="sbi_photo" href="<?php echo esc_url( $permalink ); ?>" target="_blank" rel="noopener nofollow" data-full-res="<?php echo esc_url( $media_full_res ); ?>" data-img-src-set="<?php echo esc_attr( sbi_json_encode( $media_all_sizes_json ) ); ?>"<?php echo $sbi_photo_style_element; ?>>
+        <a class="sbi_photo" href="<?php echo esc_url( $permalink ); ?>" target="_blank" rel="noopener nofollow" data-full-res="<?php echo esc_url( $media_full_res ); ?>" data-img-src-set="<?php echo esc_attr( sbi_json_encode( $media_all_sizes_json ) ); ?>">
             <span class="sbi-screenreader"><?php echo esc_html( $img_screenreader ); ?></span>
             <?php echo $maybe_carousel_icon; ?>
 	        <?php echo $maybe_video_icon; ?>

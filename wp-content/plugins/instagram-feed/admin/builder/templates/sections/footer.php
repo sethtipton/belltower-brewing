@@ -21,6 +21,7 @@
 -->
 <div class="sbi-stck-wdg" v-if="viewsActive.pageScreen !== 'selectFeed' && ! iscustomizerScreen" :data-active="checkActiveView('footerWidget')">
 	<?php
+	use InstagramFeed\Admin\SBI_Callout;
 		$smashballoon_info = InstagramFeed\Builder\SBI_Feed_Builder::get_smashballoon_info();
 	?>
 	<div class="sbi-stck-pop">
@@ -131,3 +132,7 @@ ref="addSourceRef"
 :plugins="plugins[viewsActive.installPluginModal]"
 >
 </install-plugin-popup>
+
+<div v-if="viewsActive?.pageScreen === 'welcome' && isSetupPage === 'false' && customizerFeedData === undefined">
+	<?php SBI_Callout::print_callout('backend'); ?>
+</div>

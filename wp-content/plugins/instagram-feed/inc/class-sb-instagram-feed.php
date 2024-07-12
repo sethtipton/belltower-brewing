@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die( '-1' );
 }
 
+use InstagramFeed\Helpers\Util;
+
 class SB_Instagram_Feed
 {
 	/**
@@ -1328,9 +1330,15 @@ class SB_Instagram_Feed
 		);
 
 		$encoded_options = sbi_json_encode( $js_options );
+		// legacy settings.
+        $path = Util::sbi_legacy_css_enabled() ? 'js/legacy/' : 'js/';
+
+		if ( ! wp_script_is( 'jquery', 'queue' ) ) {
+			wp_enqueue_script( 'jquery' );
+		}
 
 		$js_option_html = '<script type="text/javascript">var sb_instagram_js_options = ' . $encoded_options . ';</script>';
-		$js_option_html .= "<script type='text/javascript' src='" . trailingslashit( SBI_PLUGIN_URL ) . 'js/sbi-scripts.min.js?ver=' . SBIVER . "'></script>";
+		$js_option_html .= "<script type='text/javascript' src='" . trailingslashit( SBI_PLUGIN_URL ) . $path . 'sbi-scripts.min.js?ver=' . SBIVER . "'></script>";
 
 		return $js_option_html;
 	}

@@ -27,7 +27,7 @@ class SBI_About_Us {
 	 *
 	 * @since 4.0
 	 */
-	function __construct(){
+	public function __construct(){
 		$this->init();
 	}
 
@@ -49,7 +49,7 @@ class SBI_About_Us {
 	 *
 	 * @since 4.0
 	 */
-	function register_menu() {
+	public function register_menu() {
         $cap = current_user_can( 'manage_instagram_feed_options' ) ? 'manage_instagram_feed_options' : 'manage_options';
         $cap = apply_filters( 'sbi_settings_pages_capability', $cap );
 
@@ -299,7 +299,7 @@ class SBI_About_Us {
 	                'download_plugin' => 'https://downloads.wordpress.org/plugin/coming-soon.zip',
 	                'title' => __( 'SeedProd Website Builder', 'instagram-feed' ),
 	                'description' => __( 'The fastest drag & drop landing page builder for WordPress. Create custom landing pages without writing code, connect a CRM, collect subscribers, and grow an audience. Trusted by 1 million sites.', 'instagram-feed' ),
-	                'icon' => $images_url . 'plugin-seedprod.png',
+	                'icon' => $images_url . 'plugin-seedProd.png',
 	                'installed' => isset( $installed_plugins['coming-soon/coming-soon.php'] ) ? true : false,
 	                'activated' => is_plugin_active('coming-soon/coming-soon.php'),
                 ),
@@ -339,6 +339,6 @@ class SBI_About_Us {
 	 * @since 4.0
 	 */
 	public function about_us(){
-		return SBI_View::render( 'about.index' );
+		SBI_View::render( 'about.index' );
 	}
 }

@@ -12,7 +12,16 @@ get_header();
 
 	<main id="primary" class="site-main default-page events-page">
 
-<!-- 
+<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+	<header id="entry-header" class="entry-header <?php the_field('apply_overlay_to_featured_image'); ?>" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+		<?php the_title( '<h1 class="entry-title">', '</h1>' ); ?>
+	</header><!-- .entry-header -->
+
+	<!-- ACF Adds cwidth class here if "Page Width" is true -->
+	<div class="entry-content <?php if( get_field('limit-width') ): ?>cwidth<?php endif;?>">
+
+
+
 		<div class="events-feed">
 			<?php
 			$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
@@ -30,7 +39,7 @@ get_header();
 						'key' => 'event_date',
 						'value' => date('Ymd'), // Current date in Ymd format
 						'compare' => '>=', // Show events from today onwards
-						'type' => 'DATE'
+						'type' => 'NUMERIC'
 					),
 				),
 			);
@@ -43,18 +52,29 @@ get_header();
 					$arr_posts->the_post();
 					?>
 					<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-						<?php
-						if ( has_post_thumbnail() ) :
-							the_post_thumbnail();
-						endif;
-						?>
-						<header class="entry-header">
-							<h1 class="entry-title"><?php the_title(); ?></h1>
-						</header>
-						<div class="entry-content">
-							<?php the_excerpt(); ?>
-							<a href="<?php the_permalink(); ?>">Read Mores</a>
-						</div>
+						
+						<a href="<?php the_permalink(); ?>" class="event_thumbnail">
+							<?php
+							if ( has_post_thumbnail() ) :
+								the_post_thumbnail();
+							endif;
+							?>
+						</a>
+						
+						<a href="<?php the_permalink(); ?>" class="event_title">
+							<h2 class="entry-title"><?php the_title(); ?></h2>
+							<span class="event_date">
+								<?php the_field('event_date'); ?>
+							</span>
+							<span class="event_time">
+								<?php the_field('event_time'); ?>
+							</span>
+						</a>
+						
+						<?php the_excerpt(); ?>
+
+						<a href="<?php the_permalink(); ?>" class="event_readmore">Read More</a>
+						
 					</article>
 					<?php
 				endwhile;
@@ -68,20 +88,35 @@ get_header();
 			endif;
 			?>
 		</div>
--->
-		<?php
-		while ( have_posts() ) :
-			the_post();
 
-			get_template_part( 'template-parts/content', 'page' );
+	</div><!-- .entry-content -->
 
-			// If comments are open or we have at least one comment, load up the comment template.
-			if ( comments_open() || get_comments_number() ) :
-				comments_template();
-			endif;
+	<?php if ( get_edit_post_link() ) : ?>
+		<footer class="entry-footer">
+			<?php
+			edit_post_link(
+				sprintf(
+					wp_kses(
+						/* translators: %s: Name of current post. Only visible to screen readers */
+						__( 'Edit <span class="screen-reader-text">%s</span>', 'belltower' ),
+						array(
+							'span' => array(
+								'class' => array(),
+							),
+						)
+					),
+					wp_kses_post( get_the_title() )
+				),
+				'<span class="edit-link">',
+				'</span>'
+			);
+			?>
+		</footer><!-- .entry-footer -->
+	<?php endif; ?>
+</article><!-- #post-<?php the_ID(); ?> -->
 
-		endwhile; // End of the loop.
-		?>
+
+
 
 	</main><!-- #main -->
 

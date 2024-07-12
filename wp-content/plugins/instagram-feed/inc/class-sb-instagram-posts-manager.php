@@ -590,7 +590,7 @@ class SB_Instagram_Posts_Manager {
 			}
 		}
 
-		$options = sbi_get_database_settings();
+		$options            = sbi_get_database_settings();
 		$options['connected_accounts'] = $connected_accounts;
 		update_option( 'sb_instagram_settings', $options );
 
@@ -622,15 +622,18 @@ class SB_Instagram_Posts_Manager {
 		$upload     = wp_upload_dir();
 		$upload_dir = $upload['basedir'];
 		$upload_dir = trailingslashit( $upload_dir ) . SBI_UPLOADS_NAME;
+		global $sbi_notices;
 		if ( ! file_exists( $upload_dir ) ) {
 			$created = wp_mkdir_p( $upload_dir );
 			if ( $created ) {
 				$this->remove_error( 'upload_dir' );
+				$sbi_notices->remove_notice( 'upload_dir' );
 			} else {
 				$this->add_error( 'upload_dir', __( 'There was an error creating the folder for storing resized images.', 'instagram-feed' ) . ' ' . $upload_dir );
 			}
 		} else {
 			$this->remove_error( 'upload_dir' );
+			$sbi_notices->remove_notice( 'upload_dir' );
 		}
 
 		sbi_create_database_table();
@@ -796,6 +799,9 @@ class SB_Instagram_Posts_Manager {
 
 		update_option( 'sb_instagram_errors', $this->errors, false );
 		sb_instagram_cron_clear_cache();
+
+		global $sbi_notices;
+		$sbi_notices->remove_notice( 'critical_error' );
 	}
 
 	/**

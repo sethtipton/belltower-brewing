@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@ class Ai1wm_Import_Mu_Plugins {
 			AI1WM_MUPLUGINS_NAME . DIRECTORY_SEPARATOR . AI1WM_WPE_SIGN_ON_PLUGIN_NAME,
 			AI1WM_MUPLUGINS_NAME . DIRECTORY_SEPARATOR . AI1WM_WP_ENGINE_SECURITY_AUDITOR_NAME,
 			AI1WM_MUPLUGINS_NAME . DIRECTORY_SEPARATOR . AI1WM_WP_CERBER_SECURITY_NAME,
+			AI1WM_MUPLUGINS_NAME . DIRECTORY_SEPARATOR . AI1WM_SQLITE_DATABASE_INTEGRATION_NAME,
+			AI1WM_MUPLUGINS_NAME . DIRECTORY_SEPARATOR . AI1WM_SQLITE_DATABASE_ZERO_NAME,
 		);
 
 		// Open the archive file for reading

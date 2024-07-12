@@ -132,4 +132,101 @@ class Util {
 		return $timestamp;
 	}
 
+	/**
+	 * Checks if the user has custom templates, CSS or JS added
+	 * 
+	 * @return bool
+	 * @since 6.3
+	 */
+	public static function sbi_has_custom_templates() {
+		// Check if the user has sbi custom templates in their theme
+		$templates = array(
+			'feed.php',
+			'footer.php',
+			'header.php',
+			'item.php',
+		);
+		foreach ( $templates as $template ) {
+			if ( locate_template( 'sbi/' . $template ) ) {
+				return true;
+			}
+		}
+
+		// Check if the user has custom CSS and or JS added in the settings
+		$settings = get_option( 'sb_instagram_settings', array() );
+		if ( isset( $settings['sb_instagram_custom_css'] ) && ! empty( $settings['sb_instagram_custom_css'] ) ) {
+			return true;
+		}
+		if ( isset( $settings['sb_instagram_custom_js'] ) && ! empty( $settings['sb_instagram_custom_js'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/** 
+	 * Checks if the user has custom templates, CSS or JS added and if they have dismissed the notice
+	 * 
+	 * @return bool
+	 * @since 6.3
+	 */
+	public static function sbi_show_legacy_css_settings() {
+		$show_legacy_css_settings = false;
+		$sbi_statuses = get_option( 'sbi_statuses', array() );
+		
+		if ( ( isset( $sbi_statuses['custom_templates_notice'] ) 
+			&& self::sbi_has_custom_templates() )
+			|| self::sbi_legacy_css_enabled() ) {
+			$show_legacy_css_settings = true;
+		}
+
+		$show_legacy_css_settings = apply_filters( 'sbi_show_legacy_css_settings', $show_legacy_css_settings );
+
+		return $show_legacy_css_settings;
+	}
+
+	/**
+	 * Checks if the user has legacy CSS enabled 
+	 * 
+	 * @return bool
+	 * @since 6.3
+	 */
+	public static function sbi_legacy_css_enabled() {
+		$legacy_css_enabled = false;
+		$settings = get_option( 'sb_instagram_settings', array() );
+		if ( isset( $settings['enqueue_legacy_css'] ) 
+			&& $settings['enqueue_legacy_css'] ) {
+			$legacy_css_enabled = true;
+		}
+
+		$legacy_css_enabled = apply_filters( 'sbi_legacy_css_enabled', $legacy_css_enabled );
+
+		return $legacy_css_enabled;
+	}
+
+	/**
+	 * Checks if sb_instagram_posts_manager errors exists.
+	 * 
+	 * @return bool
+	 */
+	public static function sbi_has_admin_errors() {
+		global $sb_instagram_posts_manager;
+		$are_critical_errors = $sb_instagram_posts_manager->are_critical_errors();
+
+		if ( $are_critical_errors ) {
+			return true;
+		}
+		
+		$errors = $sb_instagram_posts_manager->get_errors();
+		if( ! empty( $errors ) ) {
+			foreach ( $errors as $type => $error ) {
+				if ( in_array( $type, array( 'database_create', 'upload_dir', 'unused_feed', 'platform_data_deleted' ) ) 
+					&& ! empty( $error ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
 }

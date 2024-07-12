@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,8 +129,15 @@ class Ai1wm_Main_Controller {
 		// Enqueue schedules scripts and styles
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_schedules_scripts_and_styles' ), 5 );
 
+		// Enqueue reset scripts and styles
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_reset_scripts_and_styles' ), 5 );
+
 		// Enqueue updater scripts and styles
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_updater_scripts_and_styles' ), 5 );
+
+		// Handle export/import exceptions (errors)
+		add_action( 'ai1wm_status_export_error', array( $this, 'handle_error_cleanup' ), 5, 2 );
+		add_action( 'ai1wm_status_import_error', array( $this, 'handle_error_cleanup' ), 5, 2 );
 	}
 
 	/**
@@ -231,10 +238,13 @@ class Ai1wm_Main_Controller {
 		add_action( 'wp_maybe_auto_update', 'Ai1wm_Updater_Controller::check_for_updates' );
 
 		// Add HTTP export headers
-		add_filter( 'ai1wm_http_export_headers', 'Ai1wm_Export_Controller::http_export_headers' );
+		add_filter( 'ai1wm_http_export_headers', 'ai1wm_auth_headers' );
 
 		// Add HTTP import headers
-		add_filter( 'ai1wm_http_import_headers', 'Ai1wm_Import_Controller::http_import_headers' );
+		add_filter( 'ai1wm_http_import_headers', 'ai1wm_auth_headers' );
+
+		// Add HTTP reset headers
+		add_filter( 'ai1wm_http_reset_headers', 'ai1wm_auth_headers' );
 
 		// Add chunk size limit
 		add_filter( 'ai1wm_max_chunk_size', 'Ai1wm_Import_Controller::max_chunk_size' );
@@ -261,7 +271,7 @@ class Ai1wm_Main_Controller {
 	 * @return void
 	 */
 	public function wp_cli() {
-		if ( defined( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && count( Ai1wm_Extensions::get() ) === 0 ) {
 			WP_CLI::add_command( 'ai1wm', 'Ai1wm_WP_CLI_Command', array( 'shortdesc' => __( 'All-in-One WP Migration Command', AI1WM_PLUGIN_NAME ) ) );
 		}
 	}
@@ -662,11 +672,20 @@ class Ai1wm_Main_Controller {
 		);
 
 		if ( ! defined( 'AI1WMVE_PATH' ) ) {
+			// Sub-level Reset
+			add_submenu_page(
+				'ai1wm_export',
+				__( 'Reset Hub', AI1WM_PLUGIN_NAME ),
+				__( 'Reset Hub', AI1WM_PLUGIN_NAME ) . Ai1wm_Template::get_content( 'main/premium-badge' ),
+				'export',
+				'ai1wm_reset',
+				'Ai1wm_Reset_Controller::index'
+			);
 			// Sub-level Schedules
 			add_submenu_page(
 				'ai1wm_export',
 				__( 'Schedules', AI1WM_PLUGIN_NAME ),
-				__( 'Schedules', AI1WM_PLUGIN_NAME ),
+				__( 'Schedules', AI1WM_PLUGIN_NAME ) . Ai1wm_Template::get_content( 'main/premium-badge' ),
 				'export',
 				'ai1wm_schedules',
 				'Ai1wm_Schedules_Controller::index'
@@ -769,6 +788,9 @@ class Ai1wm_Main_Controller {
 				'ajax'       => array(
 					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_export' ) ) ),
 				),
+				'download'   => array(
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_download_file' ) ) ),
+				),
 				'status'     => array(
 					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1, 'secret_key' => get_option( AI1WM_SECRET_KEY ) ), admin_url( 'admin-ajax.php?action=ai1wm_status' ) ) ),
 				),
@@ -795,6 +817,7 @@ class Ai1wm_Main_Controller {
 				'thanks_for_submitting_your_request'  => __( 'Thanks for submitting your request!', AI1WM_PLUGIN_NAME ),
 				'backups_count_singular'              => __( 'You have %d backup', AI1WM_PLUGIN_NAME ),
 				'backups_count_plural'                => __( 'You have %d backups', AI1WM_PLUGIN_NAME ),
+				'archive_browser_download_error'      => __( 'Error while downloading file', AI1WM_PLUGIN_NAME ),
 			)
 		);
 	}
@@ -1038,13 +1061,19 @@ class Ai1wm_Main_Controller {
 			'ai1wm_backups',
 			array(
 				'ajax'       => array(
-					'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_backups' ) ),
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backups' ) ) ),
 				),
 				'backups'    => array(
-					'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_backup_list' ) ),
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_list' ) ) ),
 				),
 				'labels'     => array(
-					'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_add_backup_label' ) ),
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_add_backup_label' ) ) ),
+				),
+				'content'    => array(
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_list_content' ) ) ),
+				),
+				'download'   => array(
+					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_download_file' ) ) ),
 				),
 				'secret_key' => get_option( AI1WM_SECRET_KEY ),
 			)
@@ -1057,20 +1086,6 @@ class Ai1wm_Main_Controller {
 				'free'   => ai1wm_disk_free_space( AI1WM_STORAGE_PATH ),
 				'factor' => AI1WM_DISK_SPACE_FACTOR,
 				'extra'  => AI1WM_DISK_SPACE_EXTRA,
-			)
-		);
-
-		wp_localize_script(
-			'ai1wm_backups',
-			'ai1wm_list',
-			array(
-				'ajax'       => array(
-					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_list_content' ) ) ),
-				),
-				'download'   => array(
-					'url' => wp_make_link_relative( add_query_arg( array( 'ai1wm_import' => 1 ), admin_url( 'admin-ajax.php?action=ai1wm_backup_download_file' ) ) ),
-				),
-				'secret_key' => get_option( AI1WM_SECRET_KEY ),
 			)
 		);
 
@@ -1133,7 +1148,7 @@ class Ai1wm_Main_Controller {
 	}
 
 	/**
-	 * Enqueue scripts and styles for What's new Controller
+	 * Enqueue scripts and styles for Schedules page
 	 *
 	 * @param  string $hook Hook suffix
 	 * @return void
@@ -1167,6 +1182,40 @@ class Ai1wm_Main_Controller {
 		);
 	}
 
+	/**
+	 * Enqueue scripts and styles for Reset page
+	 *
+	 * @param  string $hook Hook suffix
+	 * @return void
+	 */
+	public function enqueue_reset_scripts_and_styles( $hook ) {
+		if ( stripos( 'all-in-one-wp-migration_page_ai1wm_reset', $hook ) === false ) {
+			return;
+		}
+
+		// We don't want heartbeat to occur when restoring
+		wp_deregister_script( 'heartbeat' );
+
+		// We don't want auth check for monitoring whether the user is still logged in
+		remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
+
+		if ( is_rtl() ) {
+			wp_enqueue_style(
+				'ai1wm_reset',
+				Ai1wm_Template::asset_link( 'css/reset.min.rtl.css' )
+			);
+		} else {
+			wp_enqueue_style(
+				'ai1wm_reset',
+				Ai1wm_Template::asset_link( 'css/reset.min.css' )
+			);
+		}
+
+		wp_enqueue_script(
+			'ai1wm_reset',
+			Ai1wm_Template::asset_link( 'javascript/reset.min.js' )
+		);
+	}
 
 	/**
 	 * Enqueue scripts and styles for Updater Controller
@@ -1237,16 +1286,22 @@ class Ai1wm_Main_Controller {
 	 * @return void
 	 */
 	public function init() {
+		$user     = false;
+		$password = false;
 		// Set username
 		if ( isset( $_SERVER['PHP_AUTH_USER'] ) ) {
-			update_option( AI1WM_AUTH_USER, $_SERVER['PHP_AUTH_USER'] );
+			$user = $_SERVER['PHP_AUTH_USER'];
 		} elseif ( isset( $_SERVER['REMOTE_USER'] ) ) {
-			update_option( AI1WM_AUTH_USER, $_SERVER['REMOTE_USER'] );
+			$user = $_SERVER['REMOTE_USER'];
 		}
 
 		// Set password
 		if ( isset( $_SERVER['PHP_AUTH_PW'] ) ) {
-			update_option( AI1WM_AUTH_PASSWORD, $_SERVER['PHP_AUTH_PW'] );
+			$password = $_SERVER['PHP_AUTH_PW'];
+		}
+
+		if ( $user !== false && $password !== false ) {
+			update_option( AI1WM_AUTH_HEADER, base64_encode( sprintf( '%s:%s', $user, $password ) ) );
 		}
 
 		// Check for updates
@@ -1321,5 +1376,19 @@ class Ai1wm_Main_Controller {
 		);
 
 		return $schedules;
+	}
+
+	/**
+	 * Handles ai1wm_status_export_error hook
+	 *
+	 * @param $params
+	 * @param $exception
+	 *
+	 * @return void
+	 */
+	public function handle_error_cleanup( $params, $exception = null ) {
+		if ( ! $exception instanceof Ai1wm_Import_Retry_Exception ) {
+			Ai1wm_Directory::delete( ai1wm_storage_path( $params ) );
+		}
 	}
 }

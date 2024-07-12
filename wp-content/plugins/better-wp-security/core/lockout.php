@@ -144,6 +144,10 @@ final class ITSEC_Lockout {
 			return;
 		}
 
+		if ( ! ITSEC_Lib_IP_Detector::is_configured() ) {
+			return;
+		}
+
 		$host = ITSEC_Lib::get_ip();
 
 		if ( ITSEC_Lib::is_ip_banned() ) {
@@ -519,8 +523,8 @@ final class ITSEC_Lockout {
 			$username = isset( $args['username'] ) ? $args['username'] : false;
 			$context  = null;
 		}
-
 		$module_details = $this->lockout_modules[ $module ];
+
 
 		$whitelisted = ITSEC_Lib::is_ip_whitelisted( $host );
 		$blacklisted = false;
@@ -764,7 +768,10 @@ final class ITSEC_Lockout {
 	 * @return void
 	 */
 	public function execute_lock( Execute_Lock\Context $context ) {
-		if ( ITSEC_Lib::is_ip_whitelisted( ITSEC_Lib::get_ip() ) ) {
+		if (
+			ITSEC_Lib_IP_Detector::is_configured() &&
+			ITSEC_Lib::is_ip_whitelisted( ITSEC_Lib::get_ip() )
+		) {
 			return;
 		}
 
@@ -1479,12 +1486,12 @@ SQL,
 			esc_html__( 'Site Lockout Notification', 'better-wp-security' ),
 			esc_html__( 'Site Lockout Notification', 'better-wp-security' ),
 			false,
-			sprintf( esc_html__( '%s lockout notification', 'better-wp-security'), $mail->get_display_url() ),
+			sprintf( esc_html__( '%s lockout notification', 'better-wp-security' ), $mail->get_display_url() ),
 		);
 		$mail->add_lockouts_table( $lockouts );
 
 		if ( $show_remove_lockout_message ) {
-			$mail->add_text( __( 'Release lockouts from the Active Lockouts dashboard card.', 'better-wp-security' ) );
+			$mail->add_text( __( 'Release lockouts from the Active Lockouts section of the Security -> Dashboard page.', 'better-wp-security' ) );
 			$mail->add_button( __( 'Visit Dashboard', 'better-wp-security' ), ITSEC_Mail::filter_admin_page_url( network_admin_url( 'admin.php?page=itsec-dashboard' ) ) );
 		}
 

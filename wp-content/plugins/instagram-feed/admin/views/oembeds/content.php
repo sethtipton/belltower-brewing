@@ -1,13 +1,13 @@
 <div class="sbi-fb-full-wrapper sbi-fb-fs">
-	<?php
-	/**
-	 * SBI Admin Notices
-	 *
-	 * @since 4.0
-	 */
-	do_action('sbi_admin_notices');
-	?>
     <div class="sbi-oembeds-container">
+        <?php
+        /**
+         * SBI Admin Notices
+         *
+         * @since 4.0
+         */
+        do_action('sbi_admin_notices');
+        ?>
         <div class="sbi-section-header">
             <h3>{{genericText.title}}</h3>
             <p>{{genericText.description}}</p>
@@ -24,10 +24,10 @@
                         <span v-if="instaoEmbedLoader" v-html="loaderSVG"></span>
                         {{genericText.disable}}
                     </button>
-                    <a v-else :href="connectionURL" class="sbi-btn-blue sbi-btn" :class="{loading: instaoEmbedLoader}" @click="instaoEmbedLoader = true">
+                    <button v-else @click="enableInstaoEmbed()" class="sbi-btn-blue sbi-btn" :class="{loading: instaoEmbedLoader}">
                         <span v-if="instaoEmbedLoader" v-html="loaderSVG"></span>
                         {{genericText.enable}}
-                    </a>
+                    </button>
                 </span>
             </div>
             <div class="sbi-oembed-plugin-box sbi-oembed-facebook">
@@ -54,13 +54,13 @@
                 <h3 v-if="isoEmbedsEnabled()">{{genericText.whatElseOembeds}}</h3>
                 <h3 v-else>{{genericText.whatAreOembeds}}</h3>
             </div>
-			<?php
-			InstagramFeed\SBI_View::render( 'oembeds.oembed_features' );
-			InstagramFeed\SBI_View::render( 'oembeds.plugin_info' );
-			?>
+            <?php
+            InstagramFeed\SBI_View::render('oembeds.oembed_features');
+            InstagramFeed\SBI_View::render('oembeds.plugin_info');
+            ?>
         </div>
     </div>
 </div>
 <?php
-InstagramFeed\SBI_View::render( 'oembeds.modal' );
+InstagramFeed\SBI_View::render('oembeds.modal');
 ?>

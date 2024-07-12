@@ -211,6 +211,11 @@ jQuery(document).ready(function($) {
       }
     });
   });
+
+  $(document).on('click', '#oembed_api_change_reconnect .sbi-notice-dismiss', function (e) {
+    e.preventDefault();
+    $('#oembed_api_change_reconnect').remove();
+  });
 });
 
 
@@ -332,7 +337,7 @@ jQuery(document).ready(function($) {
       $('.sbi_get_pro').parent().attr({'class':'sbi_get_pro_highlight', 'target':'_blank'});
 
       //Click event for other plugins in menu
-      $('.sbi_get_cff, .sbi_get_sbi, .sbi_get_sbr, .sbi_get_ctf, .sbi_get_yt').parent().on('click', function(e) {
+      $('.sbi_get_cff, .sbi_get_sbi, .sbi_get_sbr, .sbi_get_ctf, .sbi_get_yt, .sbi_get_tiktok').parent().on('click', function(e) {
         e.preventDefault();
 
         // remove the already opened modal
@@ -353,6 +358,8 @@ jQuery(document).ready(function($) {
           sb_get_plugin = 'youtube';
         }else if ($self.hasClass('sbi_get_sbr')) {
           sb_get_plugin = 'reviews';
+        } else if ($self.hasClass('sbi_get_tiktok')) {
+          sb_get_plugin = 'tiktok';
         }
 
         // send the ajax request to load plugin name and others data

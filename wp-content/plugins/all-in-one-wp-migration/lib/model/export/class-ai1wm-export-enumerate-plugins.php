@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ class Ai1wm_Export_Enumerate_Plugins {
 
 	public static function execute( $params ) {
 
-		$exclude_filters = array();
+		$exclude_filters = array( AI1WM_SQLITE_DATABASE_INTEGRATION_NAME );
 
 		// Get total plugins files count
 		if ( isset( $params['total_plugins_files_count'] ) ) {

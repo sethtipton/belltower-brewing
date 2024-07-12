@@ -79,6 +79,24 @@ class SBI_Support_Tool {
 	public static $role = '_support_role';
 
 	/**
+	 * Instagram Basic Display API URL
+	 *
+	 * @access private
+	 *
+	 * @var string
+	 */
+	public static $basic_display_api = 'https://graph.instagram.com/';
+
+	/**
+	 * Instagram Graph API URL
+	 *
+	 * @access private
+	 *
+	 * @var string
+	 */
+	public static $graph_api = 'https://graph.facebook.com/';
+
+	/**
 	 * Class constructor
 	 */
 	public function __construct() {
@@ -112,6 +130,7 @@ class SBI_Support_Tool {
 	public function ini_ajax_calls() {
 		add_action( 'wp_ajax_sbi_create_temp_user', array( $this, 'create_temp_user_ajax_call' ) );
 		add_action( 'wp_ajax_sbi_delete_temp_user', array( $this, 'delete_temp_user_ajax_call' ) );
+		add_action('wp_ajax_sbi_get_api_calls_handler', array( $this, 'get_api_calls_handler' ));
 	}
 
 	/**
@@ -428,6 +447,33 @@ class SBI_Support_Tool {
 			array( $this, 'render' ),
 			5
 		);
+
+		add_action('admin_enqueue_scripts', array( $this, 'enqueue_scripts' ));
+	}
+
+	/**
+	 * Enqueue Scripts.
+	 *
+	 * @since 6.2.9
+	 */
+	public function enqueue_scripts()
+	{
+		$screen = get_current_screen();
+		if (strpos($screen->id, self::$plugin . '_tool') === false) {
+			return;
+		}
+
+		wp_enqueue_script('sbi-support-tool', SBI_PLUGIN_URL . 'admin/assets/js/support-tool.js', array( 'jquery' ), SBIVER, true);
+		wp_localize_script(
+			'sbi-support-tool',
+			'sbi_support_tool',
+			array(
+				'ajax_url' => admin_url('admin-ajax.php'),
+				'nonce'    => wp_create_nonce('sbi-admin'),
+			)
+		);
+
+		wp_enqueue_style('sbi-support-tool', SBI_PLUGIN_URL . 'admin/assets/css/support-tool.css', array(), SBIVER);
 	}
 
 
@@ -455,157 +501,147 @@ class SBI_Support_Tool {
 	}
 
 	/**
-	 * Available Endpoints
+	 * Get ajax handers for API calls
 	 *
-	 * @since 6.3
-	 *
-	 * @return array
+	 * @since 6.2.9
 	 */
-	public function available_endpoints() {
-		return array(
-			'https://graph.instagram.com/me',
-			'https://graph.instagram.com/{user_id}/media?',
-			'https://graph.facebook.com/{user_id}/stories?',
-			'https://graph.facebook.com/{hashtag_id}/top_media?',
-			'https://graph.facebook.com/{hashtag_id}/recent_media?',
-			'https://graph.facebook.com/{user_id}/recently_searched_hashtags?',
-			'https://graph.facebook.com/{user_id}/tags?',
-			'https://graph.facebook.com/ig_hashtag_search?',
-			'https://graph.facebook.com/{user_id}/media?',
-		);
-	}
+	public function get_api_calls_handler()
+	{
+		check_ajax_referer('sbi-admin', 'nonce');
 
-	/**
-	 * Validates the fields being retrieved in the API call.
-	 *
-	 * @param string $raw_fields Instagram API fields.
-	 *
-	 * @return array
-	 */
-	public function validate_fields( $raw_fields ) {
-		$fields_array = explode( ',', $raw_fields );
-
-		$acceptable_fields = array(
-			'biography',
-			'id',
-			'username',
-			'website',
-			'followers_count',
-			'media_count',
-			'profile_picture_url',
-			'name',
-			'limit',
-			'media_url',
-			'media_product_type',
-			'thumbnail_url',
-			'caption',
-			'id',
-			'media_type',
-			'timestamp',
-			'username',
-			'comments_count',
-			'like_count',
-			'permalink',
-			'media_url',
-			'id',
-			'media_type',
-			'timestamp',
-			'permalink',
-			'thumbnail_url',
-		);
-
-		$valid = array();
-
-		foreach ( $fields_array as $field ) {
-			if ( in_array( $field, $acceptable_fields, true ) ) {
-				$valid[] = $field;
-			}
+		$user_role = self::$plugin . self::$role;
+		if (! sbi_current_user_can($user_role)) {
+			wp_send_json_error(__('You don\'t have enough permission to perform this API call.', 'instagram-feed'));
 		}
 
-		return $valid;
-	}
+		$user_id = isset($_POST['user_id']) ? sanitize_text_field($_POST['user_id']) : false;
+		$ajax_action = isset($_POST['ajax_action']) ? sanitize_text_field($_POST['ajax_action']) : 'user_info';
+		$account_type = isset($_POST['account_type']) ? sanitize_text_field($_POST['account_type']) : 'basic';
 
-	/**
-	 * Validates and sanitizes input from the support tool.
-	 *
-	 * @param array $raw_post Raw $_POST data.
-	 *
-	 * @return array
-	 */
-	public function validate_and_sanitize_support_settings( $raw_post ) {
-
-		if ( empty( $raw_post['sb_instagram_support_connected_account'] ) ) {
-			return array();
+		if (! $user_id) {
+			wp_send_json_error(__('User ID is required', 'instagram-feed'));
 		}
-
-		$return = array(
-			'sb_instagram_support_connected_account' => sanitize_key( $raw_post['sb_instagram_support_connected_account'] ),
-			'sb_instagram_support_hashtag'           => sanitize_key( $raw_post['sb_instagram_support_hashtag'] ),
-			'sb_instagram_support_endpoint'          => absint( $raw_post['sb_instagram_support_endpoint'] ),
-			'sb_instagram_support_fields'            => sanitize_text_field( wp_unslash( $raw_post['sb_instagram_support_fields'] ) ),
-			'sb_instagram_support_children_fields'   => sanitize_text_field( wp_unslash( $raw_post['sb_instagram_support_children_fields'] ) ),
-			'sb_instagram_support_limit'             => absint( $raw_post['sb_instagram_support_limit'] ),
-
-		);
 
 		$connected_accounts = \SB_Instagram_Connected_Account::get_all_connected_accounts();
 
-		foreach ( $connected_accounts as $connected_account ) {
-			if ( (string) $connected_account['id'] === $return['sb_instagram_support_connected_account'] ) {
-				$return['access_token'] = $connected_account['access_token'];
-				$return['user_id']      = (string) $connected_account['id'];
+		$access_token = '';
+		foreach ($connected_accounts as $connected_account) {
+			if ((string) $connected_account['id'] === $user_id) {
+				$access_token = $connected_account['access_token'];
+				break;
 			}
 		}
 
-		$endpoints            = $this->available_endpoints();
-		$return['endpoint']   = $endpoints[ $return['sb_instagram_support_endpoint'] ];
-		$return['hashtag_id'] = $return['sb_instagram_support_hashtag'];
+		if (empty($access_token)) {
+			wp_send_json_error(__('Access Token is required', 'instagram-feed'));
+		}
 
-		$return['fields']          = $this->validate_fields( str_replace( ' ', '', $raw_post['sb_instagram_support_fields'] ) );
-		$return['children_fields'] = $this->validate_fields( str_replace( ' ', '', $raw_post['sb_instagram_support_children_fields'] ) );
+		switch ($ajax_action) {
+			case 'user_info':
+				$api_response = $this->get_account_info(array(
+					'user_id' => $user_id,
+					'access_token' => $access_token,
+					'account_type' => $account_type,
+				));
+				break;
 
-		$return['limit'] = $return['sb_instagram_support_limit'];
+			case 'media':
+				$media_fields = isset($_POST['media_fields']) ? sanitize_text_field($_POST['media_fields']) : 'media_url,thumbnail_url,caption,id,media_type,timestamp,username,permalink';
+				$post_limit = isset($_POST['post_limit']) ? absint($_POST['post_limit']) : 10;
+				$api_response = $this->get_media(array(
+					'user_id' => $user_id,
+					'access_token' => $access_token,
+					'account_type' => $account_type,
+					'media_fields' => $media_fields,
+					'post_limit' => $post_limit,
+				));
+				break;
 
-		return $return;
+			default:
+				wp_send_json_error(__('Invalid API action', 'instagram-feed'));
+		}
+
+		if (is_wp_error($api_response)) {
+			wp_send_json_error($api_response);
+		} else {
+			$api_response = sanitize_text_field(wp_remote_retrieve_body($api_response));
+			$api_response = json_decode($api_response, true);
+
+			if (isset($api_response['error'])) {
+				wp_send_json_error($api_response['error']);
+			}
+
+			// responses have next pagination data that includes access token so we need to remove it.
+			if (isset($api_response['paging']['next'])) {
+				$api_response['paging']['next'] = !empty($api_response['paging']['next']) ? true : false;
+			}
+
+			wp_send_json_success([
+				'api_response' => $api_response,
+				'user_id'      => $user_id,
+			]);
+		}
 	}
 
 	/**
-	 * Create a URL to make the API request with.
+	 * Get Account Info
 	 *
-	 * @param string $url API URL with placeholders that need to be replaced.
-	 * @param array  $settings Settings from support tool inputs.
+	 * @param array $args Arguments for the API call.
 	 *
-	 * @return string
+	 * @return object
+	 *
+	 * @since 6.2.9
 	 */
-	public function create_api_url( $url, $settings ) {
-		if ( ! empty( $settings['user_id'] ) ) {
-			$url = str_replace( '{user_id}', $settings['user_id'], $url );
-		}
-		if ( ! empty( $settings['user_id'] ) ) {
-			$url = str_replace( '{hashtag_id}', $settings['hashtag_id'], $url );
+	public function get_account_info($args)
+	{
+		$user_id = isset($args['user_id']) ? sanitize_text_field($args['user_id']) : false;
+		$access_token = isset($args['access_token']) ? sanitize_text_field($args['access_token']) : false;
+		$account_type = isset($args['account_type']) ? sanitize_text_field($args['account_type']) : 'basic';
+
+		if (!$user_id || !$access_token) {
+			return new \WP_Error('missing_params', __('User ID and Access Token are required', 'instagram-feed'));
 		}
 
-		$params = array();
-
-		if ( ! empty( $settings['limit'] ) ) {
-			$params['limit'] = absint( $settings['limit'] );
+		if ($account_type === 'basic' || $account_type === 'personal') {
+			$me_endpoint_url = self::$basic_display_api . $user_id . '?fields=id,username,account_type,media_count&access_token=' . $access_token;
+		} else {
+			$me_endpoint_url = self::$graph_api . $user_id . '?fields=biography,id,username,website,followers_count,media_count,profile_picture_url,name&access_token=' . $access_token;
 		}
 
-		if ( ! empty( $settings['access_token'] ) ) {
-			$params['access_token'] = sanitize_key( $settings['access_token'] );
+		return wp_remote_get($me_endpoint_url);
+	}
+
+	/**
+	 * Get Media
+	 *
+	 * @param array $args Arguments for the API call.
+	 *
+	 * @return object
+	 *
+	 * @since 6.2.9
+	 */
+	public function get_media($args)
+	{
+		$user_id = isset($args['user_id']) ? sanitize_text_field($args['user_id']) : false;
+		$access_token = isset($args['access_token']) ? sanitize_text_field($args['access_token']) : false;
+		$account_type = isset($args['account_type']) ? sanitize_text_field($args['account_type']) : 'basic';
+		$media_fields = isset($args['media_fields']) ? sanitize_text_field($args['media_fields']) : 'media_url,thumbnail_url,caption,id,media_type,timestamp,username,permalink';
+		$post_limit = isset($args['post_limit']) ? absint($args['post_limit']) : 10;
+
+		if (!$user_id || !$access_token) {
+			return new \WP_Error('missing_params', __('User ID and Access Token are required', 'instagram-feed'));
 		}
 
-		if ( ! empty( $settings['access_token'] ) ) {
-			$params['access_token'] = $settings['access_token'];
+		if (strpos($media_fields, 'children') !== false) {
+			$media_fields .= '%7Bmedia_url,id,media_type,timestamp,permalink,thumbnail_url%7D';
 		}
 
-		if ( ! empty( $settings['fields'] ) ) {
-			$params['fields'] = implode( ',', $settings['fields'] );
+		if ($account_type === 'basic' || $account_type === 'personal') {
+			$api_url = self::$basic_display_api . $user_id . '/media?fields=' . $media_fields . '&limit=' . $post_limit . '&access_token=' . $access_token;
+		} else {
+			$api_url = self::$graph_api . $user_id . '/media?fields=' . $media_fields . '&limit=' . $post_limit . '&access_token=' . $access_token;
 		}
 
-		if ( ! empty( $settings['children_fields'] ) ) {
-			$params['fields'] .= ',children%7B' . implode( ',', $settings['children_fields'] ) . '%7D';
-		}
-		return add_query_arg( $params, $url );
+		return wp_remote_get($api_url, array( 'timeout' => 120 ));
 	}
 }

@@ -518,7 +518,17 @@ class SBI_Support {
 	 * @return string
 	 */
 	public static function get_sources_info() {
-		$output = '## Sources: ## </br>';
+		$output = '## SOURCES TABLE: ## </br>';
+		global $wpdb;
+		$sources_table_name = $wpdb->prefix . 'sbi_sources';
+
+		if ($wpdb->get_var("show tables like '$sources_table_name'") !== $sources_table_name) {
+			$output .= 'no sources table</br></br>';
+		} else {
+			$output .= 'sources table exists</br></br>';
+		}
+
+		$output .= '## Sources: ## </br>';
 
 		$source_list = SBI_Feed_Builder::get_source_list();
 		$manager     = new \SB_Instagram_Data_Manager();
@@ -662,6 +672,14 @@ class SBI_Support {
 		} else {
 			$last_result = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY id DESC LIMIT 1;" );
 			if ( is_array( $last_result ) && isset( $last_result[0] ) ) {
+				// exclude the json_data column.
+				$last_result = array_map(
+					function ($row) {
+						unset($row->json_data);
+						return $row;
+					},
+					$last_result
+				);
 				$output .= '## POSTS TABLE ##';
 				$output .= '</br>';
 				foreach ( $last_result as $column ) {

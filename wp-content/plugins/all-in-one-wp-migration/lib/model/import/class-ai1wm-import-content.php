@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,7 +186,7 @@ class Ai1wm_Import_Content {
 			$exclude_files = array_merge( $exclude_files, array( AI1WM_ELEMENTOR_CSS_NAME ) );
 
 			// Exclude content extensions
-			$exclude_extensions = array( AI1WM_LESS_CACHE_NAME );
+			$exclude_extensions = array( AI1WM_LESS_CACHE_EXTENSION, AI1WM_SQLITE_DATABASE_EXTENSION );
 
 			// Extract a file from archive to WP_CONTENT_DIR
 			if ( ( $completed = $archive->extract_one_file_to( WP_CONTENT_DIR, $exclude_files, $exclude_extensions, $old_paths, $new_paths, $file_bytes_written, $file_bytes_offset ) ) ) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Ai1wm_Import_Compatibility {
 
 	public static function execute( $params ) {
+		do_action( 'ai1wm_status_import_start', $params );
 
 		// Set progress
 		Ai1wm_Status::info( __( 'Checking extensions compatibility...', AI1WM_PLUGIN_NAME ) );

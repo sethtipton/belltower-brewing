@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2020 ServMask Inc.
+ * Copyright (C) 2014-2023 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,8 +36,6 @@ class Ai1wm_Backups_Controller {
 				'backups'      => Ai1wm_Backups::get_files(),
 				'labels'       => Ai1wm_Backups::get_labels(),
 				'downloadable' => Ai1wm_Backups::are_downloadable(),
-				'username'     => get_option( AI1WM_AUTH_USER ),
-				'password'     => get_option( AI1WM_AUTH_PASSWORD ),
 			)
 		);
 	}
@@ -214,18 +212,27 @@ class Ai1wm_Backups_Controller {
 		}
 
 		$chunk_size = 1024 * 1024;
-		$read       = 0;
+		$file_bytes = 0;
 
 		try {
-			if ( $handle  = ai1wm_open( ai1wm_backup_path( $params ), 'r' ) ) {
+			if ( $handle  = ai1wm_open( ai1wm_backup_path( $params ), 'rb' ) ) {
+				if ( ! isset( $params['file_size'] ) ) {
+					$params['file_size'] = filesize( ai1wm_backup_path( $params ) );
+				}
+
+				if ( ! isset( $params['offset'] ) ) {
+					$params['offset'] = 0;
+				}
+
 				ai1wm_seek( $handle, $params['offset'] );
-				while ( ! feof( $handle ) && $read < $params['file_size'] ) {
-					$buffer = ai1wm_read( $handle, min( $chunk_size, $params['file_size'] - $read ) );
+				while ( ! feof( $handle ) && $file_bytes < $params['file_size'] ) {
+					$buffer = ai1wm_read( $handle, min( $chunk_size, $params['file_size'] - $file_bytes ) );
 					echo $buffer;
 					ob_flush();
 					flush();
-					$read += strlen( $buffer );
+					$file_bytes += strlen( $buffer );
 				}
+
 				ai1wm_close( $handle );
 			}
 		} catch ( Exception $exception ) {

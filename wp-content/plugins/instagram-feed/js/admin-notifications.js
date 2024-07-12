@@ -22,8 +22,38 @@ var SBIAdminNotifications = window.SBIAdminNotifications || ( function( document
 		$prevButton:       $( '#sbi-notifications .navigation .prev' ),
 		$adminBarCounter:  $( '#wp-admin-bar-wpforms-menu .sbi-menu-notification-counter' ),
 		$adminBarMenuItem: $( '#wp-admin-bar-sbi-notifications' ),
-
+		$notificationsClass: $('.sbi-notifications-wrap'),
 	};
+
+	var $messages = el.$notificationsClass.find('.messages'),
+		$messagesCount = $messages.length,
+		$message = $messages.find('.message'),
+		$navigation = el.$notificationsClass.find('.navigation');
+
+	// if there is only one notification, remove the navigation
+	if ($messagesCount === 1) {
+		$navigation.remove();
+	}
+
+	// if only 2 review messages, remove the navigation
+	if ($messagesCount === 2) {
+		if ($message.hasClass('sbi_review_step1_notice') && $message.hasClass('rn_step_2')) {
+			$navigation.remove();
+		}
+	}
+
+	// if there are multiple notifications, merge them into one div
+	el.$notificationsClass.not(':first').hide();
+	var $first = $messages.first();
+	$first.find('.message').addClass('current');
+
+	$messages.not(':first').each(function () {
+		// get the message div and append to the first one
+		$first.append($(this).html());
+	});
+
+	// remove the rest except the first one
+	el.$notificationsClass.not(':first').remove();
 
 	/**
 	 * Public functions and properties.
@@ -185,6 +215,14 @@ var SBIAdminNotifications = window.SBIAdminNotifications || ( function( document
 			el.$currentMessage = el.$notifications.find( '.message.current' );
 			el.$nextMessage = el.$currentMessage.next( '.message' );
 			el.$prevMessage = el.$currentMessage.prev( '.message' );
+
+			if (el.$notifications.find('.sbi_review_step1_notice').length > 0) {
+				var isReviewStep1 = el.$currentMessage.hasClass('sbi_review_step1_notice');
+				var isReviewStep2 = el.$currentMessage.prev('.message').hasClass('rn_step_2');
+
+				el.$nextMessage = isReviewStep1 ? el.$currentMessage.next('.message').next('.message') : el.$nextMessage;
+				el.$prevMessage = isReviewStep2 ? el.$currentMessage.prev('.message').prev('.message') : el.$prevMessage;
+			}
 
 			if ( el.$nextMessage.length === 0 ) {
 				el.$nextButton.addClass( 'disabled' );

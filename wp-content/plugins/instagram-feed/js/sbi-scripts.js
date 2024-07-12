@@ -1,134 +1,6 @@
 var sbi_js_exists = (typeof sbi_js_exists !== 'undefined') ? true : false;
 if(!sbi_js_exists) {
   (function($){
-
-    function sbiAddImgLiquid() {
-      /*! imgLiquid v0.9.944 / 03-05-2013 https://github.com/karacas/imgLiquid */
-      var sbi_imgLiquid = sbi_imgLiquid || {VER: "0.9.944"};
-      sbi_imgLiquid.bgs_Available = !1, sbi_imgLiquid.bgs_CheckRunned = !1, function (i) {
-        function t() {
-          if (!sbi_imgLiquid.bgs_CheckRunned) {
-            sbi_imgLiquid.bgs_CheckRunned = !0;
-            var t = i('<span style="background-size:cover" />');
-            i("body").append(t), !function () {
-              var i = t[0];
-              if (i && window.getComputedStyle) {
-                var e = window.getComputedStyle(i, null);
-                e && e.backgroundSize && (sbi_imgLiquid.bgs_Available = "cover" === e.backgroundSize)
-              }
-            }(), t.remove()
-          }
-        }
-
-        i.fn.extend({
-          sbi_imgLiquid: function (e) {
-            this.defaults = {
-              fill: !0,
-              verticalAlign: "center",
-              horizontalAlign: "center",
-              useBackgroundSize: !0,
-              useDataHtmlAttr: !0,
-              responsive: !0,
-              delay: 0,
-              fadeInTime: 0,
-              removeBoxBackground: !0,
-              hardPixels: !0,
-              responsiveCheckTime: 500,
-              timecheckvisibility: 500,
-              onStart: null,
-              onFinish: null,
-              onItemStart: null,
-              onItemFinish: null,
-              onItemError: null
-            }, t();
-            var a = this;
-            return this.options = e, this.settings = i.extend({}, this.defaults, this.options), this.settings.onStart && this.settings.onStart(), this.each(function (t) {
-              function e() {
-                -1 === u.css("background-image").indexOf(encodeURI(c.attr("src"))) && u.css({"background-image": 'url("' + encodeURI(c.attr("src")) + '")'}), u.css({
-                  "background-size": g.fill ? "cover" : "contain",
-                  "background-position": (g.horizontalAlign + " " + g.verticalAlign).toLowerCase(),
-                  "background-repeat": "no-repeat"
-                }), i("a:first", u).css({
-                  display: "block",
-                  width: "100%",
-                  height: "100%"
-                }), i("img", u).css({display: "none"}), g.onItemFinish && g.onItemFinish(t, u, c), u.addClass("sbi_imgLiquid_bgSize"), u.addClass("sbi_imgLiquid_ready"), l()
-              }
-
-              function o() {
-                function e() {
-                  c.data("sbi_imgLiquid_error") || c.data("sbi_imgLiquid_loaded") || c.data("sbi_imgLiquid_oldProcessed") || (u.is(":visible") && c[0].complete && c[0].width > 0 && c[0].height > 0 ? (c.data("sbi_imgLiquid_loaded", !0), setTimeout(r, t * g.delay)) : setTimeout(e, g.timecheckvisibility))
-                }
-
-                if (c.data("oldSrc") && c.data("oldSrc") !== c.attr("src")) {
-                  var a = c.clone().removeAttr("style");
-                  return a.data("sbi_imgLiquid_settings", c.data("sbi_imgLiquid_settings")), c.parent().prepend(a), c.remove(), c = a, c[0].width = 0, void setTimeout(o, 10)
-                }
-                return c.data("sbi_imgLiquid_oldProcessed") ? void r() : (c.data("sbi_imgLiquid_oldProcessed", !1), c.data("oldSrc", c.attr("src")), i("img:not(:first)", u).css("display", "none"), u.css({overflow: "hidden"}), c.fadeTo(0, 0).removeAttr("width").removeAttr("height").css({
-                  visibility: "visible",
-                  "max-width": "none",
-                  "max-height": "none",
-                  width: "auto",
-                  height: "auto",
-                  display: "block"
-                }), c.on("error", n), c[0].onerror = n, e(), void d())
-              }
-
-              function d() {
-                (g.responsive || c.data("sbi_imgLiquid_oldProcessed")) && c.data("sbi_imgLiquid_settings") && (g = c.data("sbi_imgLiquid_settings"), u.actualSize = u.get(0).offsetWidth + u.get(0).offsetHeight / 1e4, u.sizeOld && u.actualSize !== u.sizeOld && r(), u.sizeOld = u.actualSize, setTimeout(d, g.responsiveCheckTime))
-              }
-
-              function n() {
-                c.data("sbi_imgLiquid_error", !0), u.addClass("sbi_imgLiquid_error"), g.onItemError && g.onItemError(t, u, c), l()
-              }
-
-              function s() {
-                var i = {};
-                if (a.settings.useDataHtmlAttr) {
-                  var t = u.attr("data-sbi_imgLiquid-fill"),
-                    e = u.attr("data-sbi_imgLiquid-horizontalAlign"),
-                    o = u.attr("data-sbi_imgLiquid-verticalAlign");
-                  ("true" === t || "false" === t) && (i.fill = Boolean("true" === t)), void 0 === e || "left" !== e && "center" !== e && "right" !== e && -1 === e.indexOf("%") || (i.horizontalAlign = e), void 0 === o || "top" !== o && "bottom" !== o && "center" !== o && -1 === o.indexOf("%") || (i.verticalAlign = o)
-                }
-                return sbi_imgLiquid.isIE && a.settings.ieFadeInDisabled && (i.fadeInTime = 0), i
-              }
-
-              function r() {
-                var i, e, a, o, d, n, s, r, m = 0, h = 0, f = u.width(), v = u.height();
-                void 0 === c.data("owidth") && c.data("owidth", c[0].width), void 0 === c.data("oheight") && c.data("oheight", c[0].height), g.fill === f / v >= c.data("owidth") / c.data("oheight") ? (i = "100%", e = "auto", a = Math.floor(f), o = Math.floor(f * (c.data("oheight") / c.data("owidth")))) : (i = "auto", e = "100%", a = Math.floor(v * (c.data("owidth") / c.data("oheight"))), o = Math.floor(v)), d = g.horizontalAlign.toLowerCase(), s = f - a, "left" === d && (h = 0), "center" === d && (h = .5 * s), "right" === d && (h = s), -1 !== d.indexOf("%") && (d = parseInt(d.replace("%", ""), 10), d > 0 && (h = s * d * .01)), n = g.verticalAlign.toLowerCase(), r = v - o, "left" === n && (m = 0), "center" === n && (m = .5 * r), "bottom" === n && (m = r), -1 !== n.indexOf("%") && (n = parseInt(n.replace("%", ""), 10), n > 0 && (m = r * n * .01)), g.hardPixels && (i = a, e = o), c.css({
-                  width: i,
-                  height: e,
-                  "margin-left": Math.floor(h),
-                  "margin-top": Math.floor(m)
-                }), c.data("sbi_imgLiquid_oldProcessed") || (c.fadeTo(g.fadeInTime, 1), c.data("sbi_imgLiquid_oldProcessed", !0), g.removeBoxBackground && u.css("background-image", "none"), u.addClass("sbi_imgLiquid_nobgSize"), u.addClass("sbi_imgLiquid_ready")), g.onItemFinish && g.onItemFinish(t, u, c), l()
-              }
-
-              function l() {
-                t === a.length - 1 && a.settings.onFinish && a.settings.onFinish()
-              }
-
-              var g = a.settings, u = i(this), c = i("img:first", u);
-              return c.length ? (c.data("sbi_imgLiquid_settings") ? (u.removeClass("sbi_imgLiquid_error").removeClass("sbi_imgLiquid_ready"), g = i.extend({}, c.data("sbi_imgLiquid_settings"), a.options)) : g = i.extend({}, a.settings, s()), c.data("sbi_imgLiquid_settings", g), g.onItemStart && g.onItemStart(t, u, c), void (sbi_imgLiquid.bgs_Available && g.useBackgroundSize ? e() : o())) : void n()
-            })
-          }
-        })
-      }(jQuery);
-
-      // Use imagefill to set the images as backgrounds so they can be square
-      !function () {
-        var css = sbi_imgLiquid.injectCss,
-          head = document.getElementsByTagName('head')[0],
-          style = document.createElement('style');
-        style.type = 'text/css';
-        if (style.styleSheet) {
-          style.styleSheet.cssText = css;
-        } else {
-          style.appendChild(document.createTextNode(css));
-        }
-        head.appendChild(style);
-      }();
-    }
-
     function sbiAddVisibilityListener() {
       /* Detect when element becomes visible. Used for when the feed is initially hidden, in a tab for example. https://github.com/shaunbowe/jquery.visibilityChanged */
       !function (i) {
@@ -203,7 +75,7 @@ if(!sbi_js_exists) {
               num : $self.attr('data-num'),
               imgRes : $self.attr('data-res'),
               feedID : $self.attr('data-feedid'),
-              postID : typeof $self.attr( 'data-postid' ) !== 'undefind' ? $self.attr( 'data-postid' ) : 'unknown',
+              postID : typeof $self.attr( 'data-postid' ) !== 'undefined' ? $self.attr( 'data-postid' ) : 'unknown',
               shortCodeAtts : $self.attr('data-shortcode-atts'),
               resizingEnabled : (flags.indexOf('resizeDisable') === -1),
               imageLoadEnabled : (flags.indexOf('imageLoadDisable') === -1),
@@ -362,7 +234,6 @@ if(!sbi_js_exists) {
         // Call Custom JS if it exists
         if (typeof sbi_custom_js == 'function') setTimeout(function(){ sbi_custom_js(); }, 100);
 
-        this.applyImageLiquid();
         $self.find('.sbi_item').each(function (index) {
           var $self = jQuery(this);
 
@@ -696,7 +567,6 @@ if(!sbi_js_exists) {
           var newUrl = imgSrcSet[newRes].split("?ig_cache_key")[0];
           if (currentUrl !== newUrl) {
             $item.find('.sbi_photo img').attr('src', newUrl);
-            $item.find('.sbi_photo').css('background-image', 'url("' + newUrl + '")');
           }
           currentRes = newRes;
 
@@ -728,7 +598,6 @@ if(!sbi_js_exists) {
                 if (newRes > currentRes) {
                   newUrl = imgSrcSet[newRes].split("?ig_cache_key")[0];
                   $this_image.attr('src', newUrl);
-                  $this_image.closest('.sbi_photo').css('background-image', 'url("' + newUrl + '")');
                 }
                 if (feed.layout === 'masonry' || feed.layout === 'highlight') {
                   $(feed.el).find('#sbi_images').smashotope(feed.isotopeArgs);
@@ -759,7 +628,6 @@ if(!sbi_js_exists) {
                 var srcSet = JSON.parse($(this).closest('.sbi_photo').attr('data-img-src-set').replace(/\\\//g, '/'));
                 if (typeof srcSet.d !== 'undefined') {
                   $(this).attr('src', srcSet.d);
-                  $(this).closest('.sbi_photo').css('background-image', 'url(' + srcSet.d + ')');
                   $(this).closest('.sbi_item').addClass('sbi_had_error').find('.sbi_link_area').attr('href', srcSet[640]).addClass('sbi_had_error');
                 }
               }
@@ -768,7 +636,6 @@ if(!sbi_js_exists) {
               var srcSet = feed.getImageUrls($(this).closest('.sbi_item'));
               if (typeof srcSet[640] !== 'undefined') {
                 $(this).attr('src', srcSet[640]);
-                $(this).closest('.sbi_photo').css('background-image', 'url(' + srcSet[640] + ')');
                 $(this).closest('.sbi_item').addClass('sbi_had_error').find('.sbi_link_area').attr('href', srcSet[640]).addClass('sbi_had_error');
               }
             }
@@ -960,14 +827,6 @@ if(!sbi_js_exists) {
           this.needsResizing.push(id);
         }
       },
-      applyImageLiquid: function () {
-        var $self = $(this.el),
-          feed = this;
-        sbiAddImgLiquid();
-        if (typeof $self.find(".sbi_photo").sbi_imgLiquid == 'function') {
-          $self.find(".sbi_photo").sbi_imgLiquid({fill: true});
-        }
-      },
       listenForVisibilityChange: function() {
         var feed = this;
         sbiAddVisibilityListener();
@@ -1006,7 +865,11 @@ if(!sbi_js_exists) {
         if (this.settings.consentGiven || !this.settings.gdpr) {
           return true;
         }
-        if (typeof CLI_Cookie !== "undefined") { // GDPR Cookie Consent by WebToffee
+        if (typeof window.cookieyes !== "undefined") { // CookieYes | GDPR Cookie Consent by CookieYes
+          if (typeof window.cookieyes._ckyConsentStore.get !== 'undefined') {
+            this.settings.consentGiven = window.cookieyes._ckyConsentStore.get('functional') === 'yes';
+          }
+        } else if (typeof CLI_Cookie !== "undefined") { // GDPR Cookie Consent by WebToffee
           if (CLI_Cookie.read(CLI_ACCEPT_COOKIE_NAME) !== null)  {
 
             // WebToffee no longer uses this cookie but being left here to maintain backwards compatibility
@@ -1033,7 +896,7 @@ if(!sbi_js_exists) {
         } else if (typeof window.Cookiebot !== "undefined") { // Cookiebot by Cybot A/S
           this.settings.consentGiven = Cookiebot.consented;
         } else if (typeof window.BorlabsCookie !== 'undefined') { // Borlabs Cookie by Borlabs
-          this.settings.consentGiven = window.BorlabsCookie.checkCookieConsent('instagram');
+          this.settings.consentGiven = typeof window.BorlabsCookie.Consents !== 'undefined' ? window.BorlabsCookie.Consents.hasConsent('instagram') : window.BorlabsCookie.checkCookieConsent('instagram');
         }
 
         var evt = jQuery.Event('sbicheckconsent');
@@ -1141,10 +1004,10 @@ if(!sbi_js_exists) {
     });
 
     // GDPR Cookie Consent by WebToffee
-    $('.cli-user-preference-checkbox').on('click',function(){
+    $('.cli-user-preference-checkbox, .cky-notice button').on('click',function(){
       setTimeout(function() {
         $.each(window.sbi.feeds,function(index){
-          window.sbi.feeds[ index ].settings.consentGiven = false;
+          window.sbi.feeds[index].checkConsent();
           window.sbi.feeds[ index ].afterConsentToggled();
         });
       },1000);

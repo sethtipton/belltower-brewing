@@ -14,6 +14,7 @@ import {
 	useConfigContext,
 	PromoCard,
 } from '@ithemes/security.dashboard.dashboard';
+import { StellarSale } from '@ithemes/security.promos.components';
 
 export default function App() {
 	const { installType } = useConfigContext();
@@ -24,6 +25,7 @@ export default function App() {
 				{ ( { page, dashboardId } ) =>
 					dashboardId > 0 && page === 'view-dashboard' && (
 						<>
+							<StellarSale installType={ installType } />
 						</>
 					)
 				}

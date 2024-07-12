@@ -61,6 +61,8 @@ var sbioEmbeds = new Vue({
             data.append( 'nonce', sbi_oembeds.nonce );
             data.append( 'plugin', sbi_oembeds.facebook.installer.plugin );
             data.append( 'type', 'plugin' );
+            data.append( 'referrer', sbi_oembeds.facebook.installer.referrer );
+
             fetch(sbi_oembeds.ajax_handler, {
                 method: "POST",
                 credentials: 'same-origin',
@@ -86,15 +88,56 @@ var sbioEmbeds = new Vue({
                     return;
                 });
         },
-        enableFboEmbed: function() {
-            this.fboEmbedLoader = true;
-            window.location = this.connectionURL;
-            return;
+        enableInstaoEmbed: function () {
+            this.instaoEmbedLoader = true;
+
+            let oembedConnectUrl = this.connectionURL.connect,
+                appendURL = this.connectionURL.stateURL;
+
+            const urlParams = {
+                'sbi_con': this.connectionURL.sbi_con,
+                'state': "{'{url=" + appendURL + "}'}"
+            }
+
+            let form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', oembedConnectUrl);
+
+            for (const key in urlParams) {
+                let hiddenField = document.createElement('input');
+                hiddenField.setAttribute('type', 'hidden');
+                hiddenField.setAttribute('name', key);
+                hiddenField.setAttribute('value', urlParams[key]);
+                form.appendChild(hiddenField);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
         },
-        enableFacebookOembed: function() {
-            this.facebookoEmbedLoader = true;
-            window.location = this.connectionURL;
-            return;
+        enableFacebookOembed: function () {
+            this.fboEmbedLoader = true;
+            let oembedConnectUrl = this.connectionURL.connect,
+                appendURL = this.connectionURL.stateURL;
+
+            const urlParams = {
+                'sbi_con': this.connectionURL.sbi_con,
+                'state': "{'{url=" + appendURL + "}'}"
+            }
+
+            let form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', oembedConnectUrl);
+
+            for (const key in urlParams) {
+                let hiddenField = document.createElement('input');
+                hiddenField.setAttribute('type', 'hidden');
+                hiddenField.setAttribute('name', key);
+                hiddenField.setAttribute('value', urlParams[key]);
+                form.appendChild(hiddenField);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
         },
         disableFboEmbed: function() {
             this.fboEmbedLoader = true;

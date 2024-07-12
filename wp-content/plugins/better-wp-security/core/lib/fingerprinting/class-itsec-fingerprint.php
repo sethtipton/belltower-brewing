@@ -9,6 +9,7 @@ class ITSEC_Fingerprint implements JsonSerializable {
 	const S_AUTO_APPROVED = 'auto-approved';
 	const S_PENDING_AUTO_APPROVE = 'pending-auto-approve';
 	const S_PENDING = 'pending';
+	const S_IGNORED = 'ignored';
 	const S_DENIED = 'denied';
 
 	/** @var WP_User */
@@ -133,6 +134,13 @@ class ITSEC_Fingerprint implements JsonSerializable {
 	public function is_pending() { return self::S_PENDING === $this->_status; }
 
 	/**
+	 * Is the fingerprint being ignored.
+	 *
+	 * @return bool
+	 */
+	public function is_ignored() { return self::S_IGNORED === $this->_status; }
+
+	/**
 	 * Is the fingerprint denied.
 	 *
 	 * @return bool
@@ -144,7 +152,12 @@ class ITSEC_Fingerprint implements JsonSerializable {
 	 *
 	 * @return bool
 	 */
-	public function can_change_status() { return $this->is_auto_approved() || $this->is_pending_auto_approval() || $this->is_pending(); }
+	public function can_change_status() {
+		return $this->is_auto_approved() ||
+		       $this->is_pending_auto_approval() ||
+		       $this->is_pending() ||
+		       $this->is_ignored();
+	}
 
 	/**
 	 * Get the number of times the fingerprint was used.
@@ -323,6 +336,28 @@ class ITSEC_Fingerprint implements JsonSerializable {
 	}
 
 	/**
+	 * Ignore a device.
+	 *
+	 * This basically treats a device as "Pending",
+	 * but removes is from the list of Login Alerts.
+	 *
+	 * @return bool
+	 */
+	public function ignore() {
+		if ( self::S_IGNORED === $this->_status ) {
+			return true;
+		}
+
+		if ( ! $this->can_change_status() ) {
+			return false;
+		}
+
+		$this->_status = self::S_IGNORED;
+
+		return $this->_id ? $this->save( $this->get_status_action( self::S_IGNORED ) ) : true;
+	}
+
+	/**
 	 * Deny this fingerprint.
 	 *
 	 * @return bool
@@ -382,6 +417,8 @@ class ITSEC_Fingerprint implements JsonSerializable {
 				return 'auto_approved';
 			case self::S_PENDING_AUTO_APPROVE:
 				return 'auto_approve_delayed';
+			case self::S_IGNORED:
+				return 'ignored';
 			case self::S_DENIED:
 				return 'denied';
 			default:
@@ -404,16 +441,20 @@ class ITSEC_Fingerprint implements JsonSerializable {
 			return false;
 		}
 
+		if ( ! $this->get_uses() ) {
+			$this->_uses = 1;
+		}
+
 		global $wpdb;
 
 		$this->_uuid = wp_generate_uuid4();
 		$this->generate_snapshot();
 
-		$insert_id = $wpdb->insert( $wpdb->base_prefix . 'itsec_fingerprints', array(
+		$rows_affected = $wpdb->insert( $wpdb->base_prefix . 'itsec_fingerprints', array(
 			'fingerprint_user'        => $this->get_user()->ID,
 			'fingerprint_hash'        => md5( $data ),
 			'fingerprint_data'        => $data,
-			'fingerprint_uses'        => 1,
+			'fingerprint_uses'        => $this->_uses,
 			'fingerprint_status'      => $this->_status,
 			'fingerprint_uuid'        => $this->_uuid,
 			'fingerprint_created_at'  => $this->get_created_at()->format( 'Y-m-d H:i:s' ),
@@ -433,8 +474,8 @@ class ITSEC_Fingerprint implements JsonSerializable {
 			'fingerprint_snapshot'    => '%s',
 		) );
 
-		if ( $insert_id ) {
-			$this->_id = $insert_id;
+		if ( $rows_affected ) {
+			$this->_id = $wpdb->insert_id;
 
 			/**
 			 * Fires when a fingerprint is created.
@@ -449,7 +490,7 @@ class ITSEC_Fingerprint implements JsonSerializable {
 			}
 		}
 
-		return (bool) $insert_id;
+		return (bool) $rows_affected;
 	}
 
 	/**
@@ -518,19 +559,10 @@ class ITSEC_Fingerprint implements JsonSerializable {
 		return $updated;
 	}
 
-	/**
-	 * Get a user's fingerprints.
-	 *
-	 * @param WP_User $user
-	 * @param array   $args
-	 *
-	 * @return ITSEC_Fingerprint[]
-	 */
-	public static function get_all_for_user( WP_User $user, array $args ) {
-
+	private static function build_where_clause( string $sql, WP_User $user, array $args ) {
 		global $wpdb;
 
-		$sql     = "SELECT * FROM {$wpdb->base_prefix}itsec_fingerprints WHERE `fingerprint_user` = %s";
+		$sql     .= "WHERE `fingerprint_user` = %s";
 		$prepare = array( $user->ID );
 
 		if ( ! empty( $args['status'] ) ) {
@@ -548,9 +580,61 @@ class ITSEC_Fingerprint implements JsonSerializable {
 			$prepare = array_merge( $prepare, wp_parse_slug_list( $args['exclude'] ) );
 		}
 
-		$sql .= ' ORDER BY `fingerprint_last_seen` DESC';
+		if ( ! empty( $args['last_seen_before'] ) ) {
+			$before    = date( 'Y-m-d H:i:s', $args['last_seen_before'] );
+			$sql       .= ' AND `fingerprint_last_seen` <= %s';
+			$prepare[] = $before;
+		}
 
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $prepare ) );
+		if ( ! empty( $args['last_seen_after'] ) ) {
+			$after     = date( 'Y-m-d H:i:s', $args['last_seen_after'] );
+			$sql       .= ' AND `fingerprint_last_seen` >= %s';
+			$prepare[] = $after;
+		}
+
+		if ( ! empty( $args['search'] ) ) {
+			$sql       .= ' AND `fingerprint_data` LIKE %s';
+			$prepare[] = '%"%' . $wpdb->esc_like( $args['search'] ) . '%"%';
+		}
+
+		return [
+			'sql'     => $sql,
+			'prepare' => $prepare,
+		];
+	}
+
+	/**
+	 * Get a user's fingerprints.
+	 *
+	 * @param WP_User $user
+	 * @param array   $args
+	 *
+	 * @return ITSEC_Fingerprint[]
+	 */
+	public static function get_all_for_user( WP_User $user, array $args ) {
+
+		global $wpdb;
+
+		$sql = "SELECT * FROM {$wpdb->base_prefix}itsec_fingerprints ";
+
+		$build_results = self::build_where_clause( $sql, $user, $args );
+
+		$build_results['sql'] .= ' ORDER BY `fingerprint_last_seen` DESC';
+
+		if (
+			! empty( $args['page'] ) &&
+			! empty( $args['per_page'] ) &&
+			is_int( $args['per_page'] ) &&
+			is_int( $args['page'] )
+		) {
+			$limit = $args['per_page'];
+			if ( $limit > 0 ) {
+				$offset               = ( $args['page'] - 1 ) * $limit;
+				$build_results['sql'] .= " LIMIT $offset,$limit";
+			}
+		}
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $build_results['sql'], $build_results['prepare'] ) );
 
 		$fingerprints = array();
 
@@ -561,6 +645,24 @@ class ITSEC_Fingerprint implements JsonSerializable {
 		}
 
 		return $fingerprints;
+	}
+
+	/**
+	 * @param WP_User $user
+	 * @param array   $args
+	 *
+	 * @return integer
+	 */
+	public static function count_all_for_user( WP_User $user, array $args ) {
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM {$wpdb->base_prefix}itsec_fingerprints ";
+
+		$args['count'] = true;
+
+		$build_results = self::build_where_clause( $sql, $user, $args );
+
+		return $wpdb->get_var( $wpdb->prepare( $build_results['sql'], $build_results['prepare'] ) );
 	}
 
 	/**

@@ -83,6 +83,8 @@ class Platform_Data {
 
 		// Remove the platform data deletion notice.
 		$sb_instagram_posts_manager->remove_error( 'platform_data_deleted' );
+		global $sbi_notices;
+		$sbi_notices->remove_notice( 'platform_data_deleted' );
 
 		$sbi_statuses_option = get_option( self::SBI_STATUSES_OPTION_KEY, [] );
 
@@ -276,8 +278,10 @@ class Platform_Data {
 		}
 
 		global $sb_instagram_posts_manager;
-
 		$sb_instagram_posts_manager->remove_error('unused_feed');
+
+		global $sbi_notices;
+		$sbi_notices->remove_notice( 'unused_feed' );
 
 		$manager = new \SB_Instagram_Data_Manager();
 		$manager->update_last_used();

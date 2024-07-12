@@ -525,7 +525,7 @@ class SBI_Source {
 				'error' => array(
 					'code'    => 'No Accounts Found',
 					'message' => __( 'Couldn\'t find Business Profile', 'instagram-feed' ),
-					'details' => sprintf( __( 'Uh oh. It looks like this Facebook account is not currently connected to an Instagram Business profile. Please check that you are logged into the %1$sFacebook account%2$s in this browser which is associated with your Instagram Business Profile. If you are, in fact, logged-in to the correct account please make sure you have Instagram accounts connected with your Facebook account by following %3$sthis FAQ%4$s', 'instagram-feed' ), '<a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">', '</a>', '<a href="https://smashballoon.com/reconnecting-an-instagram-business-profile/" target="_blank" rel="noopener noreferrer">', '</a>' ),
+					'details' => sprintf( __( 'Uh oh. It looks like this Facebook account is not currently connected to an Instagram Business profile. Please check that you are logged into the %1$sFacebook account%2$s in this browser which is associated with your Instagram Business Profile. If you are, in fact, logged-in to the correct account please make sure you have Instagram accounts connected with your Facebook account by following %3$sthis FAQ%4$s', 'instagram-feed' ), '<a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">', '</a>', '<a href="https://smashballoon.com/reconnecting-an-instagram-business-profile/" target="_blank" rel="noopener">', '</a>' ),
 				),
 			);
 		}

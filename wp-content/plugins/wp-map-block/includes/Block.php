@@ -39,12 +39,7 @@ class Block
 		wp_enqueue_script('wp-map-block-frontend-js');
 
         $settings = [
-            'map_marker' => $this->escaping_array_data(isset($attributes['map_marker_list']) ? $attributes['map_marker_list'] : [[
-                'lat' 		=> 23.7806365,
-                'lng' 		=> 90.4193257,
-                'title'		=> 'Bangladesh',
-                'content'	=> 'A Beautiful Country'
-            ]]),
+            'map_marker' => $this->escaping_array_data(isset($attributes['map_marker_list']) ? $attributes['map_marker_list'] : []),
             'map_zoom' => (isset($attributes['map_zoom']) ? esc_attr($attributes['map_zoom']) : 10),
             'scroll_wheel_zoom' => (isset($attributes['scroll_wheel_zoom']) ? esc_attr($attributes['scroll_wheel_zoom']) : false),
             'map_type' => (isset($attributes['map_type']) ? esc_attr($attributes['map_type']) : 'GM'),

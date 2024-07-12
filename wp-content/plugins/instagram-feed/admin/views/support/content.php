@@ -150,7 +150,7 @@
                 <h3>{{genericText.tempLoginHeading}}</h3>
                 <p>{{genericText.tempLoginDesc}}</p>
             </div>
-            <table class="sbi-tempuser-list">
+            <table class="sbi-tempuser-list" :aria-describedby="genericText.tempLoginDesc">
                 <tr>
                     <th>{{genericText.link}}</th>
                     <th>{{genericText.expires}}</th>

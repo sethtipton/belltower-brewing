@@ -27,7 +27,7 @@ class SBI_Global_Settings {
 	 *
 	 * @since 6.0
 	 */
-	function __construct(){
+	public function __construct(){
 		$this->init();
 	}
 
@@ -140,6 +140,7 @@ class SBI_Global_Settings {
 		$sbi_settings['disable_js_image_loading'] = !(bool)$advanced['sbi_enable_js_image_loading'];
 		$sbi_settings['disable_admin_notice'] = !(bool)$advanced['enable_admin_notice'];
 		$sbi_settings['enable_email_report'] = (bool)$advanced['enable_email_report'];
+		$sbi_settings['enqueue_legacy_css'] = (bool) $advanced['enqueue_legacy_css'];
 
 		$sbi_settings['email_notification'] = sanitize_text_field( $advanced['email_notification'] );
 		$sbi_settings['email_notification_addresses'] = sanitize_text_field( $advanced['email_notification_addresses'] );
@@ -166,9 +167,10 @@ class SBI_Global_Settings {
 		// clear cron caches
 		$this->sbi_clear_cache();
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'cronNextCheck' => $this->get_cron_next_check()
 		) );
+		$response->send();
 	}
 
 	/**
@@ -186,9 +188,10 @@ class SBI_Global_Settings {
 		}
 		// do the form validation to check if license_key is not empty
 		if ( empty( $_POST[ 'license_key' ] ) ) {
-			new \InstagramFeed\SBI_Response( false, array(
+			$response = new \InstagramFeed\SBI_Response( false, array(
 				'message' => __( 'License key required!', 'instagram-feed' ),
 			) );
+			$response->send();
 		}
 		$license_key = sanitize_key( $_POST[ 'license_key' ] );
 		// make the remote api call and get license data
@@ -211,7 +214,8 @@ class SBI_Global_Settings {
 			'licenseStatus' => $sbi_license_data['license'],
 			'licenseData' => $sbi_license_data
 		);
-		new SBI_Response( true, $data );
+		$response = new SBI_Response( true, $data );
+		$response->send();
 	}
 
 	/**
@@ -234,7 +238,8 @@ class SBI_Global_Settings {
 			update_option( 'sbi_license_data', $sbi_license_data );
 		}
 		if ( ! $sbi_license_data['success'] ) {
-			new SBI_Response( false, array() );
+			$response = new SBI_Response( false, array() );
+			$response->send();
 		}
 		// remove the license keys and update license key status
 		if( $sbi_license_data['license'] == 'deactivated' ) {
@@ -242,7 +247,8 @@ class SBI_Global_Settings {
 			$data = array(
 				'licenseStatus' => 'inactive'
 			);
-			new SBI_Response( true, $data );
+			$response = new SBI_Response( true, $data );
+			$response->send();
 		}
 	}
 
@@ -278,15 +284,17 @@ class SBI_Global_Settings {
 			foreach ( $request->errors as $key => $error ) {
 				$message .= esc_html( $key ) . ' - ' . esc_html( $error[0] );
 			}
-			new SBI_Response( false, array(
+			$response = new SBI_Response( false, array(
 				'hasError' => true,
 				'error' => $message
 			) );
+			$response->send();
 		}
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'hasError' => false
 		) );
+		$response->send();
 	}
 
 	/**
@@ -307,7 +315,8 @@ class SBI_Global_Settings {
 		$item_name = isset( $_POST['item_name'] ) ? sanitize_text_field( $_POST['item_name'] ) : '';
 		$option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( $_POST['option_name'] ) : '';
 		if ( empty( $license_key ) || empty( $item_name ) ) {
-			new SBI_Response( false, array() );
+			$response = new SBI_Response( false, array() );
+			$response->send();
 		}
 
 		// make the remote license check API call
@@ -317,10 +326,11 @@ class SBI_Global_Settings {
 		$license_changed = $this->update_recheck_license_data( $sbi_license_data, $item_name, $option_name );
 
 		// send AJAX response back
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'license' => $sbi_license_data['license'],
 			'licenseChanged' => $license_changed
 		) );
+		$response->send();
 	}
 
 	/**
@@ -375,20 +385,25 @@ class SBI_Global_Settings {
 
 		if ( ! sbi_current_user_can( 'manage_instagram_feed_options' ) ) {
 			wp_send_json_error();
-		}		$filename = $_FILES['file']['name'];
+		}
+		
+		$filename = $_FILES['file']['name'];
 		$ext = pathinfo($filename, PATHINFO_EXTENSION);
 		if ( 'json' !== $ext ) {
-			new SBI_Response( false, [] );
+			$response = new SBI_Response( false, [] );
+			$response->send();
 		}
 		$imported_settings = file_get_contents( $_FILES["file"]["tmp_name"] );
 		// check if the file is empty
 		if ( empty( $imported_settings ) ) {
-			new SBI_Response( false, [] );
+			$response = new SBI_Response( false, [] );
+			$response->send();
 		}
 		$feed_return = \InstagramFeed\Builder\SBI_Feed_Saver_Manager::import_feed( $imported_settings );
 		// check if there's error while importing
 		if ( ! $feed_return['success'] ) {
-			new SBI_Response( false, [] );
+			$response = new SBI_Response( false, [] );
+			$response->send();
 		}
 		// Once new feed has imported lets export all the feeds to update in front end
 		$exported_feeds = \InstagramFeed\Builder\SBI_Db::feeds_query();
@@ -400,9 +415,10 @@ class SBI_Global_Settings {
 			);
 		}
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'feeds' => $feeds
 		) );
+		$response->send();
 	}
 
 	/**
@@ -476,9 +492,10 @@ class SBI_Global_Settings {
 		$sb_instagram_posts_manager->add_action_log( 'Saved settings on the configure tab.' );
 		$sb_instagram_posts_manager->clear_api_request_delays();
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'cronNextCheck' => $this->get_cron_next_check()
 		) );
+		$response->send();
 	}
 
 	/**
@@ -555,7 +572,8 @@ class SBI_Global_Settings {
 		$sb_instagram_posts_manager->add_action_log( 'Reset resizing tables.' );
 		$this->clear_stored_caches();
 
-		new SBI_Response( true, [] );
+		$response = new SBI_Response( true, [] );
+		$response->send();
 	}
 
 	/**
@@ -572,8 +590,25 @@ class SBI_Global_Settings {
 		}
 
 		global $sb_instagram_posts_manager;
-
 		$sb_instagram_posts_manager->remove_all_errors();
+
+		global $sbi_notices;
+		$sbi_notices->remove_notice( 'critical_error' );
+
+		$user_id = get_current_user_id();
+		update_user_meta($user_id, 'sbi_ignore_new_user_sale_notice', 'always');
+		$sbi_notices->remove_notice( 'discount' );
+
+		$sbi_statuses_option = get_option('sbi_statuses', array());
+		update_option('sbi_rating_notice', 'dismissed', false);
+		$sbi_statuses_option['rating_notice_dismissed'] = sbi_get_current_time();
+		update_option('sbi_statuses', $sbi_statuses_option, false);
+
+		// remove the rating notice step 1 and step 2 from global notices
+		$sbi_notices->remove_notice('review_step_1');
+		$sbi_notices->remove_notice('review_step_2');
+		$sbi_notices->remove_notice('review_step_1_all_pages');
+		$sbi_notices->remove_notice('review_step_2_all_pages');
 
 		wp_send_json_success();
 	}
@@ -601,6 +636,8 @@ class SBI_Global_Settings {
 			wp_send_json_error( array( 'message' => '<div style="margin-top: 10px;">' . esc_html__( 'Unsuccessful. Try visiting our website.', 'instagram-feed' ) . '</div>' ) );
 		}
 
+		global $sbi_notices;
+		$sbi_notices->remove_notice( 'database_create' );
 		wp_send_json_success( array( 'message' => '<div style="margin-top: 10px;">' . esc_html__( 'Success! Try creating a feed and connecting a source.', 'instagram-feed' ) . '</div>' ) );
 	}
 
@@ -620,7 +657,8 @@ class SBI_Global_Settings {
 
 		$this->clear_stored_caches();
 
-		new SBI_Response( true, [] );
+		$response = new SBI_Response( true, [] );
+		$response->send();
 	}
 
 	/**
@@ -715,7 +753,7 @@ class SBI_Global_Settings {
 	 *
 	 * @since 6.0
 	 */
-	function register_menu() {
+	public function register_menu() {
 		// remove admin page update footer
 		add_filter( 'update_footer', [$this, 'remove_admin_footer_text'] );
 
@@ -860,6 +898,7 @@ class SBI_Global_Settings {
 			'socialWallLinks'   => \InstagramFeed\Builder\SBI_Feed_Builder::get_social_wall_links(),
 			'socialWallActivated' => is_plugin_active( 'social-wall/social-wall.php' ),
 			'genericText'       => \InstagramFeed\Builder\SBI_Feed_Builder::get_generic_text(),
+			'legacyCSSSettings' => Util::sbi_show_legacy_css_settings(),
 			'generalTab'		=> array(
 				'uoInstallNotice' => array(
 					'notice' => __( 'Post to Instagram right from WordPress with Uncanny Automator', 'instagram-feed' ),
@@ -964,6 +1003,10 @@ class SBI_Global_Settings {
 				)
 			),
 			'advancedTab'	=> array(
+				'legacyCSSBox' => array(
+					'title' => __( 'Use legacy CSS', 'instagram-feed' ),
+					'helpText' => __( 'This would revert your CSS file for the feed to the file used in version 6.2. Enable this setting if your customizations are not working properly. ', 'instagram-feed' ) . '<a target="_blank" rel="noopener" href="https://smashballoon.com/doc/instagram-css-layout-changes/?utm_source=instagram-pro&utm_medium=settings-advanced&utm_campaign=63changes&utm_content=LearnMore">' . __('Learn More', 'instagram-feed') .'</a>',
+				),
 				'optimizeBox' => array(
 					'title' => __( 'Optimize Images', 'instagram-feed' ),
 					'helpText' => __( 'This will create multiple local copies of images in different sizes. The plugin then displays the smallest version based on the size of the feed.', 'instagram-feed' ),
@@ -1187,6 +1230,7 @@ class SBI_Global_Settings {
 				'sbi_enqueue_js_in_head' => $sbi_settings['enqueue_js_in_head'],
 				'sbi_enqueue_css_in_shortcode' => $sbi_settings['enqueue_css_in_shortcode'],
 				'sbi_enable_js_image_loading' => !$sbi_settings['disable_js_image_loading'],
+				'enqueue_legacy_css' => $sbi_settings['enqueue_legacy_css'],
 
 				'enable_admin_notice' => !$sbi_settings['disable_admin_notice'],
 				'enable_email_report' => $sbi_settings['enable_email_report'],
@@ -1260,7 +1304,7 @@ class SBI_Global_Settings {
 	 * @since 6.0
 	 */
 	public function global_settings(){
-		return \InstagramFeed\SBI_View::render( 'settings.index' );
+		\InstagramFeed\SBI_View::render( 'settings.index' );
 	}
 
 }

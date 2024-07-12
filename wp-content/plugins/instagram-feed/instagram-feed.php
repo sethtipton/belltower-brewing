@@ -3,13 +3,13 @@
 Plugin Name: Smash Balloon Instagram Feed
 Plugin URI: https://smashballoon.com/instagram-feed
 Description: Display beautifully clean, customizable, and responsive Instagram feeds.
-Version: 6.2.6
+Version: 6.4.3
 Author: Smash Balloon
 Author URI: https://smashballoon.com/
 License: GPLv2 or later
 Text Domain: instagram-feed
 
-Copyright 2023  Smash Balloon LLC (email : hey@smashballoon.com)
+Copyright 2024  Smash Balloon LLC (email : hey@smashballoon.com)
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 use InstagramFeed\Helpers\SB_Instagram_Tracking;
+use InstagramFeed\Vendor\Smashballoon\Framework\Packages\Notification\Notices\SBNotices;
 
 if ( ! defined( 'SBI_STORE_URL' ) ) {
 	define( 'SBI_STORE_URL', 'https://smashballoon.com/' );
@@ -32,7 +33,7 @@ if ( ! defined( 'SBI_PLUGIN_NAME' ) ) {
 	define( 'SBI_PLUGIN_NAME', 'Instagram Feed Free' );
 }
 if ( ! defined( 'SBIVER' ) ) {
-	define( 'SBIVER', '6.2.6' );
+	define( 'SBIVER', '6.4.3' );
 }
 // Db version.
 if ( ! defined( 'SBI_DBVERSION' ) ) {
@@ -63,11 +64,13 @@ if ( ! defined( 'SBI_MINIMUM_INTERVAL' ) ) {
 if ( ! defined( 'SBI_CONNECT_URL' ) ) {
     define( 'SBI_CONNECT_URL', 'https://connect.smashballoon.com/auth/ig/' );
 }
+if (!defined('SBI_OEMBED_CONNECT_URL')) {
+	define('SBI_OEMBED_CONNECT_URL', 'https://connect-tools.smashballoon.com/');
+}
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-if ( function_exists( 'sb_instagram_feed_init' ) ) {
-	wp_die( "Please deactivate Custom Feeds for Instagram Pro before activating this version.<br /><br />Back to the WordPress <a href='".get_admin_url(null, 'plugins.php')."'>Plugins page</a>." );
-} else {
+if ( ! function_exists( 'sb_instagram_feed_init' ) )
+{
 	/**
 	 * Define constants and load plugin files
 	 *
@@ -138,6 +141,9 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 		require_once trailingslashit( SBI_PLUGIN_DIR ) . 'inc/class-sb-instagram-single.php';
 		require_once trailingslashit( SBI_PLUGIN_DIR ) . 'inc/class-sb-instagram-token-refresher.php';
 		require_once trailingslashit( SBI_PLUGIN_DIR ) . 'inc/admin/blocks/class-sbi-blocks.php';
+
+		global $sbi_notices;
+		$sbi_notices = SBNotices::instance( 'instagram-feed' );
 
 		$sbi_blocks = new SB_Instagram_Blocks();
 		new SB_Instagram_Tracking();
@@ -212,6 +218,12 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 		$sbi_onboarding_wizard	= new InstagramFeed\admin\SBI_Onboarding_wizard();
 
 		$sbi_support_tool = new InstagramFeed\Admin\SBI_Support_Tool();
+
+		InstagramFeed\Integrations\Elementor\SBI_Elementor_Base::instance();
+		$sbi_divi_handler = new InstagramFeed\Integrations\Divi\SBI_Divi_Handler();
+
+		require_once trailingslashit( SBI_PLUGIN_DIR ) . 'admin/SBI_Callout.php';
+		$sbi_callout			= new InstagramFeed\Admin\SBI_Callout();
 
 
 	}
@@ -1020,6 +1032,9 @@ if ( function_exists( 'sb_instagram_feed_init' ) ) {
 		$wp_roles->remove_cap( 'administrator', 'manage_instagram_feed_options' );
 		wp_clear_scheduled_hook( 'sbi_feed_update' );
 		wp_clear_scheduled_hook( 'sbi_usage_tracking_cron' );
+
+		delete_option('sb_instagram_feed_notices');
+		delete_option('sb_instagram_feed_group_notices');
 	}
 
 	register_uninstall_hook( __FILE__, 'sb_instagram_uninstall' );

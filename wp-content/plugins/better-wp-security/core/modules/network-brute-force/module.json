@@ -121,5 +121,14 @@
         }
       }
     }
+  },
+  "telemetry-settings": {
+    "enable_ban": true
+  },
+  "requirements": {
+    "ip": {
+      "validate": "run",
+      "showMessageIfUnmet": true
+    }
   }
 }

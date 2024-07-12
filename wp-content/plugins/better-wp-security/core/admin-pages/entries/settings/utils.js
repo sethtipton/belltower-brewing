@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
+import { useHistory, useLocation, useParams, useRouteMatch, Link } from 'react-router-dom';
 import { createLocation } from 'history';
 import { pickBy, get, set, isEmpty, every } from 'lodash';
 import classnames from 'classnames';
@@ -11,6 +11,7 @@ import classnames from 'classnames';
  */
 import {
 	createContext,
+	createInterpolateElement,
 	useCallback,
 	useContext,
 } from '@wordpress/element';
@@ -20,7 +21,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import { WPError } from '@ithemes/security-utils';
+import { useGlobalNavigationUrl, WPError } from '@ithemes/security-utils';
 import {
 	CORE_STORE_NAME,
 	MODULES_STORE_NAME,
@@ -166,14 +167,19 @@ export function getModuleTypes() {
 }
 
 export function useModuleRequirementsValidator() {
-	const { featureFlags, siteInfo, requirementsInfo } = useSelect(
+	const { featureFlags, siteInfo, requirementsInfo, proxy } = useSelect(
 		( select ) => ( {
 			featureFlags: select( CORE_STORE_NAME ).getFeatureFlags(),
 			siteInfo: select( CORE_STORE_NAME ).getSiteInfo(),
 			requirementsInfo: select( CORE_STORE_NAME ).getRequirementsInfo(),
+			proxy: select( MODULES_STORE_NAME ).getEditedSetting( 'global', 'proxy' ),
 		} ),
 		[]
 	);
+
+	const { root } = useParams();
+	const proxyPath = root && `/${ root }/global#proxy`;
+	const proxyUrl = useGlobalNavigationUrl( 'settings', '/settings/global' ) + '#proxy';
 
 	const isVersionAtLeast = ( version, atLeast ) => {
 		return version.localeCompare( atLeast, undefined, { numeric: true, sensitivity: 'base' } ) >= 0;
@@ -269,9 +275,27 @@ export function useModuleRequirementsValidator() {
 				}
 			}
 
+			if ( module.requirements.ip && isForMode( module.requirements.ip ) ) {
+				if ( proxy === 'automatic' ) {
+					error.add(
+						'ip',
+						createInterpolateElement(
+							__( 'You must select an IP Detection method in <a>Global Settings</a>. <help>Learn more</help>.', 'better-wp-security' ),
+							{
+								// eslint-disable-next-line jsx-a11y/anchor-has-content
+								a: proxyPath ? <Link to={ proxyPath } /> : <a href={ proxyUrl } />,
+								// eslint-disable-next-line jsx-a11y/anchor-has-content
+								help: <a href="https://go.solidwp.com/firewall-features-not-available" />,
+							}
+						),
+						module.requirements.ip
+					);
+				}
+			}
+
 			return error;
 		},
-		[ featureFlags, siteInfo, requirementsInfo ]
+		[ featureFlags, siteInfo, requirementsInfo, proxy, proxyPath, proxyUrl ]
 	);
 }
 

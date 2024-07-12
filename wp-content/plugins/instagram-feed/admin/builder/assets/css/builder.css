@@ -1312,7 +1312,12 @@ Source Screen
 .sbi-fb-mr-fd-img img{
     width: 100%;
 }
-
+.sbi-fb-mr-fd-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding-right: 16px;
+}
 .sbi-fb-mr-fd-heading{
     font-weight:600;
     font-size: 18px;
@@ -1322,18 +1327,19 @@ Source Screen
 }
 .sbi-fb-mr-fd-list{
     margin-bottom: 10px;
-    width: 100%;
-    float: left;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    justify-items: flex-start;
+    gap: 8px;
 }
 .sbi-fb-mr-fd-item{
     box-sizing: border-box;
     position: relative;
-    float: left;
     border: 1px solid #DCDDE1;
     border-radius: 2px;
-    margin-right: 8px;
-    height: 38px;
-    width: 160px;
+    height: 40px;
+    width: 100%;
+    min-width: 120px;
     color: #141B38;
     font-size: 14px;
     font-weight:600;
@@ -1348,7 +1354,7 @@ Source Screen
     display: flex;
     justify-content: left;
     align-items: center;
-    margin-left: 13px;
+    padding: 0 5px;
 }
 
 .sbi-fb-mr-fd-ic {
@@ -1358,10 +1364,6 @@ Source Screen
     height: 16px;
     fill: currentColor;
     float: left;
-}
-.sbi-fb-mr-fd-ch{
-    position: absolute;
-    right:14px;
 }
 #sbi-builder-app .sbi-fb-mr-fd-heading h3 {
     margin-bottom: 21px;
@@ -4398,6 +4400,9 @@ width: calc(100% - 20px);
         margin-bottom: 24px;
     }
 
+    .sbi-fb-mr-fd-list {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -4414,6 +4419,13 @@ width: calc(100% - 20px);
         display: none;
     }
 }
+
+@media (min-width: 768px) and (max-width: 1366px) {
+    .sbi-fb-mr-fd-list {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
 
 /*
     Multiple Sources Sections
@@ -5547,13 +5559,27 @@ body #sbi_lightbox.sbi_lightbox:not(.sbi-lightbox-dummy-ctn){
     font-size: 16px;
     font-weight: 600;
     line-height: 26px;
+    display: flex;
+    align-items: center;
 }
 
-.sb-onboarding-wizard-elem-text span {
+.sb-onboarding-wizard-elem-text > span {
     font-size: 14px;
     font-weight: 400;
     line-height: 22px;
     color: #434960;
+}
+.sb-onboarding-wizard-elem-text-installs{
+    font-size: 12px;
+    font-weight: 400;
+    font-style: italic;
+    color: #005B8C;
+    display: inline-flex;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    column-gap: 5px;
+    margin-left: 14px;
 }
 
 .sb-onboarding-wizard-elem-toggle {
@@ -5605,7 +5631,7 @@ body #sbi_lightbox.sbi_lightbox:not(.sbi-lightbox-dummy-ctn){
 
 .sb-onboarding-wizard-elements-list-hd {
     padding: 20px !important;
-    padding-top: 50px !important;
+    padding-top: 25px !important;
     background-color: #fff !important;
     border-bottom: 1px solid #E6E6EB !important;
     font-size: 18px !important;
@@ -6051,4 +6077,80 @@ div:not(.sb-onboarding-wizard-welcome-btns) > button.sb-btn-wizard-next{
     .sb-onboarding-wizard-sources-list{
             grid-template-columns: 49% 49%;
     }
+}
+
+
+.sb-onboarding-wizard-smash-list{
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+.sb-onboarding-wizard-smash-inside{
+    display: flex;
+    padding: 6px 10px;
+    border: 1px solid #E6E6EB;
+    border-radius: 4px;
+    column-gap: 10px;
+    align-items: center;
+}
+.sb-onboarding-wizard-smash-list svg{
+    float: left;
+    fill: #888;
+}
+.sb-onboarding-wizard-smash-elem{
+    display: flex;
+    align-items: center;
+    column-gap: 5px;
+    text-transform: capitalize;
+}
+.sb-onboarding-wizard-smash-elem span {
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+}
+.sb-onboarding-wizard-smash-elem img{
+    width: 20px;
+    height: auto;
+    float: left;
+}
+.sb-onboarding-wizard-smash-inside .sb-control-elem-tltp{
+    margin-left: unset;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+.sb-onboarding-wizard-smash-inside .sb-control-elem-tltp-content{
+    position: absolute;
+    opacity: 0;
+    visibility: hidden;
+    top: -30px;
+    left: 7px;
+    -webkit-transition: all .2s ease-in-out;
+        transition: all .2s ease-in-out;
+}
+.sb-onboarding-wizard-smash-inside .sb-control-elem-tltp:hover .sb-control-elem-tltp-content{
+    opacity: 1;
+    visibility: visible;
+    top: -16px;
+    max-width: 300px;
+    width: auto;
+    left: 7px;
+}
+
+.sb-onboarding-wizard-clicking{
+    width: 300px;
+    font-size: 14px;
+    color: #3b4262;
+    line-height: 1.7em;
+    position: absolute;
+    bottom: -65px;
+    display: flex;
+    column-gap: 10px;
+}
+.sb-onboarding-wizard-clicking svg{
+    fill: currentColor;
+    margin-top: 5px;
+}
+.sb-onboarding-wizard-clicking span > span{
+    text-transform: capitalize;
 }

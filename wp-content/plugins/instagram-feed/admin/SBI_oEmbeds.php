@@ -27,7 +27,7 @@ class SBI_oEmbeds {
 	 *
 	 * @since 4.0
 	 */
-	function __construct(){
+	public function __construct(){
 		$this->init();
 	}
 
@@ -52,7 +52,7 @@ class SBI_oEmbeds {
 	 *
 	 * @since 4.0
 	 */
-	function register_menu() {
+	public function register_menu() {
         $cap = current_user_can( 'manage_instagram_feed_options' ) ? 'manage_instagram_feed_options' : 'manage_options';
         $cap = apply_filters( 'sbi_settings_pages_capability', $cap );
 
@@ -86,9 +86,10 @@ class SBI_oEmbeds {
 		$oembed_settings['disabled'] = true;
 		update_option( 'sbi_oembed_token', $oembed_settings );
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'connectionUrl' => $this->get_connection_url()
 		) );
+		$response->send();
 	}
 
 	/**
@@ -109,9 +110,10 @@ class SBI_oEmbeds {
 		$oembed_settings['disabled'] = true;
 		update_option( 'cff_oembed_token', $oembed_settings );
 
-		new SBI_Response( true, array(
+		$response = new SBI_Response( true, array(
 			'connectionUrl' => $this->get_connection_url()
 		) );
+		$response->send();
 	}
 
    	/**
@@ -325,20 +327,17 @@ class SBI_oEmbeds {
 	public static function get_connection_url() {
 
 		$admin_url_state = admin_url( 'admin.php?page=sbi-oembeds-manager' );
+		$nonce           = wp_create_nonce('sbi_con');
 		//If the admin_url isn't returned correctly then use a fallback
 		if( $admin_url_state == '/wp-admin/admin.php?page=sbi-oembeds-manager' ){
 			$admin_url_state = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 		}
 
-		if ( class_exists( '\CustomFacebookFeed\CFF_Oembed' ) ) {
-			$cff_oembed_token = \CustomFacebookFeed\CFF_Oembed::last_access_token();
-
-			if ( ! empty( $cff_oembed_token ) ) {
-				return add_query_arg( 'transfer', '1', $admin_url_state );
-			}
-		}
-
-		return 'https://www.facebook.com/dialog/oauth?client_id=254638078422287&redirect_uri=https://api.smashballoon.com/v2/instagram-graph-api-redirect.php&scope=pages_show_list&state=' . $admin_url_state;
+		return array(
+			'connect' => SBI_OEMBED_CONNECT_URL,
+			'sbi_con' => $nonce,
+			'stateURL' => $admin_url_state
+		);
 	}
 
 	/**
@@ -359,6 +358,13 @@ class SBI_oEmbeds {
 		if( ! isset( $_GET['page'] ) && 'sbi-oembeds-manager' !== $_GET['page'] ) {
 			return false;
 		}
+
+		global $sbi_notices;
+		$oembed_success_notice = $sbi_notices->get_notice('oembed_api_change_reconnect');
+		if ($oembed_success_notice) {
+			$sbi_notices->remove_notice('oembed_api_change_reconnect');
+		}
+
 		if ( ! empty( $_GET['transfer'] ) ) {
 			if ( class_exists( '\CustomFacebookFeed\CFF_Oembed' ) ) {
 				$cff_oembed_token = \CustomFacebookFeed\CFF_Oembed::last_access_token();
@@ -369,27 +375,48 @@ class SBI_oEmbeds {
 
 				return $return;
 			}
-		} if ( isset( $_GET['sbi_access_token'] ) ) {
+		}
+
+		if ( isset( $_GET['sbi_access_token'] ) ) {
 			$access_token = sbi_sanitize_alphanumeric_and_equals( $_GET['sbi_access_token'] );
 
 			$return = [];
 
 			$valid_new_access_token = ! empty( $access_token ) && strlen( $access_token ) > 20 && $saved_access_token_data !== $access_token ? $access_token : false;
 			if ( $valid_new_access_token ) {
-				$url = esc_url_raw( 'https://graph.instagram.com/me/accounts?limit=500&access_token=' . $valid_new_access_token );
-				$pages_data_connection = wp_remote_get( $url );
 				$return['access_token'] = $valid_new_access_token;
-				$return['disabled'] = false;
-				if ( ! is_wp_error( $pages_data_connection ) && isset( $pages_data_connection['body'] ) ) {
-					$pages_data = json_decode( $pages_data_connection['body'], true );
-					if ( isset( $pages_data['data'][0]['access_token'] ) ) {
-						$return['expiration_date'] = 'never';
-					} else {
-						$return['expiration_date'] = time() + (60 * DAY_IN_SECONDS);
-					}
-				} else {
-					$return['expiration_date'] = 'unknown';
-				}
+				$return['disabled']     = false;
+				$return['expiration_date'] = 'never';
+
+				$message  = '<p><strong>' . __('oEmbed account successfully connected. You are all set to continue creating oEmbeds.', 'instagram-feed') . '</strong></p>';
+
+				$success_args = array(
+					'class'     => 'sbi-admin-notices',
+					'message'     => $message,
+					'dismissible' => true,
+					'dismiss'     => array(
+						'class' => 'sbi-notice-dismiss',
+						'icon'  => SBI_PLUGIN_URL . 'admin/assets/img/sbi-dismiss-icon.svg',
+						'tag'   => 'a',
+						'href' => '#',
+					),
+					'priority'    => 1,
+					'page'        => array(
+						'sbi-oembeds-manager',
+					),
+					'icon' => array(
+						'src'  => SBI_PLUGIN_URL . 'admin/assets/img/sbi-exclamation.svg',
+						'wrap' => '<span class="sb-notice-icon"><img {src}></span>',
+					),
+					'styles' => array(
+						'display' => 'flex',
+						'justify-content' => 'space-between',
+						'gap' => '2rem',
+					),
+					'wrap_schema' => '<div {id} {class}>{icon}<div class="sbi-notice-wrap" {styles}><div class="sbi-notice-body">{message}</div>{dismiss}</div></div>',
+				);
+
+				$sbi_notices->add_notice('oembed_api_change_reconnect', 'information', $success_args);
 			} else {
 				if ( $saved_access_token_data === $access_token ) {
 					$return['error'] = 'Not New';
@@ -457,7 +484,8 @@ class SBI_oEmbeds {
 			return [
 				'nextStep' => 'none',
 				'plugin' => 'none',
-				'action' => 'none'
+				'action' => 'none',
+				'referrer' => 'oembeds'
 			];
 		}
 
@@ -466,14 +494,16 @@ class SBI_oEmbeds {
 				return [
 					'nextStep' => 'pro_activate',
 					'plugin' => 'custom-facebook-feed-pro/custom-facebook-feed.php',
-					'action' => 'sbi_activate_addon'
+					'action' => 'sbi_activate_addon',
+					'referrer' => 'oembeds'
 				];
 			}
 			if ( strpos( $plugin['Name'], 'Custom Facebook Feed' ) !== false ) {
 				return [
 					'nextStep' => 'free_activate',
 					'plugin' => 'custom-facebook-feed/custom-facebook-feed.php',
-					'action' => 'sbi_activate_addon'
+					'action' => 'sbi_activate_addon',
+					'referrer' => 'oembeds'
 				];
 			}
 		}
@@ -481,7 +511,8 @@ class SBI_oEmbeds {
 		return [
 			'nextStep' => 'free_install',
 			'plugin' => 'https://downloads.wordpress.org/plugin/custom-facebook-feed.zip',
-			'action' => 'sbi_install_addon'
+			'action' => 'sbi_install_addon',
+			'referrer' => 'oembeds'
 		];
 	}
 
@@ -491,6 +522,6 @@ class SBI_oEmbeds {
 	 * @since 4.0
 	 */
 	public function oembeds_manager(){
-		return \InstagramFeed\SBI_View::render( 'oembeds.index' );
+		\InstagramFeed\SBI_View::render( 'oembeds.index' );
 	}
 }

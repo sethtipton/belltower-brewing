@@ -2922,7 +2922,6 @@
 #sbi-notice-bar.sbi-header-notice span {
   font-size: 14px;
   line-height: 160%;
-    font-weight: 300;
     color: #fff !important;
     font-weight: 400;
 }
@@ -3046,7 +3045,8 @@
 .sbi-admin-notices .license-action-btns .sbi-notice-btn {
   text-decoration: none;
 }
-.sbi-admin-notices .license-action-btns .sbi-notice-btn:not(:last-child) {
+.sbi-admin-notices .license-action-btns .sbi-notice-btn:not(:last-child),
+#database_create .sbi-notice-btn:not(:last-child) {
   margin-right: 8px;
 }
 .sbi-admin-notices .license-action-btns .sbi-notice-btn {
@@ -3538,6 +3538,7 @@ body .sbi_review_step1_notice .sbi-btn-link:not(:last-child) {
   line-height: 22px;
   color: #434960;
   margin: 0;
+  word-wrap: break-word;
 }
 .sbi-admin-notices .sb-notice-icon {
   position: absolute;
@@ -3851,4 +3852,28 @@ body .sbi_review_step1_notice .sbi-btn-link:not(:last-child) {
 }
 .sbi-new-indicator {
 	background-color: #1da867;
+}
+
+.sbi-admin-notices.sbi-admin-notices-spaced-p p {
+	margin-top: 15px
+}
+
+.sbi-admin-notices.sbi-admin-notices-spaced-p .sbi-error-directions a {
+	margin-right: 8px
+}
+
+.sbi-admin-notices.sbi-admin-notices-spaced-p .sbi-error-directions a.button-primary {
+	font-weight: bold;
+}
+
+.sbi-admin-notices.sbi-admin-notices-spaced-p {
+	padding: 20px 120px 20px 82px;
+}
+
+#oembed_api_change_reconnect.sbi-admin-notices {
+	border-radius: 3px;
+	border: 1px solid #D6ECD1;
+	box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.05), 0px 4px 5px 0px rgba(0, 0, 0, 0.05);
+	background: #E6F4E3;
+	color: #203E1A;
 }

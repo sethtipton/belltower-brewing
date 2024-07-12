@@ -151,10 +151,18 @@ function sbi_install_addon() {
 			$type = sanitize_key( $_POST['type'] );
 		}
 
+		$referrer = '';
+		if ( ! empty( $_POST['referrer'] ) ) {
+			$referrer = sanitize_key( $_POST['referrer'] );
+		}
+
 		// Activate the plugin silently.
 		$activated = activate_plugin( $plugin_basename );
 
 		if ( ! is_wp_error( $activated ) ) {
+			if ($plugin_basename === 'custom-facebook-feed/custom-facebook-feed.php' && $referrer === 'oembeds') {
+				delete_option('cff_plugin_do_activation_redirect');
+			}
 			wp_send_json_success(
 				array(
 					'msg'          => 'plugin' === $type ? esc_html__( 'Plugin installed & activated.', 'instagram-feed' ) : esc_html__( 'Addon installed & activated.', 'instagram-feed' ),

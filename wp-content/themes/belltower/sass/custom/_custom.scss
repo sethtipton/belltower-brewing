@@ -178,8 +178,8 @@ ul li {margin: $u30txtPadding1 0;}
 		.entry-meta {
 			position: relative;
 			z-index: 3;
-			text-align: right;
-			margin-right: 0.5em;
+			text-align: center;
+			//margin-right: 0.5em;
 			padding-bottom: 0.3em;
 			span {
 				color:$color__btpurewhite;
@@ -196,8 +196,8 @@ ul li {margin: $u30txtPadding1 0;}
 	}
 	.post-thumbnail {
 		padding-top: 4vh;
-		//width:30%;
-		//float:left;
+		width:auto;
+		text-align: center;
 	}
 	.entry-content  {
 		//@extend .cwidth;
@@ -234,7 +234,15 @@ ul li {margin: $u30txtPadding1 0;}
 		margin-top: -4vh;
 		margin-bottom: 6vh;
 	}
-	//background-color: purple;
+	.event_date_head, .dash, .event_time_head {
+		font-size:2rem;
+	}
+	.posted-on {
+		display:none;
+	}
+	.byline {
+		display:none;
+	}
 }
 
 
@@ -306,7 +314,7 @@ ul li {margin: $u30txtPadding1 0;}
 		background-color:$color__btpurewhite;
 		&:after{display:none!important;}
 	}
-	.page-template-belltower-home &{
+	.page-template-belltower-home & {
 		background-color:$color__btdarkgreen;
 	}
 }
@@ -1011,9 +1019,75 @@ body.blog {
 	&:hover {opacity: 0.8;}
 }
 
-.event-feed {
+.events-feed {
 	//background:purple;
+	article {
+		margin-top:50px;
+		display: grid;
+		grid-template-columns: auto auto; /* First column auto-sized, second column takes up remaining space */
+		grid-template-rows: auto auto auto;
+		grid-column-gap: 20px;
+		grid-row-gap: 20px;
+		position: relative;
+		&:after {
+			content:'';
+			position: absolute;
+			height:1px;
+			background-color: $color__btblack;
+			width:100%;
+			bottom:-25px;
+		}
+		a {
+			text-decoration: none;
+		}
+		.event_thumbnail {
+			grid-column: 1;
+			grid-row: 1 / 4;
+			display:flex;
+			img {
+				height: fit-content;
+			}
+		}
+		.event_title {
+			//grid-column: 2;
+			//grid-row:1;
+			//display:block;
+			display: flex;
+    		flex-direction: column;
+			color:$color__btblack;
+			h2 {
+				text-align: left;
+				margin:0;
+				color:$color__btblack;
+				font-size: 1.5rem;
+			}
+		}
+		.event_date {
+			float:left;
+			font-size: 1.5rem;
+			font-weight:900;
+			color:$color__btdarkgreen;
+		}
+		.event_time {
+			font-size: 1.3rem;
+			font-weight: 600;
+			color:$color__btyellow;
+		}
+		.event_readmore {
+			color:#808166;
+		}
+		.read-more {display:none}
+		//a {
+		//	grid-column: 2;
+		//	grid-row:3;
+		//}
+		&:first-child {
+			margin-top:0;
+		}
+	}
 }
+
+
 
 @media (max-width:$btcwidth) {
 	.cwidth {
@@ -1060,6 +1134,13 @@ body.blog {
 }
 
 @media (max-width:$tabletBreakpoint) {
+	.events-feed article {
+		grid-template-columns: auto;
+		grid-template-rows: auto;
+		&:after {
+			bottom: 0;
+		}
+	}
 	.wp-block-latest-posts {
 		li {
 			//margin: clamp(30px, 8vh, 70px) 0;
@@ -1163,10 +1244,10 @@ body.blog {
 		pointer-events: none;
 		display:block;
 		background-color:$color__btpurewhite;
-		.page-template-belltower-home &{background-color:$color__btdarkgreen;}
 		transition: opacity 300ms ease-in-out;
 		width: 100%;
 		opacity: 0;
+		.page-template-belltower-home & {background-color:$color__btdarkgreen;}
 		.menu-toggled &{
 			pointer-events: all;
 			opacity:1;
@@ -1178,8 +1259,8 @@ body.blog {
     			padding-bottom: 8px;
 				color:$color__btdarkgreen;
 				height:auto!important;
-				.page-template-belltower-home &{color:$color__btpurewhite;}
 				font-size: 1.2rem;
+				.page-template-belltower-home &{color:$color__btpurewhite;}
 				&:after{display:none;}
 			}
 			&.menu-item-has-children:after {display:none;}
@@ -1201,7 +1282,7 @@ body.blog {
 				position: absolute;
 				bottom: 0;
 				height: 1px;
-				background-color: #231F20;
+				background-color: $color__btblack;
 				opacity: 0.1;
 				right: 24px;
 				left: 0px;
@@ -1359,6 +1440,9 @@ body.blog {
 		}
 		.entry-content {
 			padding-top: clamp(10px, 3vh, 20px);
+		}
+		.event_date_head, .dash, .event_time_head {
+			font-size:1.5rem;
 		}
 	}
 
