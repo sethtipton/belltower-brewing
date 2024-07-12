@@ -12,7 +12,7 @@ function is_local_environment() {
 }
 
 if (is_local_environment()) {
-	//echo "Local environment detected.";
+	echo "Local environment detected.";
 
 	/**
 	 * The base configuration for WordPress
@@ -91,7 +91,7 @@ if (is_local_environment()) {
 
 }else {
 
-	//echo "production environment detected.";
+	echo "production environment detected.";
 	define( 'ITSEC_ENCRYPTION_KEY', 'T0NxckNXfkF4IERPZEg/a2xnVVRNUXlfMGxEWjYvPHR4PDkxSFd4TGxFSkUxT3Y0ZCNhdShSKj59QikmR19fcw==' );
 
 	/**
