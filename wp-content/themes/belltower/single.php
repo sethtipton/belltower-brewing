@@ -25,12 +25,26 @@ get_header();
 				echo '</div>';
 			endif;
 
-			the_post_navigation(
-				array(
-					'prev_text' => '<span class="nav-subtitle">' . esc_html__( 'Previous:', 'belltower' ) . '</span> <span class="nav-title">%title</span>',
-					'next_text' => '<span class="nav-subtitle">' . esc_html__( 'Next:', 'belltower' ) . '</span> <span class="nav-title">%title</span>',
-				)
-			);
+			if ( has_category( 'events' ) ) :
+				$prev_post = get_previous_post( true, '', 'category' );
+				$next_post = get_next_post( true, '', 'category' );
+
+				the_post_navigation(
+					array(
+						'prev_text' => $prev_post ? '<span class="nav-subtitle">' . esc_html__( 'Previous:', 'belltower' ) . '</span> <span class="nav-title">%title</span>' : '',
+						'next_text' => $next_post ? '<span class="nav-subtitle">' . esc_html__( 'Next:', 'belltower' ) . '</span> <span class="nav-title">%title</span>' : '',
+						'prev_link' => $prev_post ? get_permalink( $prev_post ) : '',
+						'next_link' => $next_post ? get_permalink( $next_post ) : '',
+					)
+				);
+			else :
+				the_post_navigation(
+					array(
+						'prev_text' => '<span class="nav-subtitle">' . esc_html__( 'Previous:', 'belltower' ) . '</span> <span class="nav-title">%title</span>',
+						'next_text' => '<span class="nav-subtitle">' . esc_html__( 'Next:', 'belltower' ) . '</span> <span class="nav-title">%title</span>',
+					)
+				);
+			endif;
 
 			// If comments are open or we have at least one comment, load up the comment template.
 			if ( comments_open() || get_comments_number() ) :
