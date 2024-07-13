@@ -31,6 +31,17 @@
 
 </head>
 
+<style>
+	:root {
+		--masthead-height: 0px;
+	}
+	@media (max-width:600px) {
+		.menu-toggled .main-navigation.toggled .menu-main-nav-container > ul {
+			height: calc(100vh - var(--masthead-height));
+		}
+	}
+</style>
+
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 <div id="page" class="site swidth">

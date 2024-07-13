@@ -1,7 +1,7 @@
 
 
 
-
+$basefontsize: 1.1rem;
 
 body,
 button,
@@ -13,7 +13,7 @@ textarea {
 	font-family: $font__main;
 	//src: $font__src;
 	src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-	font-size: 1rem;
+	font-size: $basefontsize;
 	line-height: $font__line-height-body;
 }
 
@@ -22,7 +22,7 @@ textarea {
 	color: $color__text-main!important;
 	font-family: $font__main!important;
 	src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-	font-size: 1rem!important;
+	font-size: $basefontsize!important;
 	line-height: $font__line-height-body!important;
 }
 

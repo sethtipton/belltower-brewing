@@ -131,6 +131,19 @@ let btresizeTimer;
   }, 400);
 });
 
+function updateMastheadHeight() {
+  let masthead = doc.getElementById('masthead');
+  if (masthead) {
+    const mastheadHeight = masthead.offsetHeight;
+    document.documentElement.style.setProperty('--masthead-height', `${mastheadHeight}px`);
+  }
+}
+//window.addEventListener('load', updateMastheadHeight);
+setTimeout(function() {
+  updateMastheadHeight();
+}, 200);
+window.addEventListener('resize', updateMastheadHeight);
+
 //Give the page top padding based on height on Nav
 const ro = new ResizeObserver(entries => {
 	for (let entry of entries) {

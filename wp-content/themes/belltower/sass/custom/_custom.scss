@@ -8,13 +8,26 @@ $u30txtPadding1 : clamp(10px, 2vh, 20px);
 $btcmpPadding1 : clamp(10px, 10vh, 80px);
 $btcmpPadding2 : clamp(10px, 8vh, 50px);
 
-.has-small-font-size {font-size: 0.8125rem;}
+.has-small-font-size {font-size: 0.8125rem!important;}
 .has-regular-font-size,
-.has-normal-font-size {font-size: 1rem;}
-.has-medium-font-size {font-size: 1.25rem;}
-.has-large-font-size {font-size: 2.25rem;}
+.has-normal-font-size {font-size: $basefontsize!important;}
+.has-medium-font-size {font-size: 1.25rem!important;}
+.has-large-font-size {font-size: 2.25rem!important;}
 .has-larger-font-size,
-.has-huge-font-size {font-size: 2.625rem;}
+.has-huge-font-size {font-size: 2.625rem!important;}
+
+@mixin bt-visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+	border: 0;
+	margin: -1px;
+	padding: 0;
+}
 
 body.pause * {
 	animation: none !important;
@@ -135,7 +148,8 @@ ul li {margin: $u30txtPadding1 0;}
 		}
 		&:first-child {margin-top:0;}
 		& > a {
-			font-size:2rem;
+			//font-size:2rem;
+			@extend .has-large-font-size;
 			color:$color__btdarkestgreen;
 			line-height: 1;
 			transform: translate(0px, -4px);
@@ -223,7 +237,10 @@ ul li {margin: $u30txtPadding1 0;}
 			color:$color__btdarkgreen;
 		}
 		.nav-title {display:block}
-		.nav-subtitle {font-size: 1.2rem;}
+		.nav-subtitle {
+			//font-size: 1.2rem;
+			@extend .has-medium-font-size;
+		}
 	}
 	.comments-area {
 		a {
@@ -235,7 +252,12 @@ ul li {margin: $u30txtPadding1 0;}
 		margin-bottom: 6vh;
 	}
 	.event_date_head, .dash, .event_time_head {
-		font-size:2rem;
+		//font-size:2rem;
+		@extend .has-large-font-size;
+	}
+	.googlecalwrap {
+		margin-top: 0;
+    	margin-bottom: 0;
 	}
 	.posted-on {
 		display:none;
@@ -316,6 +338,11 @@ ul li {margin: $u30txtPadding1 0;}
 	}
 	.page-template-belltower-home & {
 		background-color:$color__btdarkgreen;
+	}
+	//Beer Page because of the photos choice
+	.page-id-9 & {
+		//$color__btdarkgreen
+		//background-color: rgba(128, 129, 102, 0.6);
 	}
 }
 
@@ -401,13 +428,14 @@ h1 {margin:0;}
 				order:4;
 				padding-top:0;
 				padding-bottom: 0;
-				span {display:none;}
+				span {@include bt-visually-hidden}
 				a{color:transparent;}
 				a:after {display:none;}
 			}
 			a {
 				color: $color__btpurewhite;
-				font-size: 1.1rem;
+				//font-size: 1.1rem;
+				@extend .has-medium-font-size;
 				.scrolled &{color:$color__btblack;}
 				.page-template-belltower-home.scrolled &{color:$color__btpurewhite;}
 				&:after {
@@ -444,7 +472,7 @@ h1 {margin:0;}
 			padding:0 0 0.5em 0;
 			.scrolled &{background-color:$color__btpurewhite;}
 			.page-template-belltower-home &{background-color:$color__btdarkgreen;}
-			
+			.single-post &{background-color:$color__btdarkgreen;}
 			li {
 				//padding-top:$u30navPadding;
 				padding-top:0.5em;
@@ -576,88 +604,6 @@ body.page-id-1168 .fullheightimg {margin-bottom:0;}
 }
 
 #mc_embed_signup input.mce_inline_error {border-color: $color__btpink!important;}
-
-/*  3 column layout with bell shape from og designs
-.home-head {
-	background-color: $color__btdarkgreen;
-	height:100vh;
-	min-height: 500px;
-}
-
-.home-headw2 {
-	display:grid;
-	grid-template-columns: .6fr 1.4fr .6fr;
-	grid-template-rows: 0 auto;
-	height: 100%;
-	padding-top: 4vh!important;
-	gap: 0;
-	overflow:hidden;
-	h1 {
-		text-align: center;
-		grid-row: 1 / 1;
-		grid-column: 1 / 4;
-		color: $color__btpurewhite;
-		font-size: 110px;
-		line-height: 1;
-		font-size: calc(3.5vw + 3.5vh);
-		z-index: 1;
-		font-weight: 300;
-		text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
-	}
-	strong {
-		display:block;
-		padding:$u30txtPadding1 0;
-		font-size: 1.1rem;
-	}
-	p {
-		margin:0;
-		font-size: 1.1rem;
-	}
-	a {
-		color: $color__btblack;
-		font-size: 1.1rem;
-	}
-	& > div {
-		grid-row: 2 / 2;
-		&.home-headc1 {
-			margin-top:auto;
-			padding-bottom:10vh;
-			display:flex;
-			.home-headc1w1 {
-				text-align: center;
-			}
-		}
-		&.home-headc2 {
-			background:$color__btpurewhite;
-			margin-top: 5vh;
-			position: relative;
-			background-color: $color__btdarkgreen;
-			//background-image: url("/wp-content/themes/belltower/images/belltower-2.jpg");
-			background-size: cover;
-			background-position: center;
-			outline: 2px solid $color__btdarkgreen;
-			outline-offset: -1px;
-			img {
-				position: absolute;
-				top: 0;
-				left:0;
-				right:0;
-				height: auto;
-				width: 101%;
-			}
-		}
-		&.home-headc3 {
-			margin-top:auto;
-			padding-bottom:10vh;
-			display:flex;
-			.home-headc3w1 {
-				text-align: center;
-				margin-left: auto;
-			}
-		}
-	}
-}
-*/
 
 a.googlecal {
 	background:$color__btdarkgreen;
@@ -810,7 +756,8 @@ a.googlecal {
 	box-shadow:none;
 	text-decoration:none;
 	padding:calc(.667em + 2px) calc(1.333em + 2px);
-	font-size: 1.2rem;
+	//font-size: 1.2rem;
+	@extend .has-medium-font-size;
 	line-height: 1.5;
 	&:visited {color:$color__btpurewhite;}
 	&:hover {color:$color__btyellow;}
@@ -819,13 +766,15 @@ a.googlecal {
 .wp-block-file {
 	a {
 		color:$color__btdarkgreen;
-		font-size:18px;
+		//font-size:18px;
+		@extend .has-medium-font-size;
 	}
 	.wp-block-file__button {
 		border-radius: 3px;
 		color:$color__btpurewhite;
 		background-color:$color__btdarkgreen;
-		font-size:18px;
+		//font-size:18px;
+		@extend .has-medium-font-size;
 		&:hover {
 			color:$color__btblack!important;
 			background-color:$color__btlightgreen;
@@ -891,13 +840,18 @@ a.googlecal {
 	display: grid;
     grid-auto-flow: column;
 	grid-template-rows: 1fr;
-	strong {font-size: 1.2rem;}
+	strong {
+		//font-size: 1.2rem;
+		@extend .has-medium-font-size;
+	}
 	.style {
-		font-size: 1.1rem;
+		//font-size: 1.1rem;
+		@extend .has-normal-font-size;
 		display:block;
 	}
 	.attr {
-		font-size: 1rem;
+		//font-size: 1rem;
+		@extend .has-normal-font-size;
 		display:block;
 		margin-top:1vh;
 	}
@@ -986,7 +940,8 @@ body.blog {
 	p {
 		margin-top: 80px;
 		padding: 0 0.5em;
-		font-size: 14px;
+		//font-size: 14px;
+		@extend .has-normal-font-size;
 	}
 	.agelogo {
 		width: 100%;
@@ -1003,7 +958,8 @@ body.blog {
 
 .popup-body {
 	box-sizing: border-box;
-	font-size: 26px;
+	//font-size: 26px;
+	@extend .has-large-font-size;
 	margin-bottom: 20px;
 	padding-top:70px;
 }
@@ -1013,7 +969,8 @@ body.blog {
 	padding: 6px 12px;
 	margin-right: 10px;
 	border: none;
-	font-size: 20px;
+	//font-size: 20px;
+	@extend .has-medium-font-size;
 	cursor: pointer;
 	background-color: $color__btpurewhite;
 	&:hover {opacity: 0.8;}
@@ -1059,19 +1016,22 @@ body.blog {
 				text-align: left;
 				margin:0;
 				color:$color__btblack;
-				font-size: 1.5rem;
+				//font-size: 1.5rem;
+				@extend .has-large-font-size;
 			}
 		}
 		.event_date {
 			float:left;
-			font-size: 1.5rem;
+			//font-size: 1.5rem;
+			@extend .has-large-font-size;
 			font-weight:900;
 			color:$color__btdarkgreen;
 		}
 		.event_time {
-			font-size: 1.3rem;
+			//font-size: 1.3rem;
+			@extend .has-medium-font-size;
 			font-weight: 600;
-			color:$color__btyellow;
+			color:$color__btdarkgreen;
 		}
 		.event_readmore {
 			color:#808166;
@@ -1087,7 +1047,17 @@ body.blog {
 	}
 }
 
-
+/*
+$color__btdarkestgreen: #515441;
+$color__btdarkgreen: #808166;
+$color__btblack: #231F20;
+$color__btpink: #E0CDC0;
+$color__btlightgreen: #BAB488;
+$color__btyellow: #b8a881;
+$color__btred: #BA583B;
+$color__btwhite: #E5E5E5;
+$color__btpurewhite: #FFFFFF;
+*/
 
 @media (max-width:$btcwidth) {
 	.cwidth {
@@ -1095,13 +1065,13 @@ body.blog {
 		padding-right: $btsitePadding;
 	}
 	.footerw1 {padding: $btcmpPadding2 $btsitePadding;}
-	.has-small-font-size {font-size: 0.8125rem;}
+	.has-small-font-size {font-size: 0.8125rem!important;}
 	.has-regular-font-size,
-	.has-normal-font-size {font-size: 1rem;}
-	.has-medium-font-size {font-size: 1.25rem;}
-	.has-large-font-size {font-size: 1.5rem;}
+	.has-normal-font-size {font-size: $basefontsize!important;}
+	.has-medium-font-size {font-size: 1.25rem!important;}
+	.has-large-font-size {font-size: 1.5rem!important;}
 	.has-larger-font-size,
-	.has-huge-font-size {font-size: 2.625rem;}
+	.has-huge-font-size {font-size: 1.8rem!important;}
 }
 
 // WP blocks breakpoint
@@ -1171,6 +1141,22 @@ body.blog {
 
 
 @media (max-width:$mobileBreakpoint) {
+
+	body, button, input, select, optgroup, textarea {
+		font-size: 1.2rem;
+	}
+
+	.has-medium-font-size {
+		font-size: 1.6rem !important;
+	}
+
+	h2 span, .has-large-font-size {
+		font-size: 1.7rem !important;
+	}
+
+	.events-feed article .event_thumbnail img {
+		width:100%;
+	}
 
 	.home-head {
 		//height:auto;
@@ -1247,13 +1233,12 @@ body.blog {
 		transition: opacity 300ms ease-in-out;
 		width: 100%;
 		opacity: 0;
+		z-index: 11;
 		.page-template-belltower-home & {background-color:$color__btdarkgreen;}
-		.menu-toggled &{
-			pointer-events: all;
-			opacity:1;
-		}
 		li {
 			padding-left:5px;
+			z-index: 11;
+			position: relative;
 			a {
 				padding-top: 8px;
     			padding-bottom: 8px;
@@ -1262,6 +1247,7 @@ body.blog {
 				font-size: 1.2rem;
 				.page-template-belltower-home &{color:$color__btpurewhite;}
 				&:after{display:none;}
+				&:hover {text-decoration: underline;}
 			}
 			&.menu-item-has-children:after {display:none;}
 		}
@@ -1271,11 +1257,21 @@ body.blog {
 			width:100%;
 			//padding-bottom:1em;
 			margin-bottom:0.5em;
+			opacity: 1;
+			float:none;
+			z-index: 12;
 			li {
 				padding-left:0.5em;
 				padding-top:0;
+				z-index: 12;
+				position: relative;
 				&:after {display:none;}
-				a {font-size:1.1rem;}
+				a {
+					font-size:1.1rem;
+					padding: 0.3em 1em 0.3em 0;
+    				margin: 0.5em;
+					&:hover{text-decoration: underline;}
+				}
 			}
 			&:after {
 				content: '';
@@ -1286,6 +1282,20 @@ body.blog {
 				opacity: 0.1;
 				right: 24px;
 				left: 0px;
+			}
+		}
+	}
+
+	.main-navigation.toggled .menu-main-nav-container>ul {
+		.menu-toggled &{
+			pointer-events: all;
+			opacity:1;
+			//Defined in header.php with inline stles so this is set after updateMastheadHeight inside navigation.js 
+			//height:calc(100vh - var(--masthead-height));
+			overflow:scroll;
+			padding-bottom: 4em;
+			ul {
+				pointer-events: all;
 			}
 		}
 	}
@@ -1479,6 +1489,9 @@ body.blog {
 	}
 	.menu-items-container .menu-item .item .item-details .item-description .ut-more {
 		display:none;
+	}
+	a {
+		color:$color__btdarkgreen!important;
 	}
 }
 

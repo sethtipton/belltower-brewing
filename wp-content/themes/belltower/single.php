@@ -18,12 +18,12 @@ get_header();
 			get_template_part( 'template-parts/content', get_post_type() );
 
 			// Check if the 'google_calendar_link' field has a value
-			if(get_field('google_calendar_link')): 
-				$googleCalendarLink = get_field('google_calendar_link');
-				echo '<div class="googlecalwrap cwidth">';
-				echo '<a class="googlecal" target="_blank" href="' . esc_url($googleCalendarLink) . '">Add this event to your Google calendar</a>';
-				echo '</div>';
-			endif;
+			//if(get_field('google_calendar_link')): 
+			//	$googleCalendarLink = get_field('google_calendar_link');
+			//	echo '<div class="googlecalwrap cwidth">';
+			//	echo '<a class="googlecal" target="_blank" href="' . esc_url($googleCalendarLink) . '">Add this event to your Google calendar</a>';
+			//	echo '</div>';
+			//endif;
 
 			if ( has_category( 'events' ) ) :
 				$prev_post = get_previous_post( true, '', 'category' );

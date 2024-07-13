@@ -37,6 +37,13 @@ if ( ! function_exists( 'belltower_posted_on' ) ) :
 		echo '<span class="dash"> - </span>';
 		echo '<span class="event_time_head">' . $ACF_event_time . '</span>';
 		echo '<span class="posted-on">' . $posted_on . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+		if(get_field('google_calendar_link')): 
+			$googleCalendarLink = get_field('google_calendar_link');
+			echo '<div class="googlecalwrap cwidth">';
+			echo '<a class="googlecal" target="_blank" href="' . esc_url($googleCalendarLink) . '">Add this event to your Google calendar</a>';
+			echo '</div>';
+		endif;
 	}
 endif;
 

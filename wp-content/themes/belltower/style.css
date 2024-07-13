@@ -527,7 +527,7 @@ textarea {
   color: #231F20;
   font-family: "Raisonne Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.5;
 }
 
@@ -535,7 +535,7 @@ textarea {
   color: #231F20 !important;
   font-family: "Raisonne Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
   src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-  font-size: 1rem !important;
+  font-size: 1.1rem !important;
   line-height: 1.5 !important;
 }
 
@@ -1018,25 +1018,28 @@ object {
 # Custom Styles for Bell Tower Brewing
 --------------------------------------------------------------*/
 .has-small-font-size {
-  font-size: 0.8125rem;
+  font-size: 0.8125rem !important;
 }
 
 .has-regular-font-size,
-.has-normal-font-size {
-  font-size: 1rem;
+.has-normal-font-size,
+.popup-container p,
+.draftlistw1 .attr,
+.draftlistw1 .style {
+  font-size: 1.1rem !important;
 }
 
-.has-medium-font-size, .visitus strong + a, .visitus strong + span, .visitus strong, .footerw1 strong {
-  font-size: 1.25rem;
+.has-medium-font-size, .events-feed article .event_time, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .main-navigation ul li a, .btpost-page .post-navigation .nav-subtitle {
+  font-size: 1.25rem !important;
 }
 
-.has-large-font-size, .draftlist h2, h2 span, h2 {
-  font-size: 2.25rem;
+.has-large-font-size, .events-feed article .event_date, .events-feed article .event_title h2, .popup-body, .draftlist h2, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .wp-block-latest-posts li > a, h2 span, h2 {
+  font-size: 2.25rem !important;
 }
 
 .has-larger-font-size,
 .has-huge-font-size {
-  font-size: 2.625rem;
+  font-size: 2.625rem !important;
 }
 
 body.pause * {
@@ -1161,7 +1164,6 @@ ul li {
   margin-top: 0;
 }
 .wp-block-latest-posts li > a {
-  font-size: 2rem;
   color: #515441;
   line-height: 1;
   transform: translate(0px, -4px);
@@ -1239,9 +1241,6 @@ ul li {
 .btpost-page .post-navigation .nav-title {
   display: block;
 }
-.btpost-page .post-navigation .nav-subtitle {
-  font-size: 1.2rem;
-}
 .btpost-page .comments-area a {
   color: #808166;
 }
@@ -1249,8 +1248,9 @@ ul li {
   margin-top: -4vh;
   margin-bottom: 6vh;
 }
-.btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head {
-  font-size: 2rem;
+.btpost-page .googlecalwrap {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .btpost-page .posted-on {
   display: none;
@@ -1339,7 +1339,6 @@ ul li {
 .page-template-belltower-home #masthead {
   background-color: #808166;
 }
-
 .menu-toggle {
   width: 44px;
   height: 44px;
@@ -1454,7 +1453,16 @@ h1 {
   padding-bottom: 0;
 }
 .main-navigation ul li.menu-item-home span {
-  display: none;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+  border: 0;
+  margin: -1px;
+  padding: 0;
 }
 .main-navigation ul li.menu-item-home a {
   color: transparent;
@@ -1464,7 +1472,6 @@ h1 {
 }
 .main-navigation ul li a {
   color: #FFFFFF;
-  font-size: 1.1rem;
 }
 .scrolled .main-navigation ul li a {
   color: #231F20;
@@ -1513,6 +1520,9 @@ h1 {
   background-color: #FFFFFF;
 }
 .page-template-belltower-home .main-navigation ul ul {
+  background-color: #808166;
+}
+.single-post .main-navigation ul ul {
   background-color: #808166;
 }
 .main-navigation ul ul li {
@@ -1658,87 +1668,6 @@ body.page-id-1168 .fullheightimg {
   border-color: #E0CDC0 !important;
 }
 
-/*  3 column layout with bell shape from og designs
-.home-head {
-	background-color: $color__btdarkgreen;
-	height:100vh;
-	min-height: 500px;
-}
-
-.home-headw2 {
-	display:grid;
-	grid-template-columns: .6fr 1.4fr .6fr;
-	grid-template-rows: 0 auto;
-	height: 100%;
-	padding-top: 4vh!important;
-	gap: 0;
-	overflow:hidden;
-	h1 {
-		text-align: center;
-		grid-row: 1 / 1;
-		grid-column: 1 / 4;
-		color: $color__btpurewhite;
-		font-size: 110px;
-		line-height: 1;
-		font-size: calc(3.5vw + 3.5vh);
-		z-index: 1;
-		font-weight: 300;
-		text-shadow: 0px 2px 2px rgba(0, 0, 0, .2);
-	}
-	strong {
-		display:block;
-		padding:$u30txtPadding1 0;
-		font-size: 1.1rem;
-	}
-	p {
-		margin:0;
-		font-size: 1.1rem;
-	}
-	a {
-		color: $color__btblack;
-		font-size: 1.1rem;
-	}
-	& > div {
-		grid-row: 2 / 2;
-		&.home-headc1 {
-			margin-top:auto;
-			padding-bottom:10vh;
-			display:flex;
-			.home-headc1w1 {
-				text-align: center;
-			}
-		}
-		&.home-headc2 {
-			background:$color__btpurewhite;
-			margin-top: 5vh;
-			position: relative;
-			background-color: $color__btdarkgreen;
-			//background-image: url("/wp-content/themes/belltower/images/belltower-2.jpg");
-			background-size: cover;
-			background-position: center;
-			outline: 2px solid $color__btdarkgreen;
-			outline-offset: -1px;
-			img {
-				position: absolute;
-				top: 0;
-				left:0;
-				right:0;
-				height: auto;
-				width: 101%;
-			}
-		}
-		&.home-headc3 {
-			margin-top:auto;
-			padding-bottom:10vh;
-			display:flex;
-			.home-headc3w1 {
-				text-align: center;
-				margin-left: auto;
-			}
-		}
-	}
-}
-*/
 a.googlecal {
   background: #808166;
   color: #E5E5E5;
@@ -1891,7 +1820,6 @@ a.googlecal:visited {
   box-shadow: none;
   text-decoration: none;
   padding: calc(0.667em + 2px) calc(1.333em + 2px);
-  font-size: 1.2rem;
   line-height: 1.5;
 }
 .wp-block-button__link:visited {
@@ -1903,13 +1831,11 @@ a.googlecal:visited {
 
 .wp-block-file a {
   color: #808166;
-  font-size: 18px;
 }
 .wp-block-file .wp-block-file__button {
   border-radius: 3px;
   color: #FFFFFF;
   background-color: #808166;
-  font-size: 18px;
 }
 .wp-block-file .wp-block-file__button:hover {
   color: #231F20 !important;
@@ -1974,15 +1900,10 @@ a.googlecal:visited {
   grid-auto-flow: column;
   grid-template-rows: 1fr;
 }
-.draftlistw1 strong {
-  font-size: 1.2rem;
-}
 .draftlistw1 .style {
-  font-size: 1.1rem;
   display: block;
 }
 .draftlistw1 .attr {
-  font-size: 1rem;
   display: block;
   margin-top: 1vh;
 }
@@ -2073,7 +1994,6 @@ body.blog .entry-content {
 .popup-container p {
   margin-top: 80px;
   padding: 0 0.5em;
-  font-size: 14px;
 }
 .popup-container .agelogo {
   width: 100%;
@@ -2091,7 +2011,6 @@ body.blog .entry-content {
 
 .popup-body {
   box-sizing: border-box;
-  font-size: 26px;
   margin-bottom: 20px;
   padding-top: 70px;
 }
@@ -2101,7 +2020,6 @@ body.blog .entry-content {
   padding: 6px 12px;
   margin-right: 10px;
   border: none;
-  font-size: 20px;
   cursor: pointer;
   background-color: #FFFFFF;
 }
@@ -2146,18 +2064,15 @@ body.blog .entry-content {
   text-align: left;
   margin: 0;
   color: #231F20;
-  font-size: 1.5rem;
 }
 .events-feed article .event_date {
   float: left;
-  font-size: 1.5rem;
   font-weight: 900;
   color: #808166;
 }
 .events-feed article .event_time {
-  font-size: 1.3rem;
   font-weight: 600;
-  color: #b8a881;
+  color: #808166;
 }
 .events-feed article .event_readmore {
   color: #808166;
@@ -2169,6 +2084,17 @@ body.blog .entry-content {
   margin-top: 0;
 }
 
+/*
+$color__btdarkestgreen: #515441;
+$color__btdarkgreen: #808166;
+$color__btblack: #231F20;
+$color__btpink: #E0CDC0;
+$color__btlightgreen: #BAB488;
+$color__btyellow: #b8a881;
+$color__btred: #BA583B;
+$color__btwhite: #E5E5E5;
+$color__btpurewhite: #FFFFFF;
+*/
 @media (max-width: 1174px) {
   .cwidth, .btpost-page .post-thumbnail, .btpost-page .entry-content, .btpost-page .entry-footer, .btpost-page .post-navigation, .btpost-page .comments-area, .wp-block-columns {
     padding-left: 2vw;
@@ -2178,21 +2104,24 @@ body.blog .entry-content {
     padding: clamp(10px, 8vh, 50px) 2vw;
   }
   .has-small-font-size {
-    font-size: 0.8125rem;
+    font-size: 0.8125rem !important;
   }
   .has-regular-font-size,
-  .has-normal-font-size {
-    font-size: 1rem;
+  .has-normal-font-size,
+  .draftlistw1 .style,
+  .draftlistw1 .attr,
+  .popup-container p {
+    font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .footerw1 strong, .visitus strong, .visitus strong + span, .visitus strong + a {
-    font-size: 1.25rem;
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .main-navigation ul li a, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_time {
+    font-size: 1.25rem !important;
   }
-  .has-large-font-size, h2 span, h2, .draftlist h2 {
-    font-size: 1.5rem;
+  .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body, .events-feed article .event_title h2, .events-feed article .event_date {
+    font-size: 1.5rem !important;
   }
   .has-larger-font-size,
   .has-huge-font-size {
-    font-size: 2.625rem;
+    font-size: 1.8rem !important;
   }
 }
 @media (max-width: 781px) {
@@ -2250,6 +2179,18 @@ body.blog .entry-content {
   }
 }
 @media (max-width: 600px) {
+  body, button, input, select, optgroup, textarea {
+    font-size: 1.2rem;
+  }
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .main-navigation ul li a, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_time {
+    font-size: 1.6rem !important;
+  }
+  h2 span, .has-large-font-size, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body, .events-feed article .event_title h2, .events-feed article .event_date {
+    font-size: 1.7rem !important;
+  }
+  .events-feed article .event_thumbnail img {
+    width: 100%;
+  }
   .home-head h1 {
     margin-top: 30vh;
   }
@@ -2330,16 +2271,15 @@ body.blog .entry-content {
     transition: opacity 300ms ease-in-out;
     width: 100%;
     opacity: 0;
+    z-index: 11;
   }
   .page-template-belltower-home .main-navigation ul {
     background-color: #808166;
   }
-  .menu-toggled .main-navigation ul {
-    pointer-events: all;
-    opacity: 1;
-  }
   .main-navigation ul li {
     padding-left: 5px;
+    z-index: 11;
+    position: relative;
   }
   .main-navigation ul li a {
     padding-top: 8px;
@@ -2354,6 +2294,9 @@ body.blog .entry-content {
   .main-navigation ul li a:after {
     display: none;
   }
+  .main-navigation ul li a:hover {
+    text-decoration: underline;
+  }
   .main-navigation ul li.menu-item-has-children:after {
     display: none;
   }
@@ -2362,16 +2305,26 @@ body.blog .entry-content {
     left: 0;
     width: 100%;
     margin-bottom: 0.5em;
+    opacity: 1;
+    float: none;
+    z-index: 12;
   }
   .main-navigation ul ul li {
     padding-left: 0.5em;
     padding-top: 0;
+    z-index: 12;
+    position: relative;
   }
   .main-navigation ul ul li:after {
     display: none;
   }
   .main-navigation ul ul li a {
     font-size: 1.1rem;
+    padding: 0.3em 1em 0.3em 0;
+    margin: 0.5em;
+  }
+  .main-navigation ul ul li a:hover {
+    text-decoration: underline;
   }
   .main-navigation ul ul:after {
     content: "";
@@ -2382,6 +2335,15 @@ body.blog .entry-content {
     opacity: 0.1;
     right: 24px;
     left: 0px;
+  }
+  .menu-toggled .main-navigation.toggled .menu-main-nav-container > ul {
+    pointer-events: all;
+    opacity: 1;
+    overflow: scroll;
+    padding-bottom: 4em;
+  }
+  .menu-toggled .main-navigation.toggled .menu-main-nav-container > ul ul {
+    pointer-events: all;
   }
   .main-navigation ul li.menu-item-home a {
     color: #808166;
@@ -2553,6 +2515,9 @@ body.blog .entry-content {
 }
 .ut-menu .menu-items-container .menu-item .item .item-details .item-description .ut-more {
   display: none;
+}
+.ut-menu a {
+  color: #808166 !important;
 }
 
 @media (max-width: 600px) {
