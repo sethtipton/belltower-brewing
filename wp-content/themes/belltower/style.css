@@ -1025,21 +1025,25 @@ object {
 .has-normal-font-size,
 .popup-container p,
 .draftlistw1 .attr,
-.draftlistw1 .style {
+.draftlistw1 .style,
+.main-navigation ul li a {
   font-size: 1.1rem !important;
 }
 
-.has-medium-font-size, .events-feed article .event_time, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .main-navigation ul li a, .btpost-page .post-navigation .nav-subtitle {
-  font-size: 1.25rem !important;
+.has-medium-font-size, .events-feed article .event_time, .events-feed article .event_date, .events-feed article .event_title h2, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .btpost-page .post-navigation .nav-subtitle {
+  font-size: 1.4rem !important;
 }
 
-.has-large-font-size, .events-feed article .event_date, .events-feed article .event_title h2, .popup-body, .draftlist h2, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .wp-block-latest-posts li > a, h2 span, h2 {
-  font-size: 2.25rem !important;
+.has-large-font-size, .popup-body, .draftlist h2, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .wp-block-latest-posts li > a, h2 span, h2 {
+  font-size: 1.7rem !important;
 }
 
-.has-larger-font-size,
+.has-larger-font-size {
+  font-size: 2rem !important;
+}
+
 .has-huge-font-size {
-  font-size: 2.625rem !important;
+  font-size: 2.5rem !important;
 }
 
 body.pause * {
@@ -2108,15 +2112,16 @@ $color__btpurewhite: #FFFFFF;
   }
   .has-regular-font-size,
   .has-normal-font-size,
+  .main-navigation ul li a,
   .draftlistw1 .style,
   .draftlistw1 .attr,
   .popup-container p {
     font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .main-navigation ul li a, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_time {
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time {
     font-size: 1.25rem !important;
   }
-  .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body, .events-feed article .event_title h2, .events-feed article .event_date {
+  .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body {
     font-size: 1.5rem !important;
   }
   .has-larger-font-size,
@@ -2179,14 +2184,32 @@ $color__btpurewhite: #FFFFFF;
   }
 }
 @media (max-width: 600px) {
+  .has-small-font-size {
+    font-size: 0.8125rem !important;
+  }
+  .has-regular-font-size,
+  .has-normal-font-size,
+  .main-navigation ul li a,
+  .draftlistw1 .style,
+  .draftlistw1 .attr,
+  .popup-container p {
+    font-size: 1.1rem !important;
+  }
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time {
+    font-size: 1.25rem !important;
+  }
+  .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body {
+    font-size: 1.5rem !important;
+  }
+  .has-larger-font-size,
+  .has-huge-font-size {
+    font-size: 1.8rem !important;
+  }
   body, button, input, select, optgroup, textarea {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .main-navigation ul li a, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_time {
-    font-size: 1.6rem !important;
-  }
-  h2 span, .has-large-font-size, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body, .events-feed article .event_title h2, .events-feed article .event_date {
-    font-size: 1.7rem !important;
+  .single-post .main-navigation ul ul {
+    background-color: transparent;
   }
   .events-feed article .event_thumbnail img {
     width: 100%;

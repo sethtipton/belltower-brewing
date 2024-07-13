@@ -11,10 +11,10 @@ $btcmpPadding2 : clamp(10px, 8vh, 50px);
 .has-small-font-size {font-size: 0.8125rem!important;}
 .has-regular-font-size,
 .has-normal-font-size {font-size: $basefontsize!important;}
-.has-medium-font-size {font-size: 1.25rem!important;}
-.has-large-font-size {font-size: 2.25rem!important;}
-.has-larger-font-size,
-.has-huge-font-size {font-size: 2.625rem!important;}
+.has-medium-font-size {font-size: 1.4rem!important;}
+.has-large-font-size {font-size: 1.7rem!important;}
+.has-larger-font-size {font-size: 2rem!important;}
+.has-huge-font-size {font-size: 2.5rem!important;}
 
 @mixin bt-visually-hidden {
 	clip: rect(0 0 0 0);
@@ -435,7 +435,7 @@ h1 {margin:0;}
 			a {
 				color: $color__btpurewhite;
 				//font-size: 1.1rem;
-				@extend .has-medium-font-size;
+				@extend .has-normal-font-size;
 				.scrolled &{color:$color__btblack;}
 				.page-template-belltower-home.scrolled &{color:$color__btpurewhite;}
 				&:after {
@@ -1017,13 +1017,13 @@ body.blog {
 				margin:0;
 				color:$color__btblack;
 				//font-size: 1.5rem;
-				@extend .has-large-font-size;
+				@extend .has-medium-font-size;
 			}
 		}
 		.event_date {
 			float:left;
 			//font-size: 1.5rem;
-			@extend .has-large-font-size;
+			@extend .has-medium-font-size;
 			font-weight:900;
 			color:$color__btdarkgreen;
 		}
@@ -1142,16 +1142,24 @@ $color__btpurewhite: #FFFFFF;
 
 @media (max-width:$mobileBreakpoint) {
 
+	.has-small-font-size {font-size: 0.8125rem!important;}
+	.has-regular-font-size,
+	.has-normal-font-size {font-size: $basefontsize!important;}
+	.has-medium-font-size {font-size: 1.25rem!important;}
+	.has-large-font-size {font-size: 1.5rem!important;}
+	.has-larger-font-size,
+	.has-huge-font-size {font-size: 1.8rem!important;}
+
 	body, button, input, select, optgroup, textarea {
-		font-size: 1.2rem;
+		font-size: $basefontsize;
 	}
 
-	.has-medium-font-size {
-		font-size: 1.6rem !important;
+	h2 span {
+		//@extend .has-medium-font-size;
 	}
 
-	h2 span, .has-large-font-size {
-		font-size: 1.7rem !important;
+	.single-post .main-navigation ul ul {
+		background-color: transparent;
 	}
 
 	.events-feed article .event_thumbnail img {
