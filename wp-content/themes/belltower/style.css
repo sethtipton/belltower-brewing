@@ -1341,7 +1341,7 @@ ul li {
   display: none !important;
 }
 .page-template-belltower-home #masthead {
-  background-color: #808166;
+  background-color: #515441;
 }
 .menu-toggle {
   width: 44px;
@@ -1524,7 +1524,7 @@ h1 {
   background-color: #FFFFFF;
 }
 .page-template-belltower-home .main-navigation ul ul {
-  background-color: #808166;
+  background-color: #515441;
 }
 .single-post .main-navigation ul ul {
   background-color: #808166;
@@ -1604,6 +1604,18 @@ body.page-id-1168 .fullheightimg {
   display: inline-block;
   height: 80px;
   text-align: center;
+}
+.footerlogo span {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+  border: 0;
+  margin: -1px;
+  padding: 0;
 }
 .footerlogo svg {
   height: 100%;
@@ -1711,6 +1723,7 @@ a.googlecal:visited {
   font-weight: 300;
   text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.9);
   padding-bottom: 13vh;
+  padding-top: 20vh;
 }
 .home-head p {
   margin-bottom: 0.8em;
@@ -1763,6 +1776,9 @@ a.googlecal:visited {
 .wp-block-media-text .wp-block-media-text__content a {
   margin-top: 2em;
   display: block;
+  font-weight: 500;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
 }
 .wp-block-media-text .wp-block-media-text__content a.has-pure-white-color:hover {
   color: #FFFFFF;

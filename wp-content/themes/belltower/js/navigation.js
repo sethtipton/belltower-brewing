@@ -202,7 +202,7 @@ shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo">'+btlogo+'</a
 
 //Insert logo in footer
 var footer = document.getElementById( 'footer' );
-footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" class="footerlogo">'+btbelllogo+'</a></div>');
+footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" class="footerlogo"><span>Belltower Home</span>'+btbelllogo+'</a></div>');
 
 
 // Age Modal
