@@ -2505,7 +2505,8 @@ $color__btpurewhite: #FFFFFF;
   .full-size-img.wp-block-media-text.has-media-on-the-right .wp-block-media-text__content {
     padding-left: 2vw;
     padding-right: 2vw;
-    padding-bottom: 4em;
+    padding-bottom: 2em;
+    padding-top: 2em;
   }
   .draftlistw1 {
     grid-auto-flow: row;
@@ -2560,6 +2561,9 @@ $color__btpurewhite: #FFFFFF;
 }
 .ut-menu a {
   color: #808166 !important;
+}
+.ut-menu:nth-child(odd) {
+  background-color: #BAB488;
 }
 
 @media (max-width: 600px) {
