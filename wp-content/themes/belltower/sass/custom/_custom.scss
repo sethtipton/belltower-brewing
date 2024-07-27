@@ -702,7 +702,13 @@ a.googlecal {
 		}
 	}
 	&.has-media-on-the-right{
-		.wp-block-media-text__content {padding: 0 8vw 0 4vw;}
+		//border:10px solid red;
+		//max-height:70vh;
+		.wp-block-media-text__content {
+			padding: 0 8vw 0 4vw;
+			h2 { margin-block-start: 0;}
+		}
+		.wp-block-media-text__media {max-height:70vh;}
 	}
 }
 

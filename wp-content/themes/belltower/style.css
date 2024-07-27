@@ -705,9 +705,6 @@ textarea {
 a {
   color: #4169e1;
 }
-a:visited {
-  color: #800080;
-}
 a:hover, a:focus, a:active {
   color: #191970;
 }
@@ -1785,6 +1782,12 @@ a.googlecal:visited {
 }
 .wp-block-media-text.has-media-on-the-right .wp-block-media-text__content {
   padding: 0 8vw 0 4vw;
+}
+.wp-block-media-text.has-media-on-the-right .wp-block-media-text__content h2 {
+  margin-block-start: 0;
+}
+.wp-block-media-text.has-media-on-the-right .wp-block-media-text__media {
+  max-height: 70vh;
 }
 
 .entry-content.cwidth .wp-block-media-text .wp-block-media-text__content, .entry-content.wp-block-columns .wp-block-media-text .wp-block-media-text__content, .btpost-page .entry-content .wp-block-media-text .wp-block-media-text__content {
