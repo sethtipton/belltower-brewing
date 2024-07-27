@@ -1504,6 +1504,9 @@ $color__btpurewhite: #FFFFFF;
 	.pagination-container {
 		display:none;
 	}
+	.menu-items-container .menu-item:nth-child(odd) {
+		background-color: $color__btlightgreen!important;
+	}
 	.menu-items-container .menu-item .item .item-details .item-description p.show-less {
 		white-space: inherit!important;
 	}
@@ -1512,9 +1515,6 @@ $color__btpurewhite: #FFFFFF;
 	}
 	a {
 		color:$color__btdarkgreen!important;
-	}
-	&:nth-child(odd) {
-		background-color: $color__btlightgreen;
 	}
 }
 

@@ -2553,6 +2553,9 @@ $color__btpurewhite: #FFFFFF;
 .ut-menu .pagination-container {
   display: none;
 }
+.ut-menu .menu-items-container .menu-item:nth-child(odd) {
+  background-color: #BAB488 !important;
+}
 .ut-menu .menu-items-container .menu-item .item .item-details .item-description p.show-less {
   white-space: inherit !important;
 }
@@ -2561,9 +2564,6 @@ $color__btpurewhite: #FFFFFF;
 }
 .ut-menu a {
   color: #808166 !important;
-}
-.ut-menu:nth-child(odd) {
-  background-color: #BAB488;
 }
 
 @media (max-width: 600px) {
