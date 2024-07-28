@@ -1340,6 +1340,7 @@ ul li {
 .page-template-belltower-home #masthead {
   background-color: #515441;
 }
+
 .menu-toggle {
   width: 44px;
   height: 44px;
@@ -2107,17 +2108,57 @@ body.blog .entry-content {
   margin-top: 0;
 }
 
-/*
-$color__btdarkestgreen: #515441;
-$color__btdarkgreen: #808166;
-$color__btblack: #231F20;
-$color__btpink: #E0CDC0;
-$color__btlightgreen: #BAB488;
-$color__btyellow: #b8a881;
-$color__btred: #BA583B;
-$color__btwhite: #E5E5E5;
-$color__btpurewhite: #FFFFFF;
-*/
+.forohhhhhhhfourpage {
+  background-color: #515441;
+  min-height: 100vh !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.forohhhhhhhfourpage span {
+  color: #E5E5E5;
+  font-size: 2rem;
+  padding: 0 25px;
+  z-index: 2;
+  position: relative;
+  max-width: 100%;
+}
+.forohhhhhhhfourpage span span {
+  font-size: 7rem;
+  color: #BA583B;
+  padding: 0 25px;
+  padding-bottom: 0.3em;
+  display: block;
+  text-align: center;
+  max-width: 100%;
+}
+.forohhhhhhhfourpage a {
+  color: #BAB488;
+}
+
+#hops {
+  height: 100vh;
+  width: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  z-index: 1;
+}
+
+#hops svg {
+  height: 100%;
+  width: auto;
+  height: 90vh;
+  width: auto;
+  max-width: 100%;
+}
+#hops svg path {
+  stroke: #808166;
+  fill: #BAB488;
+  opacity: 0.1;
+}
+
 @media (max-width: 1174px) {
   .cwidth, .btpost-page .post-thumbnail, .btpost-page .entry-content, .btpost-page .entry-footer, .btpost-page .post-navigation, .btpost-page .comments-area, .wp-block-columns {
     padding-left: 2vw;
@@ -2263,6 +2304,18 @@ $color__btpurewhite: #FFFFFF;
     float: left;
     padding: 3px 0 3px 3px;
   }
+  .mlogo span {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+    border: 0;
+    margin: -1px;
+    padding: 0;
+  }
   .mlogo svg {
     height: 100%;
     fill: #FFFFFF;
@@ -2326,7 +2379,7 @@ $color__btpurewhite: #FFFFFF;
   .main-navigation ul li a {
     padding-top: 8px;
     padding-bottom: 8px;
-    color: #808166;
+    color: #515441;
     height: auto !important;
     font-size: 1.2rem;
   }
@@ -2362,8 +2415,7 @@ $color__btpurewhite: #FFFFFF;
   }
   .main-navigation ul ul li a {
     font-size: 1.1rem;
-    padding: 0.3em 1em 0.3em 0;
-    margin: 0.5em;
+    padding: 0.8em 1.5em 0.8em 0;
   }
   .main-navigation ul ul li a:hover {
     text-decoration: underline;
@@ -2402,6 +2454,12 @@ $color__btpurewhite: #FFFFFF;
     opacity: 0.1;
     right: 24px;
     left: 5px;
+  }
+  .page-template-belltower-home .main-navigation ul ul {
+    background-color: #808166;
+  }
+  .main-navigation ul li.menu-item-home {
+    display: none;
   }
   /*
   .home-headw2 {
@@ -2532,6 +2590,13 @@ $color__btpurewhite: #FFFFFF;
   }
   .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head {
     font-size: 1.5rem;
+  }
+  .main-navigation ul li a {
+    font-size: 1.3rem !important;
+  }
+  .forohhhhhhhfourpage span {
+    color: #E5E5E5;
+    font-size: 1.8rem;
   }
 }
 .ut-menu .h1 {

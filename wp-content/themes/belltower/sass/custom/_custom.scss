@@ -148,7 +148,6 @@ ul li {margin: $u30txtPadding1 0;}
 		}
 		&:first-child {margin-top:0;}
 		& > a {
-			//font-size:2rem;
 			@extend .has-large-font-size;
 			color:$color__btdarkestgreen;
 			line-height: 1;
@@ -193,7 +192,6 @@ ul li {margin: $u30txtPadding1 0;}
 			position: relative;
 			z-index: 3;
 			text-align: center;
-			//margin-right: 0.5em;
 			padding-bottom: 0.3em;
 			span {
 				color:$color__btpurewhite;
@@ -214,8 +212,6 @@ ul li {margin: $u30txtPadding1 0;}
 		text-align: center;
 	}
 	.entry-content  {
-		//@extend .cwidth;
-		//width:60%;
 		.wp-block-image {
 			max-height:none;
 			justify-content: initial;
@@ -229,7 +225,6 @@ ul li {margin: $u30txtPadding1 0;}
 	}
 	.entry-footer {
 		display:none;
-		//width:60%;
 		.cat-links {display:none;}
 	}
 	.post-navigation {
@@ -238,7 +233,6 @@ ul li {margin: $u30txtPadding1 0;}
 		}
 		.nav-title {display:block}
 		.nav-subtitle {
-			//font-size: 1.2rem;
 			@extend .has-medium-font-size;
 		}
 	}
@@ -252,7 +246,6 @@ ul li {margin: $u30txtPadding1 0;}
 		margin-bottom: 6vh;
 	}
 	.event_date_head, .dash, .event_time_head {
-		//font-size:2rem;
 		@extend .has-large-font-size;
 	}
 	.googlecalwrap {
@@ -266,8 +259,6 @@ ul li {margin: $u30txtPadding1 0;}
 		display:none;
 	}
 }
-
-
 
 //Scroll Trigger
 #pixel-to-watch {
@@ -311,7 +302,6 @@ ul li {margin: $u30txtPadding1 0;}
 
 #masthead {
 	position: sticky;
-	//height:auto;
     width: 100%;
     top: 0;
 	z-index: 10;
@@ -338,11 +328,6 @@ ul li {margin: $u30txtPadding1 0;}
 	}
 	.page-template-belltower-home & {
 		background-color:$color__btdarkestgreen;
-	}
-	//Beer Page because of the photos choice
-	.page-id-9 & {
-		//$color__btdarkgreen
-		//background-color: rgba(128, 129, 102, 0.6);
 	}
 }
 
@@ -412,7 +397,6 @@ h1 {margin:0;}
 	height:100%;
 	ul {
 		justify-content: space-between;
-		//max-height: 100px;
 		padding-top:$u30navPadding;
 		padding-bottom: $u30navPadding;
 		align-items: center;
@@ -467,14 +451,12 @@ h1 {margin:0;}
 		}
 		ul {
 			background-color:transparent;
-			//left:0!important;
 			width:auto;
 			padding:0 0 0.5em 0;
 			.scrolled &{background-color:$color__btpurewhite;}
 			.page-template-belltower-home &{background-color:$color__btdarkestgreen;}
 			.single-post &{background-color:$color__btdarkgreen;}
 			li {
-				//padding-top:$u30navPadding;
 				padding-top:0.5em;
 				a {
 					width:auto;
@@ -702,8 +684,6 @@ a.googlecal {
 		}
 	}
 	&.has-media-on-the-right{
-		//border:10px solid red;
-		//max-height:70vh;
 		.wp-block-media-text__content {
 			padding: 0 8vw 0 4vw;
 			h2 { margin-block-start: 0;}
@@ -767,7 +747,6 @@ a.googlecal {
 	box-shadow:none;
 	text-decoration:none;
 	padding:calc(.667em + 2px) calc(1.333em + 2px);
-	//font-size: 1.2rem;
 	@extend .has-medium-font-size;
 	line-height: 1.5;
 	&:visited {color:$color__btpurewhite;}
@@ -777,14 +756,12 @@ a.googlecal {
 .wp-block-file {
 	a {
 		color:$color__btdarkgreen;
-		//font-size:18px;
 		@extend .has-medium-font-size;
 	}
 	.wp-block-file__button {
 		border-radius: 3px;
 		color:$color__btpurewhite;
 		background-color:$color__btdarkgreen;
-		//font-size:18px;
 		@extend .has-medium-font-size;
 		&:hover {
 			color:$color__btblack!important;
@@ -852,16 +829,13 @@ a.googlecal {
     grid-auto-flow: column;
 	grid-template-rows: 1fr;
 	strong {
-		//font-size: 1.2rem;
 		@extend .has-medium-font-size;
 	}
 	.style {
-		//font-size: 1.1rem;
 		@extend .has-normal-font-size;
 		display:block;
 	}
 	.attr {
-		//font-size: 1rem;
 		@extend .has-normal-font-size;
 		display:block;
 		margin-top:1vh;
@@ -951,7 +925,6 @@ body.blog {
 	p {
 		margin-top: 80px;
 		padding: 0 0.5em;
-		//font-size: 14px;
 		@extend .has-normal-font-size;
 	}
 	.agelogo {
@@ -969,7 +942,6 @@ body.blog {
 
 .popup-body {
 	box-sizing: border-box;
-	//font-size: 26px;
 	@extend .has-large-font-size;
 	margin-bottom: 20px;
 	padding-top:70px;
@@ -980,7 +952,6 @@ body.blog {
 	padding: 6px 12px;
 	margin-right: 10px;
 	border: none;
-	//font-size: 20px;
 	@extend .has-medium-font-size;
 	cursor: pointer;
 	background-color: $color__btpurewhite;
@@ -988,7 +959,6 @@ body.blog {
 }
 
 .events-feed {
-	//background:purple;
 	article {
 		margin-top:50px;
 		display: grid;
@@ -1017,9 +987,6 @@ body.blog {
 			}
 		}
 		.event_title {
-			//grid-column: 2;
-			//grid-row:1;
-			//display:block;
 			display: flex;
     		flex-direction: column;
 			color:$color__btblack;
@@ -1027,19 +994,16 @@ body.blog {
 				text-align: left;
 				margin:0;
 				color:$color__btblack;
-				//font-size: 1.5rem;
 				@extend .has-medium-font-size;
 			}
 		}
 		.event_date {
 			float:left;
-			//font-size: 1.5rem;
 			@extend .has-medium-font-size;
 			font-weight:900;
 			color:$color__btdarkgreen;
 		}
 		.event_time {
-			//font-size: 1.3rem;
 			@extend .has-medium-font-size;
 			font-weight: 600;
 			color:$color__btdarkgreen;
@@ -1048,27 +1012,62 @@ body.blog {
 			color:#808166;
 		}
 		.read-more {display:none}
-		//a {
-		//	grid-column: 2;
-		//	grid-row:3;
-		//}
 		&:first-child {
 			margin-top:0;
 		}
 	}
 }
 
-/*
-$color__btdarkestgreen: #515441;
-$color__btdarkgreen: #808166;
-$color__btblack: #231F20;
-$color__btpink: #E0CDC0;
-$color__btlightgreen: #BAB488;
-$color__btyellow: #b8a881;
-$color__btred: #BA583B;
-$color__btwhite: #E5E5E5;
-$color__btpurewhite: #FFFFFF;
-*/
+.forohhhhhhhfourpage {
+	background-color:$color__btdarkestgreen;
+	min-height: 100vh!important;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	//height: 100vh; 
+	span{
+		color:$color__btwhite;
+		font-size:2rem;
+		padding:0 25px;
+		z-index: 2;
+		position: relative;
+		max-width: 100%;
+		span {
+			font-size: 7rem;
+			color: $color__btred;
+			padding:0 25px;
+			padding-bottom: 0.3em;
+			display: block;
+			text-align: center;
+			max-width: 100%;
+
+		}
+	}
+	a {color:$color__btlightgreen;}
+}
+
+#hops {
+    height: 100vh;
+    width: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+	position: absolute;
+    z-index: 1;
+}
+
+#hops svg {
+    height: 100%;
+    width: auto;
+	height: 90vh;
+    width: auto;
+    max-width: 100%;
+	path {
+		stroke: $color__btdarkgreen;
+		fill:$color__btlightgreen;
+		opacity: .1;
+	}
+}
 
 @media (max-width:$btcwidth) {
 	.cwidth {
@@ -1210,6 +1209,7 @@ $color__btpurewhite: #FFFFFF;
 		height:44px;
 		float:left;
 		padding: 3px 0 3px 3px;
+		span {@include bt-visually-hidden}
 		svg {
 			height: 100%;
 			fill:$color__btpurewhite;
@@ -1261,7 +1261,7 @@ $color__btpurewhite: #FFFFFF;
 			a {
 				padding-top: 8px;
     			padding-bottom: 8px;
-				color:$color__btdarkgreen;
+				color:$color__btdarkestgreen;
 				height:auto!important;
 				font-size: 1.2rem;
 				.page-template-belltower-home &{color:$color__btpurewhite;}
@@ -1287,8 +1287,7 @@ $color__btpurewhite: #FFFFFF;
 				&:after {display:none;}
 				a {
 					font-size:1.1rem;
-					padding: 0.3em 1em 0.3em 0;
-    				margin: 0.5em;
+					padding: 0.8em 1.5em 0.8em 0;
 					&:hover{text-decoration: underline;}
 				}
 			}
@@ -1334,6 +1333,12 @@ $color__btpurewhite: #FFFFFF;
 		right:24px;
 		left:5px;
 	}
+
+	.page-template-belltower-home .main-navigation ul ul {
+		background-color: $color__btdarkgreen;
+	}
+
+	.main-navigation ul li.menu-item-home {display:none;}
 
 	/*
 	.home-headw2 {
@@ -1476,14 +1481,18 @@ $color__btpurewhite: #FFFFFF;
 		}
 	}
 
+	.main-navigation ul li a {
+		font-size: 1.3rem!important;
+	}
+
+	.forohhhhhhhfourpage span {
+		color: #E5E5E5;
+		font-size: 1.8rem;
+	}
+
 }
 
-
-
-
-
 //untappd
-
 .ut-menu {
 	.h1 {
 		color:$color__btdarkgreen!important;

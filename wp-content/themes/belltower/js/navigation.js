@@ -198,7 +198,7 @@ homeAnchor.innerHTML = btlogo + '<span>Home</span>';
 
 //Insert logo for mobile
 var shw1 = document.getElementsByClassName('site-header-w1');
-shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo">'+btlogo+'</a>');
+shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo"><span>Belltower Home</span>'+btlogo+'</a>');
 
 //Insert logo in footer
 var footer = document.getElementById( 'footer' );
