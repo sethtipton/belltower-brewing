@@ -1210,6 +1210,9 @@ ul li {
 .btpost-page .entry-header .entry-meta span {
   color: #FFFFFF;
 }
+.btpost-page .entry-header .entry-meta span.event_date_head {
+  display: block;
+}
 .btpost-page .entry-header .entry-meta span a {
   color: #FFFFFF;
   text-decoration: none;
@@ -1248,6 +1251,9 @@ ul li {
 .btpost-page .googlecalwrap {
   margin-top: -4vh;
   margin-bottom: 6vh;
+}
+.btpost-page .dash {
+  display: none;
 }
 .btpost-page .googlecalwrap {
   margin-top: 0;
@@ -2587,6 +2593,9 @@ body.blog .entry-content {
   }
   .btpost-page .entry-content {
     padding-top: clamp(10px, 3vh, 20px);
+  }
+  .btpost-page .dash {
+    display: none;
   }
   .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head {
     font-size: 1.5rem;
