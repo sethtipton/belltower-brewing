@@ -15,6 +15,7 @@
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Bell Tower Brewing Co. is a craft brewery offering a wide selection of unique, locally brewed beers in a vibrant, welcoming atmosphere. Located in [City/State], we pride ourselves on quality, community, and creativity. Join us for tastings, brewery tours, and events, and experience the best in craft beer." />
 	<link rel="profile" href="https://gmpg.org/xfn/11">
 
 	<?php wp_head(); ?>
