@@ -1020,6 +1020,25 @@ body.blog {
 			margin-top:0;
 		}
 	}
+	.pagination {
+		margin-top:50px;
+		padding:10px;
+		background-color: $color__btdarkgreen;
+		color:$color__btwhite;
+		text-align: right;
+		.page-numbers {
+			margin: 0;
+			padding: 4px 15px;
+			display: inline-block;
+		}
+		a{
+			color:$color__btwhite;
+			background-color: $color__btdarkgreen;
+			&:hover {
+				background-color: $color__btdarkestgreen;
+			}
+		}
+	}
 }
 
 .forohhhhhhhfourpage {

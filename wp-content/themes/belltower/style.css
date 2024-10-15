@@ -2113,6 +2113,25 @@ body.blog .entry-content {
 .events-feed article:first-child {
   margin-top: 0;
 }
+.events-feed .pagination {
+  margin-top: 50px;
+  padding: 10px;
+  background-color: #808166;
+  color: #E5E5E5;
+  text-align: right;
+}
+.events-feed .pagination .page-numbers {
+  margin: 0;
+  padding: 4px 15px;
+  display: inline-block;
+}
+.events-feed .pagination a {
+  color: #E5E5E5;
+  background-color: #808166;
+}
+.events-feed .pagination a:hover {
+  background-color: #515441;
+}
 
 .forohhhhhhhfourpage {
   background-color: #515441;

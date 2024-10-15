@@ -78,15 +78,28 @@ get_header();
 					</article>
 					<?php
 				endwhile;
-				/*
-				wp_pagenavi(
-					array(
-						'query' => $arr_posts,
-					)
-				);
-				*/
+				
+				//wp_pagenavi(
+				//	array(
+				//		'query' => $arr_posts,
+				//	)
+				//);
+				
 			endif;
 			?>
+
+			<div class="pagination">
+				<?php
+				echo paginate_links( array(
+					'total' => $arr_posts->max_num_pages,
+					'current' => max( 1, get_query_var('paged') ),
+					'format' => '?paged=%#%',
+					'prev_text' => __('« Previous'),
+					'next_text' => __('Next »'),
+				) );
+				?>
+			</div>
+
 		</div>
 
 	</div><!-- .entry-content -->
