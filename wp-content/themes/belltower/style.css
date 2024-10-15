@@ -1043,6 +1043,10 @@ object {
   font-size: 2.5rem !important;
 }
 
+html.banner-present .entry-header {
+  margin-top: var(--simple-banner-height, 0px);
+}
+
 body.pause * {
   animation: none !important;
   transition: none !important;

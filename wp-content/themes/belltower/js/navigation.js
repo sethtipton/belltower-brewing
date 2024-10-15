@@ -144,6 +144,37 @@ setTimeout(function() {
 }, 200);
 window.addEventListener('resize', updateMastheadHeight);
 
+//adjust styles if simple banner is present
+function updateBannerHeight() {
+  const banner = document.getElementById('simple-banner');
+  if (banner) {
+    const bannerHeight = banner.offsetHeight;
+    document.documentElement.style.setProperty('--simple-banner-height', `${bannerHeight}px`);
+  }
+}
+
+function checkForBanner() {
+  if (document.getElementById('simple-banner')) {
+    document.documentElement.classList.add('banner-present');
+    updateBannerHeight();
+    return true;
+  }
+  return false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const observer = new MutationObserver(function(mutations, observer) {
+    if (checkForBanner()) {
+      observer.disconnect(); // Stop observing once the banner is found
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  setTimeout(function() {
+    observer.disconnect();
+  }, 5000);
+});
+
+
 //Give the page top padding based on height on Nav
 const ro = new ResizeObserver(entries => {
 	for (let entry of entries) {

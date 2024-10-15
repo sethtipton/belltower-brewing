@@ -29,6 +29,14 @@ $btcmpPadding2 : clamp(10px, 8vh, 50px);
 	padding: 0;
 }
 
+html {
+	&.banner-present {
+		.entry-header {
+			margin-top: var(--simple-banner-height, 0px);
+		}
+	}
+}
+
 body.pause * {
 	animation: none !important;
 	transition: none !important;
