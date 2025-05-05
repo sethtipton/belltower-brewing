@@ -29,7 +29,7 @@ get_header();
 				'post_type' => 'post',
 				'post_status' => 'publish',
 				'category_name' => 'events',
-				'posts_per_page' => 5,
+				'posts_per_page' => 25,
 				'paged' => $paged,
 				'meta_key' => 'event_date', // ACF field name
 				'orderby' => 'meta_value', // Order by the meta value
@@ -53,13 +53,11 @@ get_header();
 					?>
 					<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 						
-						<a href="<?php the_permalink(); ?>" class="event_thumbnail">
-							<?php
-							if ( has_post_thumbnail() ) :
-								the_post_thumbnail();
-							endif;
-							?>
-						</a>
+						<?php if ( has_post_thumbnail() ) : ?>
+							<a href="<?php the_permalink(); ?>" class="event_thumbnail">
+								<?php the_post_thumbnail(); ?>
+							</a>
+						<?php endif; ?>
 						
 						<a href="<?php the_permalink(); ?>" class="event_title">
 							<h2 class="entry-title"><?php the_title(); ?></h2>
@@ -88,17 +86,20 @@ get_header();
 			endif;
 			?>
 
-			<div class="pagination">
-				<?php
-				echo paginate_links( array(
-					'total' => $arr_posts->max_num_pages,
-					'current' => max( 1, get_query_var('paged') ),
-					'format' => '?paged=%#%',
-					'prev_text' => __('« Previous'),
-					'next_text' => __('Next »'),
-				) );
-				?>
-			</div>
+			<?php if ( $arr_posts->max_num_pages > 1 ) : ?>
+				<div class="pagination">
+					<?php
+					echo paginate_links( array(
+						'total' => $arr_posts->max_num_pages,
+						'current' => max( 1, get_query_var('paged') ),
+						'format' => '?paged=%#%',
+						'prev_text' => __('« Previous'),
+						'next_text' => __('Next »'),
+					) );
+					?>
+				</div>
+			<?php endif; ?>
+
 
 		</div>
 

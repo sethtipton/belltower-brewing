@@ -974,7 +974,7 @@ body.blog {
 	article {
 		margin-top:50px;
 		display: grid;
-		grid-template-columns: auto auto; /* First column auto-sized, second column takes up remaining space */
+		grid-template-columns: auto 1fr;
 		grid-template-rows: auto auto auto;
 		grid-column-gap: 20px;
 		grid-row-gap: 20px;
@@ -993,9 +993,19 @@ body.blog {
 		.event_thumbnail {
 			grid-column: 1;
 			grid-row: 1 / 4;
-			display:flex;
+			display: flex;
+			overflow: hidden;
+			height: fit-content;
 			img {
 				height: fit-content;
+				transition: filter 0.3s ease;
+				filter: brightness(100%) saturate(100%);
+			}
+			&:hover img {
+				filter: brightness(120%) saturate(150%);
+			}
+			&:focus img {
+				filter: brightness(120%) saturate(150%);
 			}
 		}
 		.event_title {
