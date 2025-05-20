@@ -1149,7 +1149,9 @@ body.blog {
 	gap: .5em;
 	padding-bottom: 2em;
 	margin-bottom: 0;
-
+	& > h2 {
+		text-align: left;
+	}
 	button {
 		padding: .5em 1em;
 		background: $color__btpurewhite;
