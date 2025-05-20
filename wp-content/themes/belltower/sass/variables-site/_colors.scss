@@ -59,9 +59,9 @@ a.has-dark-green-color:hover {color:$color__btdarkgreen;}
 .has-white-bg {background-color:$color__btwhite;}
 
 #masthead {
-    height:0;
+    //height:0;
     &.load {
-        height: auto;
+        //height: auto;
     }
 }
 

@@ -343,18 +343,105 @@ add_action( 'widgets_init', 'belltower_widgets_init' );
  * Enqueue scripts and styles.
  */
 function belltower_scripts() {
-	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), array(), _S_VERSION );
+	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), [], _S_VERSION );
 	wp_style_add_data( 'belltower-style', 'rtl', 'replace' );
-
-	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', array(), _S_VERSION, true );
-
-	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), _S_VERSION, true );
+	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], _S_VERSION, true );
+	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], _S_VERSION, true );
+	$ver = filemtime( get_stylesheet_directory() . '/js/menu-from-sheets.js' );
+	wp_enqueue_script( 'belltower-menu', get_stylesheet_directory_uri() . '/js/menu-from-sheets.js', [], $ver, true );
+	$sheetId = '1o79G07EDWRihxOlh9GSJvG-_VBaE5ByZULdd_6lqm7Q';
+	$gid     = 0;
+	$csvURL  = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv&gid={$gid}";
+	wp_localize_script( 'belltower-menu', 'belltowerMenu', [ 'csvURL' => $csvURL ] );
 
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
 	}
 }
 add_action( 'wp_enqueue_scripts', 'belltower_scripts' );
+
+function belltower_menu_shortcode( $atts ) {
+	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'brewery_menu' );
+	$cat  = esc_attr( $atts['category'] );
+
+	return sprintf(
+		'<div class="brewery-menu" data-category="%s"></div>',
+		$cat
+	);
+}
+add_shortcode( 'brewery_menu', 'belltower_menu_shortcode' );
+
+function belltower_legend_shortcode() {
+	return '<div class="brewery-legend"></div>';
+}
+add_shortcode( 'brewery_legend', 'belltower_legend_shortcode' );
+
+add_action( 'init', function() {
+	register_post_type( 'partner', [
+		'labels'       => [
+			'name'          => 'Partners',
+			'singular_name' => 'Partner',
+		],
+		'public'       => true,
+		'has_archive'  => false,
+		'show_in_rest' => true,
+		'supports'     => [ 'title' ],
+	] );
+} );
+
+add_shortcode( 'partners_grid', function() {
+	$query = new WP_Query( [
+		'post_type'      => 'partner',
+		'posts_per_page' => -1,
+		'orderby'        => 'title',
+		'order'          => 'ASC',
+	] );
+
+	if ( ! $query->have_posts() ) {
+		return '<p>No partners found.</p>';
+	}
+
+	$html = '<div class="partners-grid">';
+
+	while ( $query->have_posts() ) {
+		$query->the_post();
+
+		$display_name = get_field( 'name' ) ?: get_the_title();
+		$logo_field   = get_field( 'logo' );
+		$website_url  = esc_url( get_field( 'website' ) );
+
+		if ( is_array( $logo_field ) && ! empty( $logo_field['url'] ) ) {
+			$logo_url = esc_url( $logo_field['url'] );
+		} elseif ( is_string( $logo_field ) && filter_var( $logo_field, FILTER_VALIDATE_URL ) ) {
+			$logo_url = esc_url( $logo_field );
+		} elseif ( is_numeric( $logo_field ) ) {
+			$logo_url = esc_url( wp_get_attachment_image_url( $logo_field, 'full' ) );
+		} else {
+			$logo_url = '';
+		}
+
+		$html .= '<div class="partner">';
+		$html .= '<div class="partner-overlay">';
+		$html .= '<h3><a href="' . $website_url . '" target="_blank" rel="noopener">'
+		       . esc_html( $display_name ) .
+		       '</a></h3>';
+		$html .= '</div>';
+
+		$html .= '<a href="' . $website_url . '" target="_blank" rel="noopener">';
+		if ( $logo_url ) {
+			$html .= '<img src="' . $logo_url . '" alt="' . esc_attr( $display_name ) . ' logo">';
+		} else {
+			$html .= '<span class="partner-placeholder">' . esc_html( $display_name ) . '</span>';
+		}
+		$html .= '</a>';
+		$html .= '</div>';
+	}
+
+	wp_reset_postdata();
+	$html .= '</div>';
+
+	return $html;
+} );
 
 /**
  * Implement the Custom Header feature.

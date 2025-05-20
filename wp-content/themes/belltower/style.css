@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /*!
 Theme Name: belltower
 Theme URI: http://underscores.me/
@@ -118,13 +119,6 @@ a.has-dark-green-color:hover {
 
 .has-white-bg {
   background-color: #E5E5E5;
-}
-
-#masthead {
-  height: 0;
-}
-#masthead.load {
-  height: auto;
 }
 
 .entry-header {
@@ -1020,6 +1014,11 @@ object {
 
 .has-regular-font-size,
 .has-normal-font-size,
+.partners-grid .partner .partner-overlay .partner-social,
+.partners-grid .partner .partner-overlay h3,
+.brewery-menu .description,
+.brewery-menu .add,
+.brewery-menu .tags,
 .popup-container p,
 .draftlistw1 .attr,
 .draftlistw1 .style,
@@ -1027,7 +1026,7 @@ object {
   font-size: 1.1rem !important;
 }
 
-.has-medium-font-size, .events-feed article .event_time, .events-feed article .event_date, .events-feed article .event_title h2, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .btpost-page .post-navigation .nav-subtitle {
+.has-medium-font-size, .brewery-menu .title-price .price, .brewery-menu .title-price h3, .events-feed article .event_time, .events-feed article .event_date, .events-feed article .event_title h2, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .btpost-page .post-navigation .nav-subtitle {
   font-size: 1.4rem !important;
 }
 
@@ -1310,6 +1309,7 @@ ul li {
 .cwidth, .wp-block-columns, .btpost-page .post-thumbnail, .btpost-page .entry-content, .btpost-page .entry-footer, .btpost-page .post-navigation, .btpost-page .comments-area {
   max-width: 1174px;
   margin: 0 auto;
+  padding: 1em;
 }
 
 .site-title {
@@ -1317,12 +1317,11 @@ ul li {
 }
 
 #masthead {
-  position: sticky;
+  position: fixed;
   width: 100%;
   top: 0;
   z-index: 10;
   background-color: transparent;
-  transition: background-color 300ms ease-in-out;
 }
 #masthead:after {
   content: "";
@@ -1349,6 +1348,10 @@ ul li {
 }
 .page-template-belltower-home #masthead {
   background-color: #515441;
+}
+
+.bg-transitions-on#masthead {
+  transition: background-color 300ms ease-in-out;
 }
 
 .menu-toggle {
@@ -1463,6 +1466,7 @@ h1 {
   order: 4;
   padding-top: 0;
   padding-bottom: 0;
+  width: 154px;
 }
 .main-navigation ul li.menu-item-home span {
   clip: rect(0 0 0 0);
@@ -1481,6 +1485,26 @@ h1 {
 }
 .main-navigation ul li.menu-item-home a:after {
   display: none;
+}
+.main-navigation ul li.menu-item-home .bell-1 {
+  fill-opacity: 0;
+  transition: fill-opacity 200ms ease-in 0s;
+}
+.main-navigation ul li.menu-item-home .bell-2 {
+  fill-opacity: 0;
+  transition: fill-opacity 200ms ease-in 50ms;
+}
+.main-navigation ul li.menu-item-home .bell-3 {
+  fill-opacity: 0;
+  transition: fill-opacity 200ms ease-in 100ms;
+}
+.main-navigation ul li.menu-item-home .bell-4 {
+  fill-opacity: 0;
+  transition: fill-opacity 200ms ease-in 150ms;
+}
+.main-navigation ul li.menu-item-home .cls-1:not(.bell-1):not(.bell-2):not(.bell-3):not(.bell-4) {
+  fill-opacity: 0;
+  transition: fill-opacity 350ms ease-in 10ms;
 }
 .main-navigation ul li a {
   color: #FFFFFF;
@@ -1571,7 +1595,7 @@ body.page-id-1168 .fullheightimg {
 }
 
 .site-footer {
-  background-color: #808166;
+  background-color: #515441;
 }
 
 .footerw1 {
@@ -1652,13 +1676,13 @@ body.page-id-1168 .fullheightimg {
   display: block;
   border: none;
   background-color: #FFFFFF;
-  color: #808166;
+  color: #515441;
 }
 #mc_embed_signup input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset;
   background-color: transparent;
   border: none;
-  color: #808166 !important;
+  color: #515441 !important;
 }
 #mc_embed_signup .mc-field-group:nth-child(2) {
   width: 50%;
@@ -1724,7 +1748,6 @@ a.googlecal:visited {
 }
 .home-head h1, .home-head h2 {
   text-align: center;
-  font-size: 110px;
   line-height: 1;
   font-size: calc(3.6vw + 3.6vh) !important;
   z-index: 1;
@@ -2198,6 +2221,290 @@ body.blog .entry-content {
   opacity: 0.1;
 }
 
+.menu-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  padding-bottom: 2em;
+  margin-bottom: 0;
+}
+.menu-filters button {
+  padding: 0.5em 1em;
+  background: #FFFFFF;
+  border: 1px solid #515441;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 200ms ease-in-out, border-color 200ms ease-in-out;
+}
+.menu-filters button[aria-pressed=true] {
+  background: #231F20;
+  color: white;
+  border-color: #080707;
+}
+.menu-filters button:focus {
+  outline: 3px solid #8e8083;
+  outline-offset: 2px;
+}
+
+.brewery-menu {
+  color: #231F20;
+  background: #FFFFFF;
+  margin-bottom: 2em;
+  padding-bottom: 2em;
+  overflow: hidden;
+  border-bottom: 1px solid #515441;
+  display: flex;
+  flex-direction: column;
+}
+.brewery-menu :not(.empty):first-of-type {
+  /* your “first non-empty” styles here */
+}
+.brewery-menu.empty {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0px solid transparent;
+}
+.brewery-menu.empty > .section-title,
+.brewery-menu.empty > .category-comment {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.brewery-menu .section-title,
+.brewery-menu .category-comment,
+.brewery-menu .menu-item {
+  overflow: hidden;
+  transition: opacity 400ms ease-in-out, max-height 500ms ease-in-out, margin 400ms ease-in-out, padding 400ms ease-in-out;
+  max-height: 1000px;
+}
+.brewery-menu .section-title,
+.brewery-menu .category-comment {
+  padding: 0;
+  opacity: 1;
+}
+.brewery-menu .menu-item {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  opacity: 1;
+}
+.brewery-menu .menu-item.filtered-out {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.brewery-menu .section-title {
+  text-transform: uppercase;
+  text-align: left;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.brewery-menu .section-title:has(+ p.category-comment) {
+  margin-bottom: 0;
+}
+.brewery-menu .category-comment {
+  color: #555;
+}
+.brewery-menu .title-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.brewery-menu .title-price h3 {
+  font-weight: 600;
+  margin: 0;
+  padding-right: 0.5em;
+}
+.brewery-menu .title-price .price {
+  font-weight: 400;
+  padding-left: 0.5em;
+  background: #FFFFFF;
+  z-index: 2;
+}
+.brewery-menu .title-price {
+  position: relative;
+}
+.brewery-menu .title-price::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px dotted #666;
+  transform: translateY(-0.3em);
+  z-index: 0;
+  height: 100%;
+}
+.brewery-menu .title-wrap {
+  display: flex;
+  background-color: #FFFFFF;
+  z-index: 2;
+}
+.brewery-menu .tags {
+  padding-right: 0.5em;
+  color: #555;
+  margin: 0.25rem 0 0;
+}
+.brewery-menu .add {
+  color: #555;
+  margin: 0.25rem 0 0;
+  margin-inline-start: 1em;
+}
+.brewery-menu .description {
+  color: #555;
+  margin: 0.25rem 0 0;
+}
+
+@media (max-width: 600px) {
+  .brewery-menu .title-wrap {
+    flex-direction: column;
+  }
+  .brewery-menu .title-price .price {
+    align-self: end;
+  }
+  .brewery-menu .title-wrap {
+    background-color: transparent;
+  }
+  .brewery-menu .title-price h3 {
+    background-color: #FFFFFF;
+  }
+  .brewery-menu .tags {
+    background-color: #FFFFFF;
+    align-self: flex-start;
+  }
+}
+.brewery-legend {
+  display: flex;
+  flex-direction: row;
+  gap: 2em;
+}
+.brewery-legend + .partners-grid {
+  margin-top: 2em;
+}
+.brewery-legend > :first-child {
+  flex: 1 1 auto;
+}
+.brewery-legend > :last-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.brewery-legend .menu-key {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 600px) {
+  .brewery-legend {
+    flex-direction: column;
+  }
+}
+/*
+
+.partners-grid {
+	display: grid;
+	//grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	grid-template-columns: repeat(4, 1fr);
+	gap: 2rem;
+	text-align: center;
+	.partner {
+		padding: 0 1em;
+		outline:1px solid $color__btdarkestgreen;
+	}
+	.partner img {
+		max-width: 100%;
+		height: auto;
+		border-radius: 4px;
+	}
+	.partner h3 {
+		margin: .5rem 0 0.25rem;
+		font-size: 1rem;
+		a {
+			color:$color__btdarkestgreen;
+		}
+	}
+	.partner-social {
+		font-size: .875rem;
+		text-decoration: none;
+		a {
+			color:$color__btdarkestgreen;
+		}
+	}
+}
+*/
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+.partners-grid .partner {
+  position: relative;
+  background: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.partners-grid .partner:hover, .partners-grid .partner:focus-within {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+.partners-grid .partner > a {
+  display: block;
+  height: 250px;
+  overflow: hidden;
+}
+.partners-grid .partner > a img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 200ms ease;
+}
+.partners-grid .partner > a img:hover {
+  transform: scale(1.01);
+}
+.partners-grid .partner .partner-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(81, 84, 65, 0.6);
+  color: #FFFFFF;
+  padding: 0.5rem 1rem;
+  z-index: 2;
+}
+.partners-grid .partner .partner-overlay h3 {
+  margin: 0 0 0.25rem;
+}
+.partners-grid .partner .partner-overlay h3 a {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+.partners-grid .partner .partner-overlay h3 a:hover {
+  text-decoration: underline;
+}
+.partners-grid .partner .partner-overlay .partner-social {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.partners-grid .partner .partner-overlay .partner-social a {
+  color: #FFFFFF;
+  text-decoration: underline;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .partners-grid .partner {
+    animation: none;
+    transition: none;
+  }
+}
 @media (max-width: 1174px) {
   .cwidth, .btpost-page .post-thumbnail, .btpost-page .entry-content, .btpost-page .entry-footer, .btpost-page .post-navigation, .btpost-page .comments-area, .wp-block-columns {
     padding-left: 2vw;
@@ -2214,10 +2521,15 @@ body.blog .entry-content {
   .main-navigation ul li a,
   .draftlistw1 .style,
   .draftlistw1 .attr,
-  .popup-container p {
+  .popup-container p,
+  .brewery-menu .tags,
+  .brewery-menu .add,
+  .brewery-menu .description,
+  .partners-grid .partner .partner-overlay h3,
+  .partners-grid .partner .partner-overlay .partner-social {
     font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time {
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
     font-size: 1.25rem !important;
   }
   .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body {
@@ -2291,10 +2603,15 @@ body.blog .entry-content {
   .main-navigation ul li a,
   .draftlistw1 .style,
   .draftlistw1 .attr,
-  .popup-container p {
+  .popup-container p,
+  .brewery-menu .tags,
+  .brewery-menu .add,
+  .brewery-menu .description,
+  .partners-grid .partner .partner-overlay h3,
+  .partners-grid .partner .partner-overlay .partner-social {
     font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time {
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
     font-size: 1.25rem !important;
   }
   .has-large-font-size, h2 span, h2, .wp-block-latest-posts li > a, .btpost-page .event_date_head, .btpost-page .dash, .btpost-page .event_time_head, .draftlist h2, .popup-body {
@@ -2371,6 +2688,26 @@ body.blog .entry-content {
   }
   .page-template-belltower-home.menu-toggled .mlogo svg {
     fill: #FFFFFF;
+  }
+  .mlogo .bell-1 {
+    fill-opacity: 0;
+    transition: fill-opacity 200ms ease-in 0s;
+  }
+  .mlogo .bell-2 {
+    fill-opacity: 0;
+    transition: fill-opacity 200ms ease-in 50ms;
+  }
+  .mlogo .bell-3 {
+    fill-opacity: 0;
+    transition: fill-opacity 200ms ease-in 100ms;
+  }
+  .mlogo .bell-4 {
+    fill-opacity: 0;
+    transition: fill-opacity 200ms ease-in 150ms;
+  }
+  .mlogo .cls-1:not(.bell-1):not(.bell-2):not(.bell-3):not(.bell-4) {
+    fill-opacity: 0;
+    transition: fill-opacity 350ms ease-in 10ms;
   }
   .wp-block-columns .wp-block-column + .wp-block-column {
     margin-top: 3vh;
