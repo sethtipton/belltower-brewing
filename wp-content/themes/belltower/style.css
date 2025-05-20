@@ -2221,6 +2221,10 @@ body.blog .entry-content {
   opacity: 0.1;
 }
 
+.heading-less-margin-bottom {
+  margin-bottom: clamp(10px, 10vh, 30px);
+}
+
 .menu-filters {
   display: flex;
   flex-wrap: wrap;

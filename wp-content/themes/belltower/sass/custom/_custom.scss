@@ -1139,6 +1139,10 @@ body.blog {
 	}
 }
 
+.heading-less-margin-bottom {
+	margin-bottom: clamp(10px, 10vh, 30px);
+}
+
 .menu-filters {
 	display: flex;
 	flex-wrap: wrap;
