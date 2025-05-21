@@ -1046,6 +1046,9 @@ html.banner-present .entry-header {
   margin-top: var(--simple-banner-height, 0px);
 }
 
+@view-transition {
+  navigation: auto;
+}
 body.pause * {
   animation: none !important;
   transition: none !important;

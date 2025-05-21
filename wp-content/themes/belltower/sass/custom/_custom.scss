@@ -37,6 +37,10 @@ html {
 	}
 }
 
+@view-transition {
+	navigation: auto;
+}
+
 body.pause * {
 	animation: none !important;
 	transition: none !important;
