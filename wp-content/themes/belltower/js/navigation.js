@@ -208,6 +208,10 @@ const ro = new ResizeObserver(entries => {
 });
 ro.observe(doc.querySelector('#masthead'));
 
+window.addEventListener('focusin', (e) => {
+	console.log('Focus moved to:', e.target);
+  });
+
 //Detect Scroll to adjust Nav
 let ptw = new IntersectionObserver(entries => {
 	if (entries[0].boundingClientRect.y < 0) {

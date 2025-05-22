@@ -443,6 +443,8 @@ add_shortcode( 'partners_grid', function() {
 	return $html;
 } );
 
+add_filter( 'cmplz_autofocus', '__return_false' );
+
 /**
  * Implement the Custom Header feature.
  */
