@@ -187,11 +187,14 @@ const ro = new ResizeObserver(entries => {
       //doc.getElementById('primary').style.marginTop=-entry.contentRect.height + 'px';
 		}
 
-    setTimeout(function() {
-      if (!masthead.classList.contains('load')) {
-        masthead.classList.add("load");
-      }
-    }, 100);
+		setTimeout(function () {
+			if (!masthead.classList.contains('load')) {
+				triggerViewTransition(() => {
+					masthead.classList.add("load");
+				}, 'load');
+				ro.unobserve(masthead); // stop observing once 'load' class is added
+			}
+		}, 100);
     
     /*
     const cr = entry.contentRect;
@@ -208,18 +211,37 @@ const ro = new ResizeObserver(entries => {
 });
 ro.observe(doc.querySelector('#masthead'));
 
-window.addEventListener('focusin', (e) => {
-	console.log('Focus moved to:', e.target);
-  });
 
-//Detect Scroll to adjust Nav
-let ptw = new IntersectionObserver(entries => {
-	if (entries[0].boundingClientRect.y < 0) {
-		docbody.classList.add('scrolled');
-	} else {
-		docbody.classList.remove('scrolled');
+function triggerViewTransition(updateFn, type = '') {
+	if (!document.startViewTransition) {
+		updateFn();
+		return;
 	}
+	// Optional: Add a data attribute so CSS can target the right animation
+	if (type) {
+		document.body.setAttribute('data-vt', type);
+	}
+	document.startViewTransition(() => {
+		updateFn();
+	});
+	// Clean up after transition completes
+	setTimeout(() => {
+		document.body.removeAttribute('data-vt');
+	}, 1000); // Must match your animation duration
+}
+
+// Detect Scroll to adjust Nav with View Transitions
+const ptw = new IntersectionObserver(entries => {
+	const isScrolled = entries[0].boundingClientRect.y < 0;
+	triggerViewTransition(() => {
+		if (isScrolled) {
+			docbody.classList.add('scrolled');
+		} else {
+			docbody.classList.remove('scrolled');
+		}
+	}, 'scrolled');
 });
+
 ptw.observe(document.querySelector("#pixel-to-watch"));
 
 //Inset Home Nav Icon

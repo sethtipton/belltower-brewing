@@ -58,13 +58,6 @@ a.has-dark-green-color:hover {color:$color__btdarkgreen;}
 .has-white-color {color:$color__btwhite!important;}
 .has-white-bg {background-color:$color__btwhite;}
 
-#masthead {
-    //height:0;
-    &.load {
-        //height: auto;
-    }
-}
-
 .entry-header {
     position: relative;
     h1 {

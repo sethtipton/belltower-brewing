@@ -317,7 +317,44 @@ ul li {margin: $u30txtPadding1 0;}
 
 .site-title {display:none;}
 
+/*
+@view-transition {
+	navigation: auto;
+}
+	*/
+/*
+::view-transition-new(masthead) {
+	animation: fade-default 1300ms ease;
+}
+
+// When loading
+body[data-vt="load"] ::view-transition-new(masthead) {
+	animation: fade-load 1300ms ease;
+}
+
+// When scrolling
+body[data-vt="scrolled"] ::view-transition-new(masthead) {
+	animation: fade-scrolled 1300ms ease;
+}
+
+@keyframes fade-default {
+	from { opacity: 0.5; }
+	to { opacity: 1; }
+}
+
+@keyframes fade-load {
+	from { opacity: 0; transform: translateY(-20px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-scrolled {
+	from { opacity: 0.5; transform: scaleY(0.95); }
+	to { opacity: 1; transform: scaleY(1); }
+}
+*/
+
 #masthead {
+	view-transition-name: masthead;
 	position: fixed;
     width: 100%;
     top: 0;
@@ -347,6 +384,13 @@ ul li {margin: $u30txtPadding1 0;}
 		background-color:$color__btdarkestgreen;
 	}
 }
+
+//#masthead {
+    //height:0;
+    //&.load {
+        //height: auto;
+   // }
+//}
 
 .bg-transitions-on#masthead {
 	transition: background-color 300ms ease-in-out;

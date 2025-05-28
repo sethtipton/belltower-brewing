@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+	const menus = document.querySelectorAll('.brewery-menu');
+	if (!menus.length) return;
 	const csvURL = window.belltowerMenu.csvURL;
-
 	function splitCSVLine(line) {
 		return line
 			.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
@@ -14,23 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			const [headerLine, ...lines] = text.trim().split(/\r?\n/);
 			const rawHeaders = splitCSVLine(headerLine);
 			const keys = rawHeaders.map(h =>
-				h.trim()
-					.replace(/\s+/g, '')
-					.replace(/^./, c => c.toLowerCase())
+				h.trim().replace(/\s+/g, '').replace(/^./, c => c.toLowerCase())
 			);
-
 			const items = lines.map(line => {
 				const cols = splitCSVLine(line);
 				return cols.reduce((obj, val, i) => {
-					const clean = val
-						.replace(/[\r\n]+/g, ' ')
-						.replace(/\s+/g, ' ')
-						.trim();
+					const clean = val.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 					obj[keys[i]] = clean;
 					return obj;
 				}, {});
 			});
-
 			const allTags = new Set();
 			items.forEach(it => {
 				if (!it.tags) return;
@@ -38,28 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (t) allTags.add(t);
 				});
 			});
-
-			renderFilterSection(Array.from(allTags).sort());
-
-			document.querySelectorAll('.brewery-menu[data-category]').forEach(div => {
-				renderCategorySection(div, items);
+			renderFilterSection(menus[0], Array.from(allTags).sort(), menus);
+			menus.forEach(menu => {
+				if (menu.dataset.category) renderCategorySection(menu, items);
 			});
-
 			document.querySelectorAll('.brewery-legend').forEach(div =>
 				renderLegend(div, items)
 			);
-
 			generateMenuJSONLD(items);
 		})
 		.catch(err => {
 			console.error(err);
-			document.querySelectorAll('.brewery-menu').forEach(c => {
+			menus.forEach(c => {
 				c.textContent = 'Sorry — menu unavailable.';
 			});
 		});
 });
 
-function renderFilterSection(tags) {
+function renderFilterSection(menuEl, tags, allMenus) {
 	const section = document.createElement('section');
 	section.id = 'menu-filters';
 
@@ -90,8 +80,7 @@ function renderFilterSection(tags) {
 
 	section.append(container);
 
-	const firstMenu = document.querySelector('.brewery-menu');
-	firstMenu.parentNode.insertBefore(section, firstMenu);
+	menuEl.parentNode.insertBefore(section, menuEl);
 
 	container.addEventListener('click', e => {
 		if (e.target.tagName !== 'BUTTON') return;
@@ -112,7 +101,7 @@ function renderFilterSection(tags) {
 			}
 		});
 
-		document.querySelectorAll('.brewery-menu').forEach(menu => {
+		allMenus.forEach(menu => {
 			const anyVisible = menu.querySelector('.menu-item:not(.filtered-out)');
 			menu.classList.toggle('empty', !anyVisible);
 		});
