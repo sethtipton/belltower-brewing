@@ -16,7 +16,7 @@ get_header();
 ?>
 
 	
-	<header class="entry-header blog" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+       <header class="entry-header blog" style="background-image: url('<?php echo esc_url( get_the_post_thumbnail_url() ); ?>')">
 		<h1>Blog</h1>
 	</header><!-- .entry-header -->
 

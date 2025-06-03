@@ -13,7 +13,9 @@ get_header();
 	<main id="primary" class="site-main default-page events-page">
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+
        <header id="entry-header" class="entry-header <?php echo esc_attr( get_field( 'apply_overlay_to_featured_image' ) ); ?>" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+
 		<?php the_title( '<h1 class="entry-title">', '</h1>' ); ?>
 	</header><!-- .entry-header -->
 
