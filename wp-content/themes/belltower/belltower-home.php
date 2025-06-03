@@ -22,7 +22,7 @@ get_header();
 					<p>12-11PM</p>
 				</div>
 			</div>
-			<div class="home-headc2" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+                        <div class="home-headc2" style="background-image: url('<?php echo esc_url( get_the_post_thumbnail_url() ); ?>')">
 				<img alt="bell-outline" src="/wp-content/themes/belltower/images/BTB-Bell-Outline-Green.svg">
 			</div>
 			<div class="home-headc3">
@@ -37,7 +37,7 @@ get_header();
 	</div>
 -->
 
-	<div id="home-head" class="home-head" style="background-image: url('<?php the_post_thumbnail_url(); ?>')">
+        <div id="home-head" class="home-head" style="background-image: url('<?php echo esc_url( get_the_post_thumbnail_url() ); ?>')">
 		<div class="home-headw2 cwidth">
 
 			<?php dynamic_sidebar( 'bt-home-hero' ); ?>
