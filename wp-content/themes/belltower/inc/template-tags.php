@@ -31,11 +31,11 @@ if ( ! function_exists( 'belltower_posted_on' ) ) :
 			'<a href="' . esc_url( get_permalink() ) . '" rel="bookmark">' . $time_string . '</a>'
 		);
 
-		$ACF_event_date = get_field('event_date');
-		echo '<span class="event_date_head">' . $ACF_event_date . '</span>';
-		$ACF_event_time = get_field('event_time');
-		echo '<span class="dash"> - </span>';
-		echo '<span class="event_time_head">' . $ACF_event_time . '</span>';
+               $ACF_event_date = get_field('event_date');
+               echo '<span class="event_date_head">' . esc_html( $ACF_event_date ) . '</span>';
+               $ACF_event_time = get_field('event_time');
+               echo '<span class="dash"> - </span>';
+               echo '<span class="event_time_head">' . esc_html( $ACF_event_time ) . '</span>';
 		echo '<span class="posted-on">' . $posted_on . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		if(get_field('google_calendar_link')): 
