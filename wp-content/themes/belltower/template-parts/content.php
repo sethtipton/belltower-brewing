@@ -10,7 +10,7 @@
 ?>
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-	<header id="entry-header" class="entry-header <?php the_field('apply_overlay_to_featured_image'); ?>">
+       <header id="entry-header" class="entry-header <?php echo esc_attr( get_field( 'apply_overlay_to_featured_image' ) ); ?>">
 		<?php
 		if ( is_singular() ) :
 			the_title( '<h1 class="entry-title">', '</h1>' );
