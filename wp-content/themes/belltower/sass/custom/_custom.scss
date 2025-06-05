@@ -1051,7 +1051,7 @@ body.blog {
 	article {
 		margin-top:50px;
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: minmax(350px, 16vw) 1fr;
 		grid-template-rows: auto auto auto;
 		grid-column-gap: 20px;
 		grid-row-gap: 20px;
@@ -1073,6 +1073,7 @@ body.blog {
 			display: flex;
 			overflow: hidden;
 			height: fit-content;
+  			width: 100%;
 			img {
 				height: fit-content;
 				transition: filter 0.3s ease;
@@ -1086,6 +1087,13 @@ body.blog {
 			}
 		}
 		.event_title {
+			grid-column: 1;
+			grid-row: 1 / 4;
+			display: flex;
+			overflow: hidden;
+			height: fit-content;
+  			width: 100%;
+
 			display: flex;
     		flex-direction: column;
 			color:$color__btblack;
