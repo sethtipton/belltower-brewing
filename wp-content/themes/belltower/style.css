@@ -1046,6 +1046,13 @@ html.banner-present .entry-header {
   margin-top: var(--simple-banner-height, 0px);
 }
 
+:root {
+  --agegate-z: 99999;
+  --masthead-height: 0px;
+  --vt-duration: .3s;
+  --vt-ease: cubic-bezier(.4,0,.2,1);
+}
+
 @view-transition {
   navigation: auto;
 }
@@ -1355,35 +1362,35 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 }
 */
 #masthead {
-  view-transition-name: masthead;
-  position: fixed;
   width: 100%;
   top: 0;
+  position: fixed;
+  inset: 0 auto auto 0;
   z-index: 10;
   background-color: transparent;
+  transition: opacity var(--vt-duration) var(--vt-ease);
 }
 #masthead:after {
   content: "";
   position: absolute;
+  inset-block-end: -1px;
+  inset-inline: 0;
   left: 0;
   right: 0;
   bottom: -1px;
   height: 1px;
   background-color: #231F20;
   opacity: 0;
-  transition: opacity 300ms ease-in-out;
+  transition: opacity var(--vt-duration) var(--vt-ease);
 }
-.scrolled #masthead {
-  background-color: #FFFFFF;
+.scrolled #masthead, .menu-toggled #masthead {
+  background: #FFFFFF;
 }
 .scrolled #masthead:after {
   opacity: 0.1;
 }
-.menu-toggled #masthead {
-  background-color: #FFFFFF;
-}
 .menu-toggled #masthead:after {
-  display: none !important;
+  display: none;
 }
 .page-template-belltower-home #masthead {
   background-color: #515441;
@@ -2097,12 +2104,18 @@ body.blog .entry-content {
 }
 .popup-container .agelogo svg {
   fill: #808166;
+  transform-origin: 50% 50%;
+  transition: transform 0.5s ease-out, opacity 0.5s ease-out;
 }
 
 .popupw1 {
   position: absolute;
   top: 0;
   width: 100%;
+  transition: opacity 0.5s ease-out;
+}
+.popupw1.is-closing {
+  opacity: 0;
 }
 
 .popup-body {
@@ -2121,6 +2134,50 @@ body.blog .entry-content {
 }
 .popup-btn:hover {
   opacity: 0.8;
+}
+
+.popup-backdrop {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  opacity: 0.78;
+  transition: opacity 0.5s ease-out;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--agegate-z) - 1);
+  background: #242629;
+}
+
+.popup-backdrop.is-closing {
+  opacity: 0;
+}
+
+.popup-modal {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--agegate-z));
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  padding: 10px;
+}
+
+.popup-modal.is-closing .agelogo svg {
+  transform: scale(1.5);
+  opacity: 0;
+}
+
+.popup-modal.is-closing + .popup-backdrop {
+  opacity: 0;
+}
+
+.popup-modal.is-closing,
+.popup-modal.is-closing + .popup-backdrop {
+  pointer-events: none;
 }
 
 .events-feed article {

@@ -37,6 +37,13 @@ html {
 	}
 }
 
+:root { 
+	--agegate-z:  99999; 
+	--masthead-height   : 0px;
+	--vt-duration       : .3s;
+	--vt-ease           : cubic-bezier(.4,0,.2,1);
+}
+
 @view-transition {
 	navigation: auto;
 }
@@ -354,43 +361,46 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 */
 
 #masthead {
-	view-transition-name: masthead;
-	position: fixed;
+	//view-transition-name: masthead;
+	//position: fixed;
     width: 100%;
     top: 0;
+	position:fixed; 
+	inset:0 auto auto 0;
 	z-index: 10;
 	background-color:transparent;
+	transition:opacity var(--vt-duration) var(--vt-ease);
 	//transition: background-color 300ms ease-in-out;
 	&:after {
 		content:'';
-		position: absolute;
+		position:absolute; 
+		inset-block-end:-1px; 
+		inset-inline:0;
 		left:0;
 		right:0;
 		bottom:-1px;
 		height:1px;
 		background-color:$color__btblack;
 		opacity: 0;
-		transition: opacity 300ms ease-in-out;
+		//transition: opacity 300ms ease-in-out;
+		transition:opacity var(--vt-duration) var(--vt-ease);
+	}
+	.scrolled &,
+	.menu-toggled & {                           // share the rule
+		background:$color__btpurewhite;
 	}
 	.scrolled &{
-		background-color:$color__btpurewhite;
+		//background-color:$color__btpurewhite;
 		&:after{opacity: 0.1;}
 	}
 	.menu-toggled &{
-		background-color:$color__btpurewhite;
-		&:after{display:none!important;}
+		//background-color:$color__btpurewhite;
+		&:after{display:none;}
 	}
 	.page-template-belltower-home & {
 		background-color:$color__btdarkestgreen;
 	}
 }
-
-//#masthead {
-    //height:0;
-    //&.load {
-        //height: auto;
-   // }
-//}
 
 .bg-transitions-on#masthead {
 	transition: background-color 300ms ease-in-out;
@@ -1019,7 +1029,11 @@ body.blog {
 	.agelogo {
 		width: 100%;
 		z-index: -1;
-		svg {fill: $color__btdarkgreen;}
+		svg {
+			fill: $color__btdarkgreen;
+			transform-origin: 50% 50%;
+			transition: transform .5s ease-out, opacity .5s ease-out;
+		}
 	}
 }
 
@@ -1027,6 +1041,10 @@ body.blog {
 	position: absolute;
 	top: 0;
 	width: 100%;
+	transition: opacity .5s ease-out;
+	&.is-closing {
+		opacity: 0;
+	}
 }
 
 .popup-body {
@@ -1047,27 +1065,60 @@ body.blog {
 	&:hover {opacity: 0.8;}
 }
 
+.popup-backdrop {
+	top: 0; 
+	right: 0; 
+	left: 0; 
+	bottom: 0; 
+	overflow-x: hidden; 
+	overflow-y: auto;
+	opacity:.78;
+	transition: opacity .5s ease-out;
+	position:fixed; 
+	inset:0;
+    z-index: calc(var(--agegate-z) - 1);
+    background:#242629;
+}
+.popup-backdrop.is-closing{ opacity:0; }
+
+.popup-modal {
+	position:fixed; 
+	inset:0;
+    z-index: calc(var(--agegate-z));
+	top: 0; 
+	right: 0; 
+	left: 0; 
+	bottom: 0; 
+	padding: 10px;
+}
+
+
+.popup-modal.is-closing  .agelogo svg { 
+	transform: scale(1.5);
+	opacity: 0;
+}
+
+.popup-modal.is-closing + .popup-backdrop { 
+	opacity: 0;
+}
+
+.popup-modal.is-closing,
+.popup-modal.is-closing + .popup-backdrop {
+	pointer-events:none;
+}
+
 .events-feed {
 	article {
-		//margin-top:50px;
 		display: grid;
 		grid-template-columns: 1fr;
-		&:has(.event_thumbnail){
-			//background-color: rebeccapurple;
-			grid-template-columns: minmax(350px, 16vw) 1fr;
-		}
 		grid-template-rows: auto;
 		grid-column-gap: 20px;
 		grid-row-gap: 20px;
-		//position: relative;
-		//display: flex;             
-		//gap: 1.5rem;                
-		//margin-top: 50px;
-		//display: flex;          // left column (thumbnail) + right column (text)
-		//flex-wrap: wrap;        // allow text items to move to their own lines
-		//gap: 1.5rem;            // 24 px column gap
 		margin-top: 50px;
-		position: relative;     // for the decorative :after rule below
+		position: relative;
+		&:has(.event_thumbnail) {
+			grid-template-columns: minmax(350px, 16vw) 1fr;
+		}
 		&:after {
 			content:'';
 			position: absolute;
@@ -1081,24 +1132,9 @@ body.blog {
 			text-decoration: none;
 		}
 		.event_thumbnail {
-			//float:left;
-			//grid-column: 1;
-			//grid-row: 1 / -1;
-			//display: block;
-			//flex: 0 0 350px;
-			//display: block; 
-			//flex: 0 0 350px;
-      		//display: block;
-			//overflow: hidden;
-			//height: fit-content;
-  			//width: 100%;
 			grid-column:1; 
 			grid-row:1 / -1;
 			img {
-				//height: fit-content;
-				//width: 100%;
-				//height:auto;
-				//display:block;
 				width: 100%;
 				height: auto;               
 				display: block;
@@ -1112,23 +1148,7 @@ body.blog {
 				filter: brightness(120%) saturate(150%);
 			}
 		}
-		.event_title, p, .event_readmore {
-			//flex: 1 1 100%;
-			//width: 100%;
-		}
 		.event_title {
-			//float:left;
-			//grid-column: 1;
-			//grid-row: 1 / 2;
-			//display: flex;
-			//overflow: hidden;
-			//height: fit-content;
-  			//width: 100%;
-			//grid-column: 2;
-			//flex: 1 1 0;
-			//display: block;              
-			//display: flex;
-    		//flex-direction: column;
 			color:$color__btblack;
 			h2 {
 				text-align: left;
@@ -1138,21 +1158,17 @@ body.blog {
 			}
 		}
 		.event_date {
-			//float:left;
 			@extend .has-medium-font-size;
 			font-weight:900;
 			color:$color__btdarkgreen;
-			//display: inline-block;
 		}
 		.event_time {
 			@extend .has-medium-font-size;
 			font-weight: 600;
 			color:$color__btdarkgreen;
-			//display: inline-block;
 		}
 		.event_readmore {
 			color:#808166;
-			//grid-column: 2;
 		}
 		.read-more {display:none}
 		&:first-child {
@@ -1860,8 +1876,6 @@ body.blog {
 		.menu-toggled &{
 			pointer-events: all;
 			opacity:1;
-			//Defined in header.php with inline stles so this is set after updateMastheadHeight inside navigation.js 
-			//height:calc(100vh - var(--masthead-height));
 			overflow:scroll;
 			padding-bottom: 4em;
 			ul {

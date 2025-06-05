@@ -7,6 +7,7 @@
  const doc = document;
  const docbody = doc.body;
  const btpage = doc.getElementById('primary');
+ let lastIsScrolled = false;
 
 ( function() {
 	var container, button, menu, links, i, len;
@@ -123,68 +124,68 @@
 
 // Pause Animation while resizing
 let btresizeTimer;
-  window.addEventListener("resize", () => {
-    docbody.classList.add("pause");
-  clearTimeout(btresizeTimer);
-  btresizeTimer = setTimeout(() => {
-    docbody.classList.remove("pause");
-  }, 400);
+	window.addEventListener("resize", () => {
+		docbody.classList.add("pause");
+	clearTimeout(btresizeTimer);
+	btresizeTimer = setTimeout(() => {
+		docbody.classList.remove("pause");
+	}, 200);
 });
 
 function updateMastheadHeight() {
-  let masthead = doc.getElementById('masthead');
-  if (masthead) {
-    const mastheadHeight = masthead.offsetHeight;
-    document.documentElement.style.setProperty('--masthead-height', `${mastheadHeight}px`);
-  }
+	let masthead = doc.getElementById('masthead');
+	if (masthead) {
+		const mastheadHeight = masthead.offsetHeight;
+		document.documentElement.style.setProperty('--masthead-height', `${mastheadHeight}px`);
+	}
 }
 //window.addEventListener('load', updateMastheadHeight);
 setTimeout(function() {
-  updateMastheadHeight();
+	updateMastheadHeight();
 }, 200);
 window.addEventListener('resize', updateMastheadHeight);
 
 //adjust styles if simple banner is present
 function updateBannerHeight() {
-  const banner = document.getElementById('simple-banner');
-  if (banner) {
-    const bannerHeight = banner.offsetHeight;
-    document.documentElement.style.setProperty('--simple-banner-height', `${bannerHeight}px`);
-  }
+	const banner = document.getElementById('simple-banner');
+	if (banner) {
+		const bannerHeight = banner.offsetHeight;
+		document.documentElement.style.setProperty('--simple-banner-height', `${bannerHeight}px`);
+	}
 }
 
 function checkForBanner() {
-  if (document.getElementById('simple-banner')) {
-    document.documentElement.classList.add('banner-present');
-    updateBannerHeight();
-    return true;
-  }
-  return false;
+	if (document.getElementById('simple-banner')) {
+		document.documentElement.classList.add('banner-present');
+		updateBannerHeight();
+		return true;
+	}
+	return false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  const observer = new MutationObserver(function(mutations, observer) {
-    if (checkForBanner()) {
-      observer.disconnect(); // Stop observing once the banner is found
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-  setTimeout(function() {
-    observer.disconnect();
-  }, 5000);
+	const observer = new MutationObserver(function(mutations, observer) {
+		if (checkForBanner()) {
+			observer.disconnect(); // Stop observing once the banner is found
+		}
+	});
+	observer.observe(document.body, { childList: true, subtree: true });
+	setTimeout(function() {
+		observer.disconnect();
+	}, 5000);
 });
 
 
 //Give the page top padding based on height on Nav
 const ro = new ResizeObserver(entries => {
 	for (let entry of entries) {
-    let masthead = doc.getElementById('masthead');
+		let masthead = doc.getElementById('masthead');
 
 		if (docbody.classList.contains('home')) {
-      //doc.getElementById('home-head').style.marginTop=-entry.contentRect.height + 'px';
+			//doc.getElementById('home-head').style.marginTop=-entry.contentRect.height + 'px';
 		}
 		else {
-      //doc.getElementById('primary').style.marginTop=-entry.contentRect.height + 'px';
+			//doc.getElementById('primary').style.marginTop=-entry.contentRect.height + 'px';
 		}
 
 		setTimeout(function () {
@@ -195,18 +196,18 @@ const ro = new ResizeObserver(entries => {
 				ro.unobserve(masthead); // stop observing once 'load' class is added
 			}
 		}, 100);
-    
-    /*
-    const cr = entry.contentRect;
-    console.log(`Element size: ${cr.width}px x ${cr.height}px`);
-    if (cr.width <= 550) {
-      
-      docbody.classList.add("mobile");
-    }
-    else {
-      docbody.classList.remove("mobile");
-    }
-    */
+		
+		/*
+		const cr = entry.contentRect;
+		console.log(`Element size: ${cr.width}px x ${cr.height}px`);
+		if (cr.width <= 550) {
+			
+			docbody.classList.add("mobile");
+		}
+		else {
+			docbody.classList.remove("mobile");
+		}
+		*/
 	}
 });
 ro.observe(doc.querySelector('#masthead'));
@@ -230,19 +231,22 @@ function triggerViewTransition(updateFn, type = '') {
 	}, 1000); // Must match your animation duration
 }
 
-// Detect Scroll to adjust Nav with View Transitions
-const ptw = new IntersectionObserver(entries => {
-	const isScrolled = entries[0].boundingClientRect.y < 0;
+// replace the whole old IntersectionObserver block with this:
+const ptw = new IntersectionObserver(([entry]) => {
+	// 1. Compute once
+	const nowScrolled = entry.boundingClientRect.y < 0;
+
+	// 2. Bail if nothing changed  ➜ avoids redundant view‑transitions
+	if (nowScrolled === lastIsScrolled) return;
+	lastIsScrolled = nowScrolled;
+
+	// 3. Wrap the DOM change in a view‑transition
 	triggerViewTransition(() => {
-		if (isScrolled) {
-			docbody.classList.add('scrolled');
-		} else {
-			docbody.classList.remove('scrolled');
-		}
+		docbody.classList.toggle('scrolled', nowScrolled);
 	}, 'scrolled');
 });
 
-ptw.observe(document.querySelector("#pixel-to-watch"));
+ptw.observe(document.querySelector('#pixel-to-watch'));
 
 //Inset Home Nav Icon
 //NO Bell classes
@@ -288,16 +292,16 @@ footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" 
  * Released under the MIT license
  */
 (function(window) {
-  'use strict';
-  window.Agegate = function(options) {
-    var defaults = {
-      cookie: 'belltower_agreed',
-      body: 'Are you 21 or older?',
-      cancelUrl: '/',
-      expires: 7, // days
-      success: function() {},
-      fail: function() {}
-    }
+	'use strict';
+	window.Agegate = function(options) {
+		var defaults = {
+			cookie: 'belltower_agreed',
+			body: 'Are you 21 or older?',
+			cancelUrl: '/',
+			expires: 7, // days
+			success: function() {},
+			fail: function() {}
+		}
 	if (window.location.href.indexOf('jobs') > 0 || window.location.href.indexOf('privacy') > 0) {
 		//console.log('is jobs');
 	}
@@ -310,269 +314,293 @@ footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" 
 		this.setEventHandlers();
 		this.freezeScrolling();
 	}
-    return this;
-  }
+		return this;
+	}
 
-  Agegate.prototype = {
-    createPopup: function() {
-      this.container = document.createElement('div');
-      this.container.innerHTML = [
-        '<div class="popup-backdrop" style="z-index: 1000; position: fixed; top: 0; right: 0; left: 0; bottom: 0; background-color: #242629; opacity: 0.78; overflow-x: hidden; overflow-y: auto;"></div>',
-        '<div class="popup-modal" style="z-index: 1001; position: fixed; top: 0; right: 0; left: 0; bottom: 0; padding: 10px;">',
-          '<div class="popup-container">',
+	Agegate.prototype = {
+		createPopup: function() {
+			this.container = document.createElement('div');
+			this.container.innerHTML = [
+				'<div class="popup-backdrop"></div>',
+				'<div class="popup-modal">',
+					'<div class="popup-container">',
+						'<div class="agelogo">'+agelogo+'</div>',
+						'<div class="popupw1">',
+							'<div class="popup-body">',
+								this.options.body,
+							'</div>',
+							'<div class="popup-actions">',
+								'<button class="popup-btn popup-agree">Yes</button>',
+								'<button class="popup-btn popup-cancel">No</button>',
+								'<p>You do not need to be 21 to check out our<br /><a href="/jobs" class="jobs">Jobs</a> and <a href="/privacy-policy" class="terms">Privacy Policy</a></p>',
+							'</div>',
+						'</div>',
+					'</div>',
+				'</div>'
+			].join('');
 
-            '<div class="agelogo">'+agelogo+'</div>',
-            '<div class="popupw1">',
-              '<div class="popup-body">',
-                this.options.body,
-              '</div>',
-              '<div class="popup-actions">',
-                '<button class="popup-btn popup-agree">Yes</button>',
-                '<button class="popup-btn popup-cancel">No</button>',
-                '<p>You do not need to be 21 to check out our<br /><a href="/jobs" class="jobs">Jobs</a> and <a href="/privacy-policy" class="terms">Privacy Policy</a></p>',
-              '</div>',
-            '</div>',
-          '</div>',
-        '</div>'
-      ].join('');
+			document.body.insertBefore(this.container, document.body.firstChild);
+			this.agreeBtn = this.container.querySelector('.popup-agree');
+			this.cancelBtn = this.container.querySelector('.popup-cancel');
+		},
+		destroyPopup: function() {
+			this.container.parentNode.removeChild(this.container);
+			this.allowScrolling();
+		},
+		successHandler: function() {
+			this.setCookie();
+			this.animateClose(() => {
+				this.destroyPopup();
+				this.options.success();
+			});
+		},
+		failHandler: function() {
+			this.animateClose(() => {
+				this.options.fail();
+				window.location.href = this.options.cancelUrl;
+			});
+		},
+		setOptions: function(options, defaults) {
+			this.options = Object.assign(defaults, options, { defaults: defaults });
+		},
+		checkCookie: function(cookie) {
+			return Cookies.get(cookie);
+		},
+		setCookie: function() {
+			Cookies.set(this.options.cookie, true, { expires: this.options.expires });
+		},
+		setEventHandlers: function() {
+			this.agreeBtn.addEventListener('click', this.successHandler.bind(this), false);
+			this.cancelBtn.addEventListener('click', this.failHandler.bind(this), false);
+		},
+		freezeScrolling: function() {
+			document.body.style.overflowY = 'hidden';
+		},
+		allowScrolling: function() {
+			document.body.style.overflowY = 'auto';
+		},
+		animateClose(cb){
+			const modal    = this.container.querySelector('.popup-modal');
+			const modalContent = this.container.querySelector('.popupw1');
+			const backdrop = this.container.querySelector('.popup-backdrop');
 
-      document.body.insertBefore(this.container, document.body.firstChild);
-      this.agreeBtn = this.container.querySelector('.popup-agree');
-      this.cancelBtn = this.container.querySelector('.popup-cancel');
-    },
-    destroyPopup: function() {
-      this.container.parentNode.removeChild(this.container);
-      this.allowScrolling();
-    },
-    successHandler: function() {
-      this.setCookie();
-      this.destroyPopup();
-      this.options.success();
-    },
-    failHandler: function() {
-      this.options.fail();
-      window.location.href = this.options.cancelUrl;
-    },
-    setOptions: function(options, defaults) {
-      this.options = Object.assign(defaults, options, { defaults: defaults });
-    },
-    checkCookie: function(cookie) {
-      return Cookies.get(cookie);
-    },
-    setCookie: function() {
-      Cookies.set(this.options.cookie, true, { expires: this.options.expires });
-    },
-    setEventHandlers: function() {
-      this.agreeBtn.addEventListener('click', this.successHandler.bind(this), false);
-      this.cancelBtn.addEventListener('click', this.failHandler.bind(this), false);
-    },
-    freezeScrolling: function() {
-      document.body.style.overflowY = 'hidden';
-    },
-    allowScrolling: function() {
-      document.body.style.overflowY = 'auto';
-    }
-  }
+			modal.classList.add('is-closing');
+			modalContent.classList.add('is-closing');
+			backdrop.classList.add('is-closing');          // <‑‑ add it here too
 
-  /*!
-   * Object.assign Polyfill
-   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill
-   */
-  if (typeof Object.assign != 'function') {
-    Object.defineProperty(Object, 'assign', {
-      value: function assign(target, varArgs) {
-        'use strict';
+			/* call cb() when either element finishes fading */
+			const done = () => {
+				modal.removeEventListener('transitionend', done);
+				modalContent.removeEventListener('transitionend', done);
+				backdrop.removeEventListener('transitionend', done);
+				cb();
+			};
+			modal.addEventListener('transitionend', done);
+			modalContent.addEventListener('transitionend', done);
+			backdrop.addEventListener('transitionend', done);
+		}
 
-        if (target == null) {
-          throw new TypeError('Cannot convert undefined or null to object');
-        }
+	}
 
-        var to = Object(target);
+	/*!
+	 * Object.assign Polyfill
+	 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill
+	 */
+	if (typeof Object.assign != 'function') {
+		Object.defineProperty(Object, 'assign', {
+			value: function assign(target, varArgs) {
+				'use strict';
 
-        for (var index = 1; index < arguments.length; index++) {
-          var nextSource = arguments[index];
+				if (target == null) {
+					throw new TypeError('Cannot convert undefined or null to object');
+				}
 
-          if (nextSource != null) {
-            for (var nextKey in nextSource) {
-              if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) to[nextKey] = nextSource[nextKey];
-            }
-          }
-        }
-        return to;
-      },
-      writable: true,
-      configurable: true
-    });
-  }
+				var to = Object(target);
 
-  /*!
-   * JavaScript Cookie v2.1.4
-   * https://github.com/js-cookie/js-cookie
-   *
-   * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
-   * Released under the MIT license
-   */
-  ;(function (factory) {
-    var registeredInModuleLoader = false;
-    if (typeof define === 'function' && define.amd) {
-      define(factory);
-      registeredInModuleLoader = true;
-    }
-    if (typeof exports === 'object') {
-      module.exports = factory();
-      registeredInModuleLoader = true;
-    }
-    if (!registeredInModuleLoader) {
-      var OldCookies = window.Cookies;
-      var api = window.Cookies = factory();
-      api.noConflict = function () {
-        window.Cookies = OldCookies;
-        return api;
-      };
-    }
-  }(function () {
-    function extend () {
-      var i = 0;
-      var result = {};
-      for (; i < arguments.length; i++) {
-        var attributes = arguments[ i ];
-        for (var key in attributes) {
-          result[key] = attributes[key];
-        }
-      }
-      return result;
-    }
+				for (var index = 1; index < arguments.length; index++) {
+					var nextSource = arguments[index];
 
-    function init (converter) {
-      function api (key, value, attributes) {
-        var result;
-        if (typeof document === 'undefined') {
-          return;
-        }
+					if (nextSource != null) {
+						for (var nextKey in nextSource) {
+							if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) to[nextKey] = nextSource[nextKey];
+						}
+					}
+				}
+				return to;
+			},
+			writable: true,
+			configurable: true
+		});
+	}
 
-        // Write
+	/*!
+	 * JavaScript Cookie v2.1.4
+	 * https://github.com/js-cookie/js-cookie
+	 *
+	 * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
+	 * Released under the MIT license
+	 */
+	;(function (factory) {
+		var registeredInModuleLoader = false;
+		if (typeof define === 'function' && define.amd) {
+			define(factory);
+			registeredInModuleLoader = true;
+		}
+		if (typeof exports === 'object') {
+			module.exports = factory();
+			registeredInModuleLoader = true;
+		}
+		if (!registeredInModuleLoader) {
+			var OldCookies = window.Cookies;
+			var api = window.Cookies = factory();
+			api.noConflict = function () {
+				window.Cookies = OldCookies;
+				return api;
+			};
+		}
+	}(function () {
+		function extend () {
+			var i = 0;
+			var result = {};
+			for (; i < arguments.length; i++) {
+				var attributes = arguments[ i ];
+				for (var key in attributes) {
+					result[key] = attributes[key];
+				}
+			}
+			return result;
+		}
 
-        if (arguments.length > 1) {
-          attributes = extend({
-            path: '/'
-          }, api.defaults, attributes);
+		function init (converter) {
+			function api (key, value, attributes) {
+				var result;
+				if (typeof document === 'undefined') {
+					return;
+				}
 
-          if (typeof attributes.expires === 'number') {
-            var expires = new Date();
-            expires.setMilliseconds(expires.getMilliseconds() + attributes.expires * 864e+5);
-            attributes.expires = expires;
-          }
+				// Write
 
-          // We're using "expires" because "max-age" is not supported by IE
-          attributes.expires = attributes.expires ? attributes.expires.toUTCString() : '';
+				if (arguments.length > 1) {
+					attributes = extend({
+						path: '/'
+					}, api.defaults, attributes);
 
-          try {
-            result = JSON.stringify(value);
-            if (/^[\{\[]/.test(result)) {
-              value = result;
-            }
-          } catch (e) {}
+					if (typeof attributes.expires === 'number') {
+						var expires = new Date();
+						expires.setMilliseconds(expires.getMilliseconds() + attributes.expires * 864e+5);
+						attributes.expires = expires;
+					}
 
-          if (!converter.write) {
-            value = encodeURIComponent(String(value))
-              .replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g, decodeURIComponent);
-          } else {
-            value = converter.write(value, key);
-          }
+					// We're using "expires" because "max-age" is not supported by IE
+					attributes.expires = attributes.expires ? attributes.expires.toUTCString() : '';
 
-          key = encodeURIComponent(String(key));
-          key = key.replace(/%(23|24|26|2B|5E|60|7C)/g, decodeURIComponent);
-          key = key.replace(/[\(\)]/g, escape);
+					try {
+						result = JSON.stringify(value);
+						if (/^[\{\[]/.test(result)) {
+							value = result;
+						}
+					} catch (e) {}
 
-          var stringifiedAttributes = '';
+					if (!converter.write) {
+						value = encodeURIComponent(String(value))
+							.replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g, decodeURIComponent);
+					} else {
+						value = converter.write(value, key);
+					}
 
-          for (var attributeName in attributes) {
-            if (!attributes[attributeName]) {
-              continue;
-            }
-            stringifiedAttributes += '; ' + attributeName;
-            if (attributes[attributeName] === true) {
-              continue;
-            }
-            stringifiedAttributes += '=' + attributes[attributeName];
-          }
-          return (document.cookie = key + '=' + value + stringifiedAttributes);
-        }
+					key = encodeURIComponent(String(key));
+					key = key.replace(/%(23|24|26|2B|5E|60|7C)/g, decodeURIComponent);
+					key = key.replace(/[\(\)]/g, escape);
 
-        // Read
+					var stringifiedAttributes = '';
 
-        if (!key) {
-          result = {};
-        }
+					for (var attributeName in attributes) {
+						if (!attributes[attributeName]) {
+							continue;
+						}
+						stringifiedAttributes += '; ' + attributeName;
+						if (attributes[attributeName] === true) {
+							continue;
+						}
+						stringifiedAttributes += '=' + attributes[attributeName];
+					}
+					return (document.cookie = key + '=' + value + stringifiedAttributes);
+				}
 
-        // To prevent the for loop in the first place assign an empty array
-        // in case there are no cookies at all. Also prevents odd result when
-        // calling "get()"
-        var cookies = document.cookie ? document.cookie.split('; ') : [];
-        var rdecode = /(%[0-9A-Z]{2})+/g;
-        var i = 0;
+				// Read
 
-        for (; i < cookies.length; i++) {
-          var parts = cookies[i].split('=');
-          var cookie = parts.slice(1).join('=');
+				if (!key) {
+					result = {};
+				}
 
-          if (cookie.charAt(0) === '"') {
-            cookie = cookie.slice(1, -1);
-          }
+				// To prevent the for loop in the first place assign an empty array
+				// in case there are no cookies at all. Also prevents odd result when
+				// calling "get()"
+				var cookies = document.cookie ? document.cookie.split('; ') : [];
+				var rdecode = /(%[0-9A-Z]{2})+/g;
+				var i = 0;
 
-          try {
-            var name = parts[0].replace(rdecode, decodeURIComponent);
-            cookie = converter.read ?
-              converter.read(cookie, name) : converter(cookie, name) ||
-              cookie.replace(rdecode, decodeURIComponent);
+				for (; i < cookies.length; i++) {
+					var parts = cookies[i].split('=');
+					var cookie = parts.slice(1).join('=');
 
-            if (this.json) {
-              try {
-                cookie = JSON.parse(cookie);
-              } catch (e) {}
-            }
+					if (cookie.charAt(0) === '"') {
+						cookie = cookie.slice(1, -1);
+					}
 
-            if (key === name) {
-              result = cookie;
-              break;
-            }
+					try {
+						var name = parts[0].replace(rdecode, decodeURIComponent);
+						cookie = converter.read ?
+							converter.read(cookie, name) : converter(cookie, name) ||
+							cookie.replace(rdecode, decodeURIComponent);
 
-            if (!key) {
-              result[name] = cookie;
-            }
-          } catch (e) {}
-        }
+						if (this.json) {
+							try {
+								cookie = JSON.parse(cookie);
+							} catch (e) {}
+						}
 
-        return result;
-      }
+						if (key === name) {
+							result = cookie;
+							break;
+						}
 
-      api.set = api;
-      api.get = function (key) {
-        return api.call(api, key);
-      };
-      api.getJSON = function () {
-        return api.apply({
-          json: true
-        }, [].slice.call(arguments));
-      };
-      api.defaults = {};
+						if (!key) {
+							result[name] = cookie;
+						}
+					} catch (e) {}
+				}
 
-      api.remove = function (key, attributes) {
-        api(key, '', extend(attributes, {
-          expires: -1
-        }));
-      };
+				return result;
+			}
 
-      api.withConverter = init;
+			api.set = api;
+			api.get = function (key) {
+				return api.call(api, key);
+			};
+			api.getJSON = function () {
+				return api.apply({
+					json: true
+				}, [].slice.call(arguments));
+			};
+			api.defaults = {};
 
-      return api;
-    }
+			api.remove = function (key, attributes) {
+				api(key, '', extend(attributes, {
+					expires: -1
+				}));
+			};
 
-    return init(function () {});
-  }));
+			api.withConverter = init;
+
+			return api;
+		}
+
+		return init(function () {});
+	}));
 }(window));
 
 new Agegate({
-    cancelUrl: 'https://www.responsibility.org/'
+		cancelUrl: 'https://www.responsibility.org/'
 })
 
