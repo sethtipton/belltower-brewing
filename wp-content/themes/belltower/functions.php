@@ -239,10 +239,10 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 					echo get_the_excerpt();
 					echo '</div>';
 
-					if(get_field('google_calendar_link')): 
-						$limitWidth = get_field('google_calendar_link');
-						echo '<a class="googlecal" target="_blank" href="' . esc_url($limitWidth) . '">Add this event to you Google calendar</a>';
-					endif;
+                                        if ( get_field( 'google_calendar_link' ) ) :
+                                                $calendar_link = get_field( 'google_calendar_link' );
+                                                echo '<a class="googlecal" target="_blank" href="' . esc_url( $calendar_link ) . '">Add this event to your Google calendar</a>';
+                                        endif;
 		
 					echo '</li>';
 				endwhile;
