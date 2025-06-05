@@ -60,21 +60,25 @@ get_header();
 								<?php the_post_thumbnail(); ?>
 							</a>
 						<?php endif; ?>
-						
-						<a href="<?php the_permalink(); ?>" class="event_title">
-							<h2 class="entry-title"><?php the_title(); ?></h2>
-							<span class="event_date">
-								<?php the_field('event_date'); ?>
-							</span>
-							<span class="event_time">
-								<?php the_field('event_time'); ?>
-							</span>
-						</a>
-						
-						<?php the_excerpt(); ?>
 
-						<a href="<?php the_permalink(); ?>" class="event_readmore">Read More</a>
-						
+						<div class="event_content">
+
+							<a href="<?php the_permalink(); ?>" class="event_title">
+								<h2 class="entry-title"><?php the_title(); ?></h2>
+								<span class="event_date">
+									<?php the_field('event_date'); ?>
+								</span>
+								<span class="event_time">
+									<?php the_field('event_time'); ?>
+								</span>
+							</a>
+							
+							<?php the_excerpt(); ?>
+
+							<a href="<?php the_permalink(); ?>" class="event_readmore">Read More</a>
+
+						</div>
+
 					</article>
 					<?php
 				endwhile;
