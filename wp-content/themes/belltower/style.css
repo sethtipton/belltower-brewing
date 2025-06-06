@@ -2880,9 +2880,6 @@ body.blog .entry-content {
     opacity: 0;
     z-index: 11;
   }
-  .page-template-belltower-home .main-navigation ul {
-    background-color: #808166;
-  }
   .main-navigation ul li {
     padding-left: 5px;
     z-index: 11;
@@ -2894,9 +2891,7 @@ body.blog .entry-content {
     color: #515441;
     height: auto !important;
     font-size: 1.2rem;
-  }
-  .page-template-belltower-home .main-navigation ul li a {
-    color: #FFFFFF;
+    padding-left: 0;
   }
   .main-navigation ul li a:after {
     display: none;
@@ -2909,12 +2904,14 @@ body.blog .entry-content {
   }
   .main-navigation ul ul {
     position: relative;
+    padding: 0 clamp(1px, 2vh, 30px);
     left: 0;
     width: 100%;
     margin-bottom: 0.5em;
     opacity: 1;
     float: none;
     z-index: 12;
+    background-color: transparent;
   }
   .main-navigation ul ul li {
     padding-left: 0.5em;
@@ -2968,7 +2965,7 @@ body.blog .entry-content {
     left: 5px;
   }
   .page-template-belltower-home .main-navigation ul ul {
-    background-color: #808166;
+    background-color: transparent;
   }
   .main-navigation ul li.menu-item-home {
     display: none;

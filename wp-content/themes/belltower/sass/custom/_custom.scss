@@ -471,9 +471,6 @@ h1 {margin:0;}
 	height:100%;
 	ul {
 		justify-content: space-between;
-		//padding-top:$u30navPadding;
-		//padding-bottom: $u30navPadding;
-		//$u30navPadding : clamp(1px, 2vh, 30px);
 		align-items: center;
 		li {
 			margin:0;
@@ -485,12 +482,10 @@ h1 {margin:0;}
 			&:nth-child(7) { order: 7; }
 			&.menu-item-home {
 				order:4;
-				//padding: 0 10px;
-				//width:154px;
 				span {@include bt-visually-hidden}
 				a{color:transparent;
 					min-height: 83px;
-					min-width:180px;
+					min-width: 180px;
 				}
 				a:after {display:none;}
 				.bell-1 {
@@ -1875,7 +1870,7 @@ body.blog {
 		width: 100%;
 		opacity: 0;
 		z-index: 11;
-		.page-template-belltower-home & {background-color:$color__btdarkgreen;}
+		//.page-template-belltower-home & {background-color:$color__btdarkgreen;}
 		li {
 			padding-left:5px;
 			z-index: 11;
@@ -1886,7 +1881,8 @@ body.blog {
 				color:$color__btdarkestgreen;
 				height:auto!important;
 				font-size: 1.2rem;
-				.page-template-belltower-home &{color:$color__btpurewhite;}
+				padding-left:0;
+				//.page-template-belltower-home &{color:$color__btpurewhite;}
 				&:after{display:none;}
 				&:hover {text-decoration: underline;}
 			}
@@ -1894,6 +1890,7 @@ body.blog {
 		}
 		ul {
 			position: relative;
+			padding:0 $u30navPadding;
 			left:0;
 			width:100%;
 			//padding-bottom:1em;
@@ -1901,6 +1898,7 @@ body.blog {
 			opacity: 1;
 			float:none;
 			z-index: 12;
+			background-color: transparent;
 			li {
 				padding-left:0.5em;
 				padding-top:0;
@@ -1955,7 +1953,8 @@ body.blog {
 	}
 
 	.page-template-belltower-home .main-navigation ul ul {
-		background-color: $color__btdarkgreen;
+		//background-color: $color__btdarkgreen;
+		background-color: transparent;
 	}
 
 	.main-navigation ul li.menu-item-home {display:none;}
