@@ -361,8 +361,6 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 */
 
 #masthead {
-	//view-transition-name: masthead;
-	//position: fixed;
     width: 100%;
     top: 0;
 	position:fixed; 
@@ -370,7 +368,11 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 	z-index: 10;
 	background-color:transparent;
 	transition:opacity var(--vt-duration) var(--vt-ease);
-	//transition: background-color 300ms ease-in-out;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+	will-change: transform;
 	&:after {
 		content:'';
 		position:absolute; 
@@ -382,19 +384,16 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 		height:1px;
 		background-color:$color__btblack;
 		opacity: 0;
-		//transition: opacity 300ms ease-in-out;
 		transition:opacity var(--vt-duration) var(--vt-ease);
 	}
 	.scrolled &,
-	.menu-toggled & {                           // share the rule
+	.menu-toggled & {
 		background:$color__btpurewhite;
 	}
 	.scrolled &{
-		//background-color:$color__btpurewhite;
 		&:after{opacity: 0.1;}
 	}
 	.menu-toggled &{
-		//background-color:$color__btpurewhite;
 		&:after{display:none;}
 	}
 	.page-template-belltower-home & {
@@ -472,8 +471,9 @@ h1 {margin:0;}
 	height:100%;
 	ul {
 		justify-content: space-between;
-		padding-top:$u30navPadding;
-		padding-bottom: $u30navPadding;
+		//padding-top:$u30navPadding;
+		//padding-bottom: $u30navPadding;
+		//$u30navPadding : clamp(1px, 2vh, 30px);
 		align-items: center;
 		li {
 			margin:0;
@@ -485,57 +485,71 @@ h1 {margin:0;}
 			&:nth-child(7) { order: 7; }
 			&.menu-item-home {
 				order:4;
-				padding-top:0;
-				padding-bottom: 0;
-				width:154px;
+				//padding: 0 10px;
+				//width:154px;
 				span {@include bt-visually-hidden}
-				a{color:transparent;}
+				a{color:transparent;
+					min-height: 83px;
+					min-width:180px;
+				}
 				a:after {display:none;}
 				.bell-1 {
 					fill-opacity: 0;
 					transition: fill-opacity 200ms ease-in 0s;
-				  }
-				  
-				  .bell-2 {
+				}
+				.bell-2 {
 					fill-opacity: 0;
 					transition: fill-opacity 200ms ease-in 50ms;
-				  }
-				  
-				  .bell-3 {
+				}
+				.bell-3 {
 					fill-opacity: 0;
 					transition: fill-opacity 200ms ease-in 100ms;
-				  }
-				  
-				  .bell-4 {
+				}
+				.bell-4 {
 					fill-opacity: 0;
 					transition: fill-opacity 200ms ease-in 150ms;
-				  }
-				  .cls-1:not(.bell-1):not(.bell-2):not(.bell-3):not(.bell-4) {
+				}
+				.cls-1:not(.bell-1):not(.bell-2):not(.bell-3):not(.bell-4) {
 					fill-opacity: 0;
 					transition: fill-opacity 350ms ease-in 10ms;
-				  }
+				}
 			}
 			a {
 				color: $color__btpurewhite;
-				//font-size: 1.1rem;
+				white-space: nowrap;
+				padding: $u30navPadding;
+				//opacity: 1; /* Initial opacity */
 				@extend .has-normal-font-size;
-				.scrolled &{color:$color__btblack;}
-				.page-template-belltower-home.scrolled &{color:$color__btpurewhite;}
+				transition: opacity 300ms ease, color 300ms ease; /* Animate opacity and color */
+				&.scrolled {
+					color: $color__btblack;
+				}
+				&.scrolled.page-template-belltower-home {
+					color: $color__btpurewhite;
+				}
 				&:after {
 					background-color: $color__btpurewhite;
 					@extend .bt-after;
-					.scrolled &{background-color: $color__btblack;}
-					.scrolled.page-template-belltower-home &{background-color: $color__btpurewhite;}
+					transform: translate(0, calc(-1 * (#{$u30navPadding} - 8px)));
+					opacity:0;
+					transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease; /* Include all animated properties */
+					&.scrolled {
+						background-color: $color__btblack;
+					}
+					&.scrolled.page-template-belltower-home {
+						background-color: $color__btpurewhite;
+					}
 				}
-				&:hover:after {
-					opacity:1;
-					transform: translate(0,0);
+				&:hover {
+					//opacity: 0.8;
+					&:after {
+						opacity: 0.7;
+						transform: translate(0, calc(-1 * (#{$u30navPadding} - 4px)));
+					}
 				}
 			}
 			&.home a {
-				height: 50px;
 				svg{
-					height:100%;
 					transform: translate(0, 2px);
 					fill: $color__btpurewhite;
 					transition: fill 300ms ease;
@@ -543,30 +557,70 @@ h1 {margin:0;}
 					.page-template-belltower-home.scrolled &{fill:$color__btpurewhite;}
 				}
 			}
+			&:nth-child(2) a { 
+				padding-left:0;
+				&:after {
+					width:calc(100% + #{$u30navPadding});
+            		left: calc(-1 * #{$u30navPadding});
+				}
+				
+			}
+			&:last-child a { 
+				padding-right:0;
+				&:after {
+					width:calc(100% + #{$u30navPadding});
+				}
+			}
 			&.current-menu-item > a:after {
 				opacity:1;
-				transform: translate(0,0);
+				//transform: translate(0,0);
+				transform: translate(0, calc(-1 * (#{$u30navPadding} - 4px)));
 			}
 		}
 		ul {
-			background-color:transparent;
+			//TEST
+			//left:0!important;
+			//left:calc((#{$u30navPadding} + #{$u30navPadding}));
+			//END TEST
+			//outline:1px solid yellow;
+			//background-color:transparent;
+			background: rgba($color__btdarkestgreen, 0.6);
+			//background-color: inherit;
 			width:auto;
-			padding:0 0 0.5em 0;
+			//padding:0 0 0.5em 0;
+			//padding:0 0.5em 0.5em 0.5em;
+			padding:0 calc(2 * #{$u30navPadding});
 			.scrolled &{background-color:$color__btpurewhite;}
 			.page-template-belltower-home &{background-color:$color__btdarkestgreen;}
 			.single-post &{background-color:$color__btdarkgreen;}
 			li {
-				padding-top:0.5em;
+				padding-top:0;
 				a {
 					width:auto;
 					white-space: nowrap;
-					padding: 0 1em 0 0.5em;
+					//padding: 0 1em 0 1em;
+					padding:0.5em 0;
 					&:after {
-						right:1em;
-						left:0.5em;
-						width:auto;
+						//right:1em;
+						left:0!important;
+						width:auto!important;
+						transform: translate(0, calc(-1 * (#{$u30navPadding} - 8px)));
+						//outline: 2px solid red;
+					}
+					&:hover:after {
+						transform: translate(0, calc(-1 * (#{$u30navPadding} - 4px)));
 					}
 				}
+				ul {
+					outline:1px solid red;
+					ul {
+						outline:1px solid purple;
+					}
+				}
+			}
+			ul li {
+				padding-top:0;
+				outline:1px solid black;
 			}
 		}
 	}

@@ -1369,6 +1369,11 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
   z-index: 10;
   background-color: transparent;
   transition: opacity var(--vt-duration) var(--vt-ease);
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 #masthead:after {
   content: "";
@@ -1483,8 +1488,6 @@ h1 {
 }
 .main-navigation ul {
   justify-content: space-between;
-  padding-top: clamp(1px, 2vh, 30px);
-  padding-bottom: clamp(1px, 2vh, 30px);
   align-items: center;
 }
 .main-navigation ul li {
@@ -1510,9 +1513,6 @@ h1 {
 }
 .main-navigation ul li.menu-item-home {
   order: 4;
-  padding-top: 0;
-  padding-bottom: 0;
-  width: 154px;
 }
 .main-navigation ul li.menu-item-home span {
   clip: rect(0 0 0 0);
@@ -1528,6 +1528,8 @@ h1 {
 }
 .main-navigation ul li.menu-item-home a {
   color: transparent;
+  min-height: 83px;
+  min-width: 180px;
 }
 .main-navigation ul li.menu-item-home a:after {
   display: none;
@@ -1554,31 +1556,33 @@ h1 {
 }
 .main-navigation ul li a {
   color: #FFFFFF;
+  white-space: nowrap;
+  padding: clamp(1px, 2vh, 30px);
+  transition: opacity 300ms ease, color 300ms ease; /* Animate opacity and color */
 }
-.scrolled .main-navigation ul li a {
+.main-navigation ul li a.scrolled {
   color: #231F20;
 }
-.page-template-belltower-home.scrolled .main-navigation ul li a {
+.main-navigation ul li a.scrolled.page-template-belltower-home {
   color: #FFFFFF;
 }
 .main-navigation ul li a:after {
   background-color: #FFFFFF;
+  transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 8px)));
+  opacity: 0;
+  transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease; /* Include all animated properties */
 }
-.scrolled .main-navigation ul li a:after {
+.main-navigation ul li a:after.scrolled {
   background-color: #231F20;
 }
-.scrolled.page-template-belltower-home .main-navigation ul li a:after {
+.main-navigation ul li a:after.scrolled.page-template-belltower-home {
   background-color: #FFFFFF;
 }
 .main-navigation ul li a:hover:after {
-  opacity: 1;
-  transform: translate(0, 0);
-}
-.main-navigation ul li.home a {
-  height: 50px;
+  opacity: 0.7;
+  transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 4px)));
 }
 .main-navigation ul li.home a svg {
-  height: 100%;
   transform: translate(0, 2px);
   fill: #FFFFFF;
   transition: fill 300ms ease;
@@ -1589,14 +1593,27 @@ h1 {
 .page-template-belltower-home.scrolled .main-navigation ul li.home a svg {
   fill: #FFFFFF;
 }
+.main-navigation ul li:nth-child(2) a {
+  padding-left: 0;
+}
+.main-navigation ul li:nth-child(2) a:after {
+  width: calc(100% + clamp(1px, 2vh, 30px));
+  left: calc(-1 * clamp(1px, 2vh, 30px));
+}
+.main-navigation ul li:last-child a {
+  padding-right: 0;
+}
+.main-navigation ul li:last-child a:after {
+  width: calc(100% + clamp(1px, 2vh, 30px));
+}
 .main-navigation ul li.current-menu-item > a:after {
   opacity: 1;
-  transform: translate(0, 0);
+  transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 4px)));
 }
 .main-navigation ul ul {
-  background-color: transparent;
+  background: rgba(81, 84, 65, 0.6);
   width: auto;
-  padding: 0 0 0.5em 0;
+  padding: 0 calc(2 * clamp(1px, 2vh, 30px));
 }
 .scrolled .main-navigation ul ul {
   background-color: #FFFFFF;
@@ -1608,17 +1625,30 @@ h1 {
   background-color: #808166;
 }
 .main-navigation ul ul li {
-  padding-top: 0.5em;
+  padding-top: 0;
 }
 .main-navigation ul ul li a {
   width: auto;
   white-space: nowrap;
-  padding: 0 1em 0 0.5em;
+  padding: 0.5em 0;
 }
 .main-navigation ul ul li a:after {
-  right: 1em;
-  left: 0.5em;
-  width: auto;
+  left: 0 !important;
+  width: auto !important;
+  transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 8px)));
+}
+.main-navigation ul ul li a:hover:after {
+  transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 4px)));
+}
+.main-navigation ul ul li ul {
+  outline: 1px solid red;
+}
+.main-navigation ul ul li ul ul {
+  outline: 1px solid purple;
+}
+.main-navigation ul ul ul li {
+  padding-top: 0;
+  outline: 1px solid black;
 }
 
 body.page-id-1168 #primary {
