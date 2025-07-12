@@ -38,10 +38,10 @@ html {
 }
 
 :root { 
-	--agegate-z:  99999; 
-	--masthead-height   : 0px;
-	--vt-duration       : .3s;
-	--vt-ease           : cubic-bezier(.4,0,.2,1);
+	--agegate-z : 99999; 
+	--masthead-height : 0px;
+	--vt-duration : .3s;
+	--vt-ease : cubic-bezier(.4,0,.2,1);
 }
 
 @view-transition {
@@ -367,6 +367,7 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 	inset:0 auto auto 0;
 	z-index: 10;
 	background-color:transparent;
+	//background-color: rgba(255, 255, 255, 0.10);
 	transition:opacity var(--vt-duration) var(--vt-ease);
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
@@ -463,9 +464,36 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 	}
 }
 
-.site-header-w1 {height:100%;}
+.site-header-w1 {
+	height:100%;
+	padding: clamp(0px, 3vh, 10px) 0;
+}
 
 h1 {margin:0;}
+
+body {
+	&.scrolled {
+		.main-navigation ul li a {
+			color: $color__btblack;
+		}
+	}
+	&.scrolled.page-template-belltower-home {
+		.main-navigation ul li a {
+			//color: $color__btpurewhite;
+		}
+	}
+
+	&.scrolled {
+		.main-navigation ul li a {
+			//background-color: $color__btblack;
+		}
+	}
+	&.scrolled.page-template-belltower-home {
+		.main-navigation ul li a {
+			//background-color: $color__btpurewhite;
+		}
+	}
+}
 
 .main-navigation {
 	height:100%;
@@ -513,30 +541,16 @@ h1 {margin:0;}
 				color: $color__btpurewhite;
 				white-space: nowrap;
 				padding: $u30navPadding;
-				//opacity: 1; /* Initial opacity */
 				@extend .has-normal-font-size;
-				transition: opacity 300ms ease, color 300ms ease; /* Animate opacity and color */
-				&.scrolled {
-					color: $color__btblack;
-				}
-				&.scrolled.page-template-belltower-home {
-					color: $color__btpurewhite;
-				}
+				transition: opacity 300ms ease, color 300ms ease;
 				&:after {
 					background-color: $color__btpurewhite;
 					@extend .bt-after;
 					transform: translate(0, calc(-1 * (#{$u30navPadding} - 8px)));
 					opacity:0;
-					transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease; /* Include all animated properties */
-					&.scrolled {
-						background-color: $color__btblack;
-					}
-					&.scrolled.page-template-belltower-home {
-						background-color: $color__btpurewhite;
-					}
+					transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease;
 				}
 				&:hover {
-					//opacity: 0.8;
 					&:after {
 						opacity: 0.7;
 						transform: translate(0, calc(-1 * (#{$u30navPadding} - 4px)));
@@ -544,6 +558,10 @@ h1 {margin:0;}
 				}
 			}
 			&.home a {
+				//padding: $u30navPadding;
+				padding-inline: clamp(4px, 2vw, 30px);
+				padding-block:  clamp(4px, 1vh, 20px);
+				min-height: auto;
 				svg{
 					transform: translate(0, 2px);
 					fill: $color__btpurewhite;
@@ -607,15 +625,15 @@ h1 {margin:0;}
 					}
 				}
 				ul {
-					outline:1px solid red;
+					//outline:1px solid red;
 					ul {
-						outline:1px solid purple;
+						//outline:1px solid purple;
 					}
 				}
 			}
 			ul li {
 				padding-top:0;
-				outline:1px solid black;
+				//outline:1px solid black;
 			}
 		}
 	}
@@ -1745,6 +1763,13 @@ body.blog {
 
 @media (max-width:$mobileBreakpoint) {
 
+	.btscrollbars {
+		-webkit-overflow-scrolling: touch;
+		scrollbar-gutter: stable;
+		scrollbar-color: $color__btdarkestgreen $color__btpurewhite;
+		scrollbar-width: thin;
+	}
+
 	.has-small-font-size {font-size: 0.8125rem!important;}
 	.has-regular-font-size,
 	.has-normal-font-size {font-size: $basefontsize!important;}
@@ -1871,6 +1896,7 @@ body.blog {
 		opacity: 0;
 		z-index: 11;
 		//.page-template-belltower-home & {background-color:$color__btdarkgreen;}
+		@extend .btscrollbars;
 		li {
 			padding-left:5px;
 			z-index: 11;

@@ -1477,12 +1477,16 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
 
 .site-header-w1 {
   height: 100%;
+  padding: clamp(0px, 3vh, 10px) 0;
 }
 
 h1 {
   margin: 0;
 }
 
+body.scrolled .main-navigation ul li a {
+  color: #231F20;
+}
 .main-navigation {
   height: 100%;
 }
@@ -1558,29 +1562,22 @@ h1 {
   color: #FFFFFF;
   white-space: nowrap;
   padding: clamp(1px, 2vh, 30px);
-  transition: opacity 300ms ease, color 300ms ease; /* Animate opacity and color */
-}
-.main-navigation ul li a.scrolled {
-  color: #231F20;
-}
-.main-navigation ul li a.scrolled.page-template-belltower-home {
-  color: #FFFFFF;
+  transition: opacity 300ms ease, color 300ms ease;
 }
 .main-navigation ul li a:after {
   background-color: #FFFFFF;
   transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 8px)));
   opacity: 0;
-  transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease; /* Include all animated properties */
-}
-.main-navigation ul li a:after.scrolled {
-  background-color: #231F20;
-}
-.main-navigation ul li a:after.scrolled.page-template-belltower-home {
-  background-color: #FFFFFF;
+  transition: opacity 300ms ease, transform 300ms ease, background-color 300ms ease;
 }
 .main-navigation ul li a:hover:after {
   opacity: 0.7;
   transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 4px)));
+}
+.main-navigation ul li.home a {
+  padding-inline: clamp(4px, 2vw, 30px);
+  padding-block: clamp(4px, 1vh, 20px);
+  min-height: auto;
 }
 .main-navigation ul li.home a svg {
   transform: translate(0, 2px);
@@ -1640,15 +1637,8 @@ h1 {
 .main-navigation ul ul li a:hover:after {
   transform: translate(0, calc(-1 * (clamp(1px, 2vh, 30px) - 4px)));
 }
-.main-navigation ul ul li ul {
-  outline: 1px solid red;
-}
-.main-navigation ul ul li ul ul {
-  outline: 1px solid purple;
-}
 .main-navigation ul ul ul li {
   padding-top: 0;
-  outline: 1px solid black;
 }
 
 body.page-id-1168 #primary {
@@ -2731,6 +2721,12 @@ body.blog .entry-content {
   }
 }
 @media (max-width: 600px) {
+  .btscrollbars, .main-navigation ul {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-color: #515441 #FFFFFF;
+    scrollbar-width: thin;
+  }
   .has-small-font-size {
     font-size: 0.8125rem !important;
   }
