@@ -5,6 +5,11 @@
 define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
 // END iThemes Security - Do not modify or remove this line
 
+if (php_sapi_name() === 'cli' && ! isset($_SERVER['HTTP_HOST'])) {
+    // Provide a harmless default so WP-CLI doesn't warn
+    $_SERVER['HTTP_HOST'] = 'localhost';
+}
+
 function is_local_environment() {
 	//echo 'Current HTTP_HOST: ' . $_SERVER['HTTP_HOST']; // Debugging line
 	$local_domains = ['localhost', '127.0.0.1', 'localhost:10003', '127.0.0.1:8080', 'your-local-domain.com', 'belltower.local'];
@@ -35,7 +40,7 @@ if (is_local_environment()) {
 
 	// ** MySQL settings - You can get this info from your web host ** //
 	/** The name of the database for WordPress */
-	define( 'DB_NAME', 'local' ); 
+	define( 'DB_NAME', 'sethtipt_WPQWA' ); 
 
 	/** MySQL database username */
 	define( 'DB_USER', 'root' );
@@ -76,7 +81,7 @@ if (is_local_environment()) {
 	 * You can have multiple installations in one database if you give each
 	 * a unique prefix. Only numbers, letters, and underscores please!
 	 */
-	$table_prefix = 'wp_';
+	$table_prefix = 'siH_';
 
 	define( 'WP_ENVIRONMENT_TYPE', 'local' );
 	/* That's all, stop editing! Happy publishing. */

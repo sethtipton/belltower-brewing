@@ -119,7 +119,8 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 		add_theme_support( 'disable-custom-gradients' );
 
 		$btdarkestgreen = '#515441';
-		$btdarkgreen    = '#808166';
+		// a11y fail $btdarkgreen    = '#808166';
+		$btdarkgreen    = '#585945';
 		$btblack        = '#231F20';
 		$btpink         = '#E0CDC0';
 		$btlightgreen   = '#BAB488';

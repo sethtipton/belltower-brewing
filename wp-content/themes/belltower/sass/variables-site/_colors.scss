@@ -1,12 +1,18 @@
+//Old A11Y Fails
+//$color__btdarkestgreen: #515441;
+//$color__btdarkgreen: #808166;
+//$color__btlightgreen: #BAB488;
+//
 $color__btdarkestgreen: #515441;
-$color__btdarkgreen: #808166;
-$color__btblack: #231F20;
-$color__btpink: #E0CDC0;
-$color__btlightgreen: #BAB488;
+$color__btdarkgreen: #787851;
+$color__btdarkgreen-bg: #5e5f3b;
+$color__btblack: #231f20;
+$color__btpink: #e0cdc0;
+$color__btlightgreen: #bab488;
 $color__btyellow: #b8a881;
-$color__btred: #BA583B;
-$color__btwhite: #E5E5E5;
-$color__btpurewhite: #FFFFFF;
+$color__btred: #ba583b;
+$color__btwhite: #e5e5e5;
+$color__btpurewhite: #ffffff;
 
 $color__background-body: $color__btpurewhite;
 $color__background-screen: #f1f1f1;
@@ -29,70 +35,126 @@ $color__border-button-focus: #aaa #bbb #bbb;
 $color__border-input: #ccc;
 $color__border-abbr: #666;
 
-.has-darkest-green-color {color:$color__btdarkestgreen;}
-a.has-darkest-green-color:hover {color:$color__btdarkestgreen;}
-.has-darkest-green-bg {background-color:$color__btdarkestgreen;}
+.has-darkest-green-color {
+  color: $color__btdarkestgreen;
+}
+a.has-darkest-green-color:hover {
+  color: $color__btdarkestgreen;
+}
+.has-darkest-green-bg {
+  background-color: $color__btdarkestgreen;
+}
 
-.has-dark-green-color {color:$color__btdarkgreen;}
-a.has-dark-green-color:hover {color:$color__btdarkgreen;}
-.has-dark-green-bg {background-color:$color__btdarkgreen;}
+.has-dark-green-color {
+  color: $color__btdarkgreen;
+}
+a.has-dark-green-color:hover {
+  color: $color__btdarkgreen;
+}
+.has-dark-green-bg {
+  background-color: $color__btdarkgreen-bg;
+}
 
-.has-black-color {color:$color__btblack;}
-.has-black-bg {background-color:$color__btblack;}
+.has-black-color {
+  color: $color__btblack;
+}
+.has-black-bg {
+  background-color: $color__btblack;
+}
 
-.has-pink-color {color:$color__btpink;}
-.has-pink-bg {background-color:$color__btpink;}
+.has-pink-color {
+  color: $color__btpink;
+}
+.has-pink-bg {
+  background-color: $color__btpink;
+}
 
-.has-light-green-color {color:$color__btlightgreen;}
-.has-light-green-bg {background-color:$color__btlightgreen;}
+.has-light-green-color {
+  color: $color__btlightgreen;
+}
+.has-light-green-bg {
+  background-color: $color__btlightgreen;
+}
 
-.has-yellow-color {color:$color__btyellow;}
-.has-yellow-bg {background-color:$color__btyellow;}
+.has-yellow-color {
+  color: $color__btyellow;
+}
+.has-yellow-bg {
+  background-color: $color__btyellow;
+}
 
-.has-red-color {color:$color__btred;}
-.has-red-bg {background-color:$color__btred;}
+.has-red-color {
+  color: $color__btred;
+}
+.has-red-bg {
+  background-color: $color__btred;
+}
 
-.has-pure-white-color {color:$color__btpurewhite;}
-.has-pure-white-bg {background-color:$color__btpurewhite;}
+.has-pure-white-color {
+  color: $color__btpurewhite;
+}
+.has-pure-white-bg {
+  background-color: $color__btpurewhite;
+}
 
-.has-white-color {color:$color__btwhite!important;}
-.has-white-bg {background-color:$color__btwhite;}
+.has-white-color {
+  color: $color__btwhite !important;
+}
+.has-white-bg {
+  background-color: $color__btwhite;
+}
 
 .entry-header {
+  position: relative;
+  h1 {
     position: relative;
-    h1 {
-        position: relative;
-        z-index: 3;
-    }
-    &:before {
-        content:'';
-        background-image: inherit;
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-        width:100%;
-        top:0;
-        bottom:0;
-        position: absolute;
-        z-index: 1;
-        filter: grayscale(100%);
-    }
-    &.none:before {filter: none;}
-	&:after {
-        content:'';
-        width:100%;
-        top:0;
-        bottom:0;
-        position: absolute;
-        z-index: 2;
-        opacity: 1;
-        mix-blend-mode: multiply;
-	}
-	&.black:after  {background-color:$color__btblack;}
-	&.darkgreen:after {background-color:$color__btdarkgreen;}
-	&.lightgreen:after {background-color:$color__btlightgreen;}
-	&.pink:after {background-color:$color__btpink;}
-	&.red:after {background-color:$color__btred;}
-	&.white:after {background-color:$color__btwhite;}
-	&.purewhite:after {background-color:$color__btpurewhite;}
+    z-index: 3;
+  }
+  &:before {
+    content: "";
+    background-image: inherit;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    z-index: 1;
+    filter: grayscale(100%);
+  }
+  &.none:before {
+    filter: none;
+  }
+  &:after {
+    content: "";
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    z-index: 2;
+    opacity: 1;
+    mix-blend-mode: multiply;
+  }
+  &.black:after {
+    background-color: $color__btblack;
+  }
+  &.darkgreen:after {
+    background-color: $color__btdarkgreen-bg;
+  }
+  &.lightgreen:after {
+    background-color: $color__btlightgreen;
+  }
+  &.pink:after {
+    background-color: $color__btpink;
+  }
+  &.red:after {
+    background-color: $color__btred;
+  }
+  &.white:after {
+    background-color: $color__btwhite;
+  }
+  &.purewhite:after {
+    background-color: $color__btpurewhite;
+  }
 }
