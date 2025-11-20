@@ -2051,6 +2051,22 @@ a.googlecal:visited {
   margin-top: 0 !important;
 }
 
+.marginbottom1 {
+  margin-bottom: 1em !important;
+}
+
+.marginbottom2 {
+  margin-bottom: em !important;
+}
+
+.margintop1 {
+  margin-top: 1em !important;
+}
+
+.margintop2 {
+  margin-top: 2em !important;
+}
+
 .draftlist h2 {
   width: 100%;
   text-align: center;
