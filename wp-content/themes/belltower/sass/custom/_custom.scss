@@ -1125,6 +1125,14 @@ a.googlecal {
   z-index: 1;
 }
 
+.nomarginbottom {
+  margin-bottom: 0 !important;
+}
+
+.nomargintop {
+  margin-top: 0 !important;
+}
+
 .draftlist {
   h2 {
     @extend .has-large-font-size;

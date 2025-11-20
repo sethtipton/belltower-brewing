@@ -2043,6 +2043,14 @@ a.googlecal:visited {
   z-index: 1;
 }
 
+.nomarginbottom {
+  margin-bottom: 0 !important;
+}
+
+.nomargintop {
+  margin-top: 0 !important;
+}
+
 .draftlist h2 {
   width: 100%;
   text-align: center;
