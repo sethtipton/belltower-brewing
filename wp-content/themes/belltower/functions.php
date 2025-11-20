@@ -406,35 +406,14 @@ add_shortcode( 'partners_grid', function() {
 
 	while ( $query->have_posts() ) {
 		$query->the_post();
-
-		$display_name = get_field( 'name' ) ?: get_the_title();
-		$logo_field   = get_field( 'logo' );
+		$display_name = get_the_title();
 		$website_url  = esc_url( get_field( 'website' ) );
-
-		if ( is_array( $logo_field ) && ! empty( $logo_field['url'] ) ) {
-			$logo_url = esc_url( $logo_field['url'] );
-		} elseif ( is_string( $logo_field ) && filter_var( $logo_field, FILTER_VALIDATE_URL ) ) {
-			$logo_url = esc_url( $logo_field );
-		} elseif ( is_numeric( $logo_field ) ) {
-			$logo_url = esc_url( wp_get_attachment_image_url( $logo_field, 'full' ) );
-		} else {
-			$logo_url = '';
-		}
-
 		$html .= '<div class="partner">';
-		$html .= '<div class="partner-overlay">';
-		$html .= '<h3><a href="' . $website_url . '" target="_blank" rel="noopener">'
-		       . esc_html( $display_name ) .
-		       '</a></h3>';
-		$html .= '</div>';
-
-		$html .= '<a href="' . $website_url . '" target="_blank" rel="noopener">';
-		if ( $logo_url ) {
-			$html .= '<img src="' . $logo_url . '" alt="' . esc_attr( $display_name ) . ' logo">';
+		if ( $website_url ) {
+			$html .= '<h3><a href="' . $website_url . '" target="_blank" rel="noopener">' . esc_html( $display_name ) . '</a></h3>';
 		} else {
-			$html .= '<span class="partner-placeholder">' . esc_html( $display_name ) . '</span>';
+			$html .= '<h3>' . esc_html( $display_name ) . '</h3>';
 		}
-		$html .= '</a>';
 		$html .= '</div>';
 	}
 
@@ -443,6 +422,7 @@ add_shortcode( 'partners_grid', function() {
 
 	return $html;
 } );
+
 
 add_filter( 'cmplz_autofocus', '__return_false' );
 

@@ -1015,8 +1015,6 @@ object {
 
 .has-regular-font-size,
 .has-normal-font-size,
-.partners-grid .partner .partner-overlay .partner-social,
-.partners-grid .partner .partner-overlay h3,
 .brewery-menu .description,
 .brewery-menu .add,
 .brewery-menu .tags,
@@ -2539,9 +2537,6 @@ body.blog .entry-content {
   flex-direction: row;
   gap: 2em;
 }
-.brewery-legend + .partners-grid {
-  margin-top: 2em;
-}
 .brewery-legend > :first-child {
   flex: 1 1 auto;
 }
@@ -2559,112 +2554,13 @@ body.blog .entry-content {
     flex-direction: column;
   }
 }
-/*
-
-.partners-grid {
-	display: grid;
-	//grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-	grid-template-columns: repeat(4, 1fr);
-	gap: 2rem;
-	text-align: center;
-	.partner {
-		padding: 0 1em;
-		outline:1px solid $color__btdarkestgreen;
-	}
-	.partner img {
-		max-width: 100%;
-		height: auto;
-		border-radius: 4px;
-	}
-	.partner h3 {
-		margin: .5rem 0 0.25rem;
-		font-size: 1rem;
-		a {
-			color:$color__btdarkestgreen;
-		}
-	}
-	.partner-social {
-		font-size: .875rem;
-		text-decoration: none;
-		a {
-			color:$color__btdarkestgreen;
-		}
-	}
+.partners-grid .partner h3 a {
+  color: #787851;
 }
-*/
-.partners-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
-  padding: 2rem 1rem;
-  text-align: center;
-}
-.partners-grid .partner {
-  position: relative;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.partners-grid .partner:hover, .partners-grid .partner:focus-within {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-.partners-grid .partner > a {
-  display: block;
-  height: 250px;
-  overflow: hidden;
-}
-.partners-grid .partner > a img {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  transition: transform 200ms ease;
-}
-.partners-grid .partner > a img:hover {
-  transform: scale(1.01);
-}
-.partners-grid .partner .partner-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(81, 84, 65, 0.6);
-  color: #ffffff;
-  padding: 0.5rem 1rem;
-  z-index: 2;
-}
-.partners-grid .partner .partner-overlay h3 {
-  margin: 0 0 0.25rem;
-}
-.partners-grid .partner .partner-overlay h3 a {
-  color: #ffffff;
-  text-decoration: none;
-}
-.partners-grid .partner .partner-overlay h3 a:hover {
-  text-decoration: underline;
-}
-.partners-grid .partner .partner-overlay .partner-social {
-  margin: 0;
-  font-size: 0.875rem;
-}
-.partners-grid .partner .partner-overlay .partner-social a {
-  color: #ffffff;
-  text-decoration: underline;
+.partners-grid .partner h3 a:hover {
+  color: #515441;
 }
 
-@keyframes fadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .partners-grid .partner {
-    animation: none;
-    transition: none;
-  }
-}
 @media (max-width: 1174px) {
   .cwidth, .btpost-page .post-thumbnail,
   .btpost-page .entry-content,
@@ -2688,9 +2584,7 @@ body.blog .entry-content {
   .popup-container p,
   .brewery-menu .tags,
   .brewery-menu .add,
-  .brewery-menu .description,
-  .partners-grid .partner .partner-overlay h3,
-  .partners-grid .partner .partner-overlay .partner-social {
+  .brewery-menu .description {
     font-size: 1.1rem !important;
   }
   .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
@@ -2782,9 +2676,7 @@ body.blog .entry-content {
   .popup-container p,
   .brewery-menu .tags,
   .brewery-menu .add,
-  .brewery-menu .description,
-  .partners-grid .partner .partner-overlay h3,
-  .partners-grid .partner .partner-overlay .partner-social {
+  .brewery-menu .description {
     font-size: 1.1rem !important;
   }
   .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
