@@ -2554,6 +2554,9 @@ body.blog .entry-content {
     flex-direction: column;
   }
 }
+.partners-grid {
+  text-align: center;
+}
 .partners-grid .partner h3 a {
   color: #787851;
 }
