@@ -2059,12 +2059,28 @@ a.googlecal:visited {
   margin-bottom: 2em !important;
 }
 
+.marginbottom3 {
+  margin-bottom: 3em !important;
+}
+
+.marginbottom4 {
+  margin-bottom: 4em !important;
+}
+
 .margintop1 {
   margin-top: 1em !important;
 }
 
 .margintop2 {
   margin-top: 2em !important;
+}
+
+.margintop3 {
+  margin-top: 3em !important;
+}
+
+.margintop4 {
+  margin-top: 4em !important;
 }
 
 .draftlist h2 {
