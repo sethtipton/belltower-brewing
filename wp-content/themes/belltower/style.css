@@ -2437,6 +2437,7 @@ body.blog .entry-content {
   gap: 0.5em;
   padding-bottom: 2em;
   margin-bottom: 0;
+  justify-content: center;
 }
 .menu-filters > h2 {
   text-align: left;
