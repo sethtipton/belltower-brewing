@@ -390,7 +390,8 @@ add_action( 'init', function() {
 	] );
 } );
 
-add_shortcode( 'partners_grid', function() {
+add_shortcode( 'partners_grid', function( ) {
+
 	$query = new WP_Query( [
 		'post_type'      => 'partner',
 		'posts_per_page' => -1,
@@ -402,26 +403,46 @@ add_shortcode( 'partners_grid', function() {
 		return '<p>No partners found.</p>';
 	}
 
-	$html = '<div class="partners-grid">';
+	// unique id for accessible labeling
+	$label_id = 'partners-' . esc_attr( uniqid() );
+	$html  = '<section class="partners-grid" aria-labelledby="' . $label_id . '">';
+	$html .= '<ul class="partners-list" role="list">';
 
 	while ( $query->have_posts() ) {
 		$query->the_post();
 		$display_name = get_the_title();
-		$website_url  = esc_url( get_field( 'website' ) );
-		$html .= '<div class="partner">';
+		$website_url  = get_field( 'website' );
+		//$location     = get_field( 'location' ); // optional ACF field if you have it
+		$label_parts = array_filter( [
+			$display_name ? wp_strip_all_tags( $display_name ) : '',
+			//$location ? wp_strip_all_tags( $location ) : '',
+		] );
+		$label = implode( ' — ', $label_parts );
+		$html .= '<li class="partner" role="listitem">';
 		if ( $website_url ) {
-			$html .= '<h3><a href="' . $website_url . '" target="_blank" rel="noopener">' . esc_html( $display_name ) . '</a></h3>';
+			$html .= '<a class="partner__link" href="' . esc_url( $website_url ) . '" target="_blank" rel="noopener noreferrer">'
+			       . esc_html( $label )
+			       . '<span class="screen-reader-text"> — opens in a new tab</span>'
+
+				   . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Open in new window">
+						<path data-anim d="M3 3h18v18H3z M14 3h7v7 M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+						</svg>'
+
+			       . '</a>';
 		} else {
-			$html .= '<h3>' . esc_html( $display_name ) . '</h3>';
+			$html .= '<span class="partner__name">' . esc_html( $label ) . '</span>';
 		}
-		$html .= '</div>';
+		$html .= '</li>';
 	}
 
 	wp_reset_postdata();
-	$html .= '</div>';
+
+	$html .= '</ul>';
+	$html .= '</section>';
 
 	return $html;
 } );
+
 
 
 add_filter( 'cmplz_autofocus', '__return_false' );

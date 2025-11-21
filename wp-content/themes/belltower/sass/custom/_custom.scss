@@ -7,6 +7,7 @@ $u30navPadding: clamp(1px, 2vh, 30px);
 $u30txtPadding1: clamp(10px, 2vh, 20px);
 $btcmpPadding1: clamp(10px, 10vh, 80px);
 $btcmpPadding2: clamp(10px, 8vh, 50px);
+$btsiteBorderRadius: 3px;
 
 .has-small-font-size {
   font-size: 0.8125rem !important;
@@ -39,6 +40,25 @@ $btcmpPadding2: clamp(10px, 8vh, 50px);
   border: 0;
   margin: -1px;
   padding: 0;
+}
+
+%bt-pill-link {
+  padding: 0.6rem 1rem;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: $btsiteBorderRadius;
+  outline-offset: 0px;
+  transition: transform 0.12s ease, outline-color 0.12s ease, color 0.12s ease;
+  &:focus-visible,
+  &:focus {
+    transform: translateY(-1px);
+    outline: none;
+  }
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 
 html {
@@ -457,7 +477,7 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
   width: 44px;
   height: 44px;
   text-indent: -9999px;
-  border-radius: 4px;
+  border-radius: $btsiteBorderRadius;
   background-color: transparent;
   border: none;
   transition: background-color 200ms ease;
@@ -1042,19 +1062,14 @@ a.googlecal {
 }
 
 .wp-block-button__link {
-  color: #fff;
+  @extend %bt-pill-link;
   background-color: $color__btdarkestgreen;
-  border-radius: 9999px;
   box-shadow: none;
-  text-decoration: none;
-  padding: calc(0.667em + 2px) calc(1.333em + 2px);
-  @extend .has-medium-font-size;
-  line-height: 1.5;
   &:visited {
-    color: $color__btpurewhite;
+    color: $color__btwhite;
   }
   &:hover {
-    color: $color__btyellow;
+    color: inherit;
   }
 }
 
@@ -1064,7 +1079,7 @@ a.googlecal {
     @extend .has-medium-font-size;
   }
   .wp-block-file__button {
-    border-radius: 3px;
+    @extend %bt-pill-link;
     color: $color__btpurewhite;
     background-color: $color__btdarkgreen;
     @extend .has-medium-font-size;
@@ -1530,24 +1545,78 @@ body.blog {
   & > h2 {
     text-align: left;
   }
-  button {
-    padding: 0.5em 1em;
-    background: $color__btpurewhite;
-    border: 1px solid $color__btdarkestgreen;
-    border-radius: 4px;
-    font: inherit;
-    cursor: pointer;
-    transition: background 200ms ease-in-out, border-color 200ms ease-in-out;
 
-    &[aria-pressed="true"] {
-      background: $color__btblack;
-      color: white;
-      border-color: darken($color__btblack, 10%);
+  .partner__link {
+    @extend %bt-pill-link;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 85%;
+    background-color: $color__btwhite;
+    color: $color__btdarkestgreen;
+    border: 1px solid $color__btdarkestgreen;
+    svg {
+      height: 1.25rem; // or whatever fits
+      width: auto;
+      display: block;
+      transition: transform 0.12s ease, scale 0.12s ease;
+      scale: (0.8);
+    }
+    &:focus-visible,
+    &:focus,
+    &:hover {
+      svg {
+        transform: translate(2px, -2px) scale(0.9);
+      }
+    }
+    // class toggled by JS when pointer/focus enters
+    &.is-hovering {
+      svg {
+        [data-anim] {
+          stroke: $color__btred; // change color while animating / hovered
+          animation: draw 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+        }
+      }
     }
 
-    &:focus {
-      outline: 3px solid lighten($color__btblack, 40%);
-      outline-offset: 2px;
+    // class toggled by JS when pointer/focus leaves to run reverse animation
+    &.is-unhovering {
+      svg {
+        [data-anim] {
+          stroke: $color__btdarkestgreen; // revert color while reversing
+          animation: erase 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+        }
+      }
+    }
+  } // .partner__link
+
+  button {
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+    padding: 0.6rem 1rem;
+    background: $color__btwhite;
+    border: 1px solid $color__btdarkestgreen;
+    border-radius: $btsiteBorderRadius;
+    color: $color__btdarkestgreen;
+    cursor: pointer;
+    transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-1px);
+    }
+    &[aria-pressed="true"] {
+      background: $color__btdarkestgreen;
+      color: $color__btwhite;
+      border-color: $color__btdarkestgreen;
+      transform: translateY(-1px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        transition: none;
+        transform: translateX(-50%) translateY(0) scaleY(1);
+        opacity: 1;
+      }
     }
   }
 }
@@ -1728,13 +1797,80 @@ body.blog {
 
 .partners-grid {
   text-align: center;
+  .partners-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 1.1rem;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
   .partner {
-    h3 a {
-      color: $color__btdarkgreen;
+    text-align: center;
+    margin: 0;
+    .partner__link {
+      @extend %bt-pill-link;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      min-width: 85%;
+      background-color: $color__btwhite;
+      color: $color__btdarkestgreen;
+      border: 1px solid $color__btdarkestgreen;
+      svg {
+        height: 1.25rem; // or whatever fits
+        width: auto;
+        display: block;
+        transition: transform 0.12s ease, scale 0.12s ease;
+        scale: (0.8);
+      }
+      &:focus-visible,
+      &:focus,
       &:hover {
-        color: $color__btdarkestgreen;
+        svg {
+          transform: translate(2px, -2px) scale(0.9);
+        }
+      }
+    } // .partner__link
+  } // .partner
+
+  // accessibility: respect prefers-reduced-motion
+  @media (prefers-reduced-motion: reduce) {
+    .partner__link {
+      svg [data-anim] {
+        transition: none !important;
+        animation: none !important;
+        stroke-dashoffset: 0 !important;
       }
     }
+  }
+}
+
+@media (max-width: $mobileBreakpoint) {
+  .partners-grid .partners-list {
+    gap: 0.8rem;
+  }
+}
+
+/* keyframes use the CSS variable --len (injected per-path by JS) */
+@keyframes draw {
+  from {
+    stroke-dashoffset: var(--len);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes erase {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--len);
   }
 }
 

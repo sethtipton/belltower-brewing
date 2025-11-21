@@ -41,75 +41,75 @@ Nicolas Gallagher and Jonathan Neal https://necolas.github.io/normalize.css/
 	## Galleries
 --------------------------------------------------------------*/
 .has-darkest-green-color {
-  color: #515441;
+  color: #515441 !important;
 }
 
 a.has-darkest-green-color:hover {
-  color: #515441;
+  color: #515441 !important;
 }
 
 .has-darkest-green-bg {
-  background-color: #515441;
+  background-color: #515441 !important;
 }
 
 .has-dark-green-color {
-  color: #787851;
+  color: #787851 !important;
 }
 
 a.has-dark-green-color:hover {
-  color: #787851;
+  color: #787851 !important;
 }
 
 .has-dark-green-bg {
-  background-color: #5e5f3b;
+  background-color: #5e5f3b !important;
 }
 
 .has-black-color {
-  color: #231f20;
+  color: #231f20 !important;
 }
 
 .has-black-bg {
-  background-color: #231f20;
+  background-color: #231f20 !important;
 }
 
 .has-pink-color {
-  color: #e0cdc0;
+  color: #e0cdc0 !important;
 }
 
 .has-pink-bg {
-  background-color: #e0cdc0;
+  background-color: #e0cdc0 !important;
 }
 
 .has-light-green-color {
-  color: #bab488;
+  color: #bab488 !important;
 }
 
 .has-light-green-bg {
-  background-color: #bab488;
+  background-color: #bab488 !important;
 }
 
 .has-yellow-color {
-  color: #b8a881;
+  color: #b8a881 !important;
 }
 
 .has-yellow-bg {
-  background-color: #b8a881;
+  background-color: #b8a881 !important;
 }
 
 .has-red-color {
-  color: #ba583b;
+  color: #ba583b !important;
 }
 
 .has-red-bg {
-  background-color: #ba583b;
+  background-color: #ba583b !important;
 }
 
 .has-pure-white-color {
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .has-pure-white-bg {
-  background-color: #ffffff;
+  background-color: #ffffff !important;
 }
 
 .has-white-color {
@@ -117,7 +117,7 @@ a.has-dark-green-color:hover {
 }
 
 .has-white-bg {
-  background-color: #e5e5e5;
+  background-color: #e5e5e5 !important;
 }
 
 .entry-header {
@@ -1025,7 +1025,7 @@ object {
   font-size: 1.1rem !important;
 }
 
-.has-medium-font-size, .brewery-menu .title-price .price, .brewery-menu .title-price h3, .events-feed article .event_time, .events-feed article .event_date, .events-feed article .event_title h2, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .wp-block-button__link, .footerw1 strong, .btpost-page .post-navigation .nav-subtitle {
+.has-medium-font-size, .brewery-menu .title-price .price, .brewery-menu .title-price h3, .events-feed article .event_time, .events-feed article .event_date, .events-feed article .event_title h2, .popup-btn, .draftlistw1 strong, .visitus strong + a, .visitus strong + span, .visitus strong, .wp-block-file .wp-block-file__button, .wp-block-file a, .footerw1 strong, .btpost-page .post-navigation .nav-subtitle {
   font-size: 1.4rem !important;
 }
 
@@ -1042,6 +1042,24 @@ h2 {
 
 .has-huge-font-size {
   font-size: 2.5rem !important;
+}
+
+.partners-grid .partner .partner__link, .menu-filters .partner__link, .wp-block-file .wp-block-file__button, .wp-block-button__link {
+  padding: 0.6rem 1rem;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 3px;
+  outline-offset: 0px;
+  transition: transform 0.12s ease, outline-color 0.12s ease, color 0.12s ease;
+}
+.partners-grid .partner .partner__link:focus-visible, .menu-filters .partner__link:focus-visible, .wp-block-file .wp-block-file__button:focus-visible, .wp-block-button__link:focus-visible, .partners-grid .partner .partner__link:focus, .menu-filters .partner__link:focus, .wp-block-file .wp-block-file__button:focus, .wp-block-button__link:focus {
+  transform: translateY(-1px);
+  outline: none;
+}
+.partners-grid .partner .partner__link:hover, .menu-filters .partner__link:hover, .wp-block-file .wp-block-file__button:hover, .wp-block-button__link:hover {
+  transform: translateY(-1px);
 }
 
 html.banner-present .entry-header {
@@ -1418,7 +1436,7 @@ body[data-vt="scrolled"] ::view-transition-new(masthead) {
   width: 44px;
   height: 44px;
   text-indent: -9999px;
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: transparent;
   border: none;
   transition: background-color 200ms ease;
@@ -1975,26 +1993,20 @@ a.googlecal:visited {
 }
 
 .wp-block-button__link {
-  color: #fff;
   background-color: #515441;
-  border-radius: 9999px;
   box-shadow: none;
-  text-decoration: none;
-  padding: calc(0.667em + 2px) calc(1.333em + 2px);
-  line-height: 1.5;
 }
 .wp-block-button__link:visited {
-  color: #ffffff;
+  color: #e5e5e5;
 }
 .wp-block-button__link:hover {
-  color: #b8a881;
+  color: inherit;
 }
 
 .wp-block-file a {
   color: #787851;
 }
 .wp-block-file .wp-block-file__button {
-  border-radius: 3px;
   color: #ffffff;
   background-color: #787851;
 }
@@ -2429,23 +2441,60 @@ body.blog .entry-content {
 .menu-filters > h2 {
   text-align: left;
 }
-.menu-filters button {
-  padding: 0.5em 1em;
-  background: #ffffff;
+.menu-filters .partner__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 85%;
+  background-color: #e5e5e5;
+  color: #515441;
   border: 1px solid #515441;
-  border-radius: 4px;
-  font: inherit;
+}
+.menu-filters .partner__link svg {
+  height: 1.25rem;
+  width: auto;
+  display: block;
+  transition: transform 0.12s ease, scale 0.12s ease;
+  scale: 0.8;
+}
+.menu-filters .partner__link:focus-visible svg, .menu-filters .partner__link:focus svg, .menu-filters .partner__link:hover svg {
+  transform: translate(2px, -2px) scale(0.9);
+}
+.menu-filters .partner__link.is-hovering svg [data-anim] {
+  stroke: #ba583b;
+  animation: draw 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.menu-filters .partner__link.is-unhovering svg [data-anim] {
+  stroke: #515441;
+  animation: erase 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.menu-filters button {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  padding: 0.6rem 1rem;
+  background: #e5e5e5;
+  border: 1px solid #515441;
+  border-radius: 3px;
+  color: #515441;
   cursor: pointer;
-  transition: background 200ms ease-in-out, border-color 200ms ease-in-out;
+  transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.menu-filters button:hover, .menu-filters button:focus-visible {
+  transform: translateY(-1px);
 }
 .menu-filters button[aria-pressed=true] {
-  background: #231f20;
-  color: white;
-  border-color: #080707;
+  background: #515441;
+  color: #e5e5e5;
+  border-color: #515441;
+  transform: translateY(-1px);
 }
-.menu-filters button:focus {
-  outline: 3px solid #8e8083;
-  outline-offset: 2px;
+@media (prefers-reduced-motion: reduce) {
+  .menu-filters button::after {
+    transition: none;
+    transform: translateX(-50%) translateY(0) scaleY(1);
+    opacity: 1;
+  }
 }
 
 .brewery-menu {
@@ -2597,13 +2646,70 @@ body.blog .entry-content {
 .partners-grid {
   text-align: center;
 }
-.partners-grid .partner h3 a {
-  color: #787851;
+.partners-grid .partners-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.1rem;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
-.partners-grid .partner h3 a:hover {
+.partners-grid .partner {
+  text-align: center;
+  margin: 0;
+}
+.partners-grid .partner .partner__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 85%;
+  background-color: #e5e5e5;
   color: #515441;
+  border: 1px solid #515441;
+}
+.partners-grid .partner .partner__link svg {
+  height: 1.25rem;
+  width: auto;
+  display: block;
+  transition: transform 0.12s ease, scale 0.12s ease;
+  scale: 0.8;
+}
+.partners-grid .partner .partner__link:focus-visible svg, .partners-grid .partner .partner__link:focus svg, .partners-grid .partner .partner__link:hover svg {
+  transform: translate(2px, -2px) scale(0.9);
+}
+@media (prefers-reduced-motion: reduce) {
+  .partners-grid .partner__link svg [data-anim] {
+    transition: none !important;
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }
 
+@media (max-width: 600px) {
+  .partners-grid .partners-list {
+    gap: 0.8rem;
+  }
+}
+/* keyframes use the CSS variable --len (injected per-path by JS) */
+@keyframes draw {
+  from {
+    stroke-dashoffset: var(--len);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes erase {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--len);
+  }
+}
 @media (max-width: 1174px) {
   .cwidth, .btpost-page .post-thumbnail,
   .btpost-page .entry-content,
@@ -2630,7 +2736,7 @@ body.blog .entry-content {
   .brewery-menu .description {
     font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
     font-size: 1.25rem !important;
   }
   .has-large-font-size, h2 span,
@@ -2722,7 +2828,7 @@ body.blog .entry-content {
   .brewery-menu .description {
     font-size: 1.1rem !important;
   }
-  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-button__link, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
+  .has-medium-font-size, .btpost-page .post-navigation .nav-subtitle, .footerw1 strong, .wp-block-file a, .wp-block-file .wp-block-file__button, .visitus strong, .visitus strong + span, .visitus strong + a, .draftlistw1 strong, .popup-btn, .events-feed article .event_title h2, .events-feed article .event_date, .events-feed article .event_time, .brewery-menu .title-price h3, .brewery-menu .title-price .price {
     font-size: 1.25rem !important;
   }
   .has-large-font-size, h2 span,
