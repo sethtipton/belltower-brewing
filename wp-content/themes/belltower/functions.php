@@ -390,7 +390,7 @@ add_action( 'init', function() {
 	] );
 } );
 
-add_shortcode( 'partners_grid', function( ) {
+add_shortcode( 'partners_grid', function() {
 
 	$query = new WP_Query( [
 		'post_type'      => 'partner',
@@ -412,25 +412,37 @@ add_shortcode( 'partners_grid', function( ) {
 		$query->the_post();
 		$display_name = get_the_title();
 		$website_url  = get_field( 'website' );
-		//$location     = get_field( 'location' ); // optional ACF field if you have it
+
 		$label_parts = array_filter( [
 			$display_name ? wp_strip_all_tags( $display_name ) : '',
-			//$location ? wp_strip_all_tags( $location ) : '',
 		] );
 		$label = implode( ' — ', $label_parts );
+
+		// Build HTML-safe label with part-after-dash wrapped in a span.
+		// This handles en-dash (U+2013), em-dash (U+2014) and regular hyphen.
+		$label_html = esc_html( $label ); // fallback
+		if ( preg_match( '/[\x{2013}\x{2014}-]/u', $label ) ) {
+			$parts = preg_split( '/\s*[\x{2013}\x{2014}-]\s*/u', $label, 2 );
+			$before = isset( $parts[0] ) ? $parts[0] : '';
+			$after  = isset( $parts[1] ) ? $parts[1] : '';
+
+			// keep the visible dash outside the location span (you can move it inside if you prefer)
+			$label_html = esc_html( $before )
+			            . ' <span class="partner__sep" aria-hidden="true">–</span> '
+			            . '<span class="partner__location">' . esc_html( $after ) . '</span>';
+		}
+
 		$html .= '<li class="partner" role="listitem">';
 		if ( $website_url ) {
 			$html .= '<a class="partner__link" href="' . esc_url( $website_url ) . '" target="_blank" rel="noopener noreferrer">'
-			       . esc_html( $label )
+			       . $label_html
 			       . '<span class="screen-reader-text"> — opens in a new tab</span>'
-
 				   . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Open in new window">
 						<path data-anim d="M3 3h18v18H3z M14 3h7v7 M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 						</svg>'
-
 			       . '</a>';
 		} else {
-			$html .= '<span class="partner__name">' . esc_html( $label ) . '</span>';
+			$html .= '<span class="partner__name">' . $label_html . '</span>';
 		}
 		$html .= '</li>';
 	}
@@ -442,6 +454,7 @@ add_shortcode( 'partners_grid', function( ) {
 
 	return $html;
 } );
+
 
 
 

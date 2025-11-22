@@ -1603,7 +1603,6 @@ body.blog {
   & > h2 {
     text-align: left;
   }
-
   .partner__link {
     @extend %bt-pill-link;
     display: inline-flex;
@@ -1870,10 +1869,14 @@ body.blog {
   .partner {
     text-align: center;
     margin: 0;
+    .partner__location,
+    .partner__sep {
+      font-size: 1rem;
+    }
     .partner__link {
       @extend %bt-pill-link;
       display: inline-flex;
-      align-items: center;
+      align-items: baseline;
       gap: 0.28rem;
       min-width: 85%;
       background-color: $color__btwhite;

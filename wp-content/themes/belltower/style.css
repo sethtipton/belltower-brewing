@@ -2718,9 +2718,13 @@ body.blog .entry-content {
   text-align: center;
   margin: 0;
 }
+.partners-grid .partner .partner__location,
+.partners-grid .partner .partner__sep {
+  font-size: 1rem;
+}
 .partners-grid .partner .partner__link {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.28rem;
   min-width: 85%;
   background-color: #e5e5e5;
