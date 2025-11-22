@@ -766,18 +766,20 @@ body.page-id-1168 .fullheightimg {
 
 .footerw1 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: minmax(0, 1fr) 0.5fr 0.5fr auto;
   gap: 2em;
-  padding-block: 8vh;
+  //padding-block: 8vh;
+  padding: $btcmpPadding1 0;
   a {
     color: $color__btpurewhite;
     text-decoration: none;
     display: inline-block;
     position: relative;
-    &.femail {
+    &.femail,
+    .cta {
       text-decoration: underline;
     }
-    &:not(.femail)::after {
+    &:not(.femail, .cta)::after {
       @extend .bt-after;
       background: $color__btpurewhite;
       opacity: 0;
@@ -786,7 +788,7 @@ body.page-id-1168 .fullheightimg {
       transition: opacity 300ms ease, transform 300ms ease,
         background-color 300ms ease;
     }
-    &:not(.femail):hover::after {
+    &:not(.femail, .cta):hover::after {
       //&:not(.femail):focus-visible::after {
       opacity: 0.7;
       transform: translate(0, 2px);
@@ -796,13 +798,68 @@ body.page-id-1168 .fullheightimg {
   p {
     margin: 0;
   }
-  strong {
+  strong,
+  h3 {
     color: $color__btpurewhite;
     display: block;
     @extend .has-medium-font-size;
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+  address {
+    font-style: normal;
+    margin-bottom: 0;
+    a {
+      margin: 0 0 $u30txtPadding1 0;
+    }
+  }
+  .footer-ctas {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    a {
+      margin: 0 0 $u30txtPadding1 0;
+    }
   }
   .fcontact {
     margin-top: 5vh;
+  }
+}
+
+.cta {
+  @extend %bt-pill-link;
+  border: 1px solid transparent;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 10ch;
+  &--solid {
+    background: inherit;
+    color: inherit;
+    border-color: inherit;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03) inset;
+    &:hover {
+      filter: brightness(0.98);
+    }
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  &--outline {
+    background: transparent;
+    color: inherit;
+    border-color: inherit;
+    &:hover {
+      background-color: inherit;
+    }
+  }
+  &--ghost {
+    background: transparent;
+    color: inherit;
+    border-color: inherit;
+    border: 1px dashed;
+    &:hover {
+      background-color: inherit;
+    }
   }
 }
 
@@ -1910,6 +1967,9 @@ body.blog {
 }
 
 @media (max-width: 900px) {
+  .footerw1 .footer-ctas {
+    align-items: anchor-center;
+  }
   .footerw1 {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto auto;
@@ -1929,6 +1989,7 @@ body.blog {
     .footerc4 {
       grid-row: 3 / 3;
       grid-column: 1 / 3;
+      text-align: center;
     }
   }
 }

@@ -1,5 +1,7 @@
 <?php
 
+define( 'ITSEC_ENCRYPTION_KEY', 'YS53byk5QXJVSUM7MzFsZ1QwRGxpc0hlbnJ6NHgmYmk/MS14MGFWNip0IUt8M1R2cm5sWDRNayVXbiAkelVnLw==' );
+
 // BEGIN iThemes Security - Do not modify or remove this line
 // iThemes Security Config Details: 2
 define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
