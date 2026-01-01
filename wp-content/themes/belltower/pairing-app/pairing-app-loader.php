@@ -17,20 +17,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 function bt_pairing_app_enqueue_assets() {
 	$theme_dir     = get_stylesheet_directory();
 	$manifest_path = null;
+	$manifest_candidates = array(
+		$theme_dir . '/pairing-app/dist/manifest.json',
+		$theme_dir . '/pairing-app/dist/.vite/manifest.json',
+	);
 	// Prefer top-level manifest; fallback to .vite/manifest if needed.
-	if ( file_exists( $theme_dir . '/pairing-app/dist/manifest.json' ) ) {
-		$manifest_path = $theme_dir . '/pairing-app/dist/manifest.json';
-	} elseif ( file_exists( $theme_dir . '/pairing-app/dist/.vite/manifest.json' ) ) {
-		$manifest_path = $theme_dir . '/pairing-app/dist/.vite/manifest.json';
+	if ( file_exists( $manifest_candidates[0] ) ) {
+		$manifest_path = $manifest_candidates[0];
+	} elseif ( file_exists( $manifest_candidates[1] ) ) {
+		$manifest_path = $manifest_candidates[1];
 	}
 	$dist_url      = get_stylesheet_directory_uri() . '/pairing-app/dist';
 
 	if ( ! file_exists( $manifest_path ) ) {
+		wp_register_script( 'bt-pairing-app-debug', '', array(), null, true );
+		wp_enqueue_script( 'bt-pairing-app-debug' );
+		wp_add_inline_script(
+			'bt-pairing-app-debug',
+			'console.warn("[pairing-app] manifest missing", ' . wp_json_encode( $manifest_candidates ) . ');',
+			'before'
+		);
 		return;
 	}
 
 	$manifest = json_decode( file_get_contents( $manifest_path ), true );
 	if ( ! $manifest ) {
+		wp_register_script( 'bt-pairing-app-debug', '', array(), null, true );
+		wp_enqueue_script( 'bt-pairing-app-debug' );
+		wp_add_inline_script(
+			'bt-pairing-app-debug',
+			'console.warn("[pairing-app] manifest unreadable", ' . wp_json_encode( $manifest_path ) . ');',
+			'before'
+		);
 		return;
 	}
 
@@ -45,6 +63,16 @@ function bt_pairing_app_enqueue_assets() {
 	if ( ! $entry ) {
 		$first = reset( $manifest );
 		$entry = $first ?: null;
+	}
+	if ( ! $entry ) {
+		wp_register_script( 'bt-pairing-app-debug', '', array(), null, true );
+		wp_enqueue_script( 'bt-pairing-app-debug' );
+		wp_add_inline_script(
+			'bt-pairing-app-debug',
+			'console.warn("[pairing-app] manifest missing entry keys", ' . wp_json_encode( array_keys( $manifest ) ) . ');',
+			'before'
+		);
+		return;
 	}
 
 	if ( $entry && isset( $entry['file'] ) ) {
@@ -81,6 +109,11 @@ function bt_pairing_app_enqueue_assets() {
 			)
 		);
 
+		wp_add_inline_script(
+			'bt-pairing-app',
+			'console.info("[pairing-app] enqueue", ' . wp_json_encode( array( 'entry' => $entry ) ) . ');',
+			'before'
+		);
 		wp_enqueue_script( 'bt-pairing-app' );
 	}
 }
@@ -91,6 +124,6 @@ add_action( 'wp_enqueue_scripts', 'bt_pairing_app_enqueue_assets' );
  */
 function bt_pairing_app_shortcode( $atts = array() ) {
 	bt_pairing_app_enqueue_assets();
-	return '<div id="pairing-app-root" aria-live="polite"></div>';
+	return '<div id="pairing-app-root" aria-live="polite"></div><script>console.info("[pairing-app] shortcode rendered", { root: !!document.getElementById("pairing-app-root") });</script>';
 }
 add_shortcode( 'pairing_app', 'bt_pairing_app_shortcode' );
