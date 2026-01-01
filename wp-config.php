@@ -7,6 +7,24 @@ define( 'ITSEC_ENCRYPTION_KEY', 'YS53byk5QXJVSUM7MzFsZ1QwRGxpc0hlbnJ6NHgmYmk/MS1
 define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
 // END iThemes Security - Do not modify or remove this line
 
+// Load private secrets (outside web root, not in git).
+$bt_secrets_path = getenv( 'BT_SECRETS_PATH' );
+if ( ! $bt_secrets_path ) {
+	// Default local path; adjust per environment if needed.
+	$bt_secrets_path = '/Users/sethtipton/Local Sites/belltower/bt-secrets.php';
+}
+// Fallback for typical cPanel layout (secrets next to public_html).
+if ( ! $bt_secrets_path || ! file_exists( $bt_secrets_path ) ) {
+	$bt_secrets_path = dirname( __DIR__ ) . '/bt-secrets.php';
+}
+// Optional dotfile fallback (e.g., .bt-secrets.php next to public_html).
+if ( ! $bt_secrets_path || ! file_exists( $bt_secrets_path ) ) {
+	$bt_secrets_path = dirname( __DIR__ ) . '/.bt-secrets.php';
+}
+if ( file_exists( $bt_secrets_path ) ) {
+	require_once $bt_secrets_path;
+}
+
 if (php_sapi_name() === 'cli' && ! isset($_SERVER['HTTP_HOST'])) {
     // Provide a harmless default so WP-CLI doesn't warn
     $_SERVER['HTTP_HOST'] = 'localhost';
@@ -86,6 +104,8 @@ if (is_local_environment()) {
 	$table_prefix = 'siH_';
 
 	define( 'WP_ENVIRONMENT_TYPE', 'local' );
+	define( 'WP_ENV', 'development' );
+  	define( 'SCRIPT_DEBUG', true );
 	/* That's all, stop editing! Happy publishing. */
 
 	/** Absolute path to the WordPress directory. */

@@ -2,3 +2,17 @@ $size__site-main: 100%;
 $size__site-sidebar: 25%;
 $tabletBreakpoint: 750px;
 $mobileBreakpoint: 600px;
+
+$basefontsize: 1.1rem;
+
+// Theme layout variables.
+//$btsiteWidth: 1440px;
+$btsiteWidth: 1800px;
+$btcwidth: 1174px;
+$btsitePaddingTop: 2vh;
+$btsitePadding: 2vw;
+$u30navPadding: clamp(1px, 2vh, 30px);
+$u30txtPadding1: clamp(10px, 2vh, 20px);
+$btcmpPadding1: clamp(10px, 10vh, 80px);
+$btcmpPadding2: clamp(10px, 8vh, 50px);
+$btsiteBorderRadius: 3px;

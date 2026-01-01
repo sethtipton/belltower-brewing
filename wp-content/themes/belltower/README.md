@@ -5,7 +5,7 @@ Bell Tower is the custom WordPress theme used on the Bell Tower Brewing Company 
 ## Features
 
 - **Custom Page Templates** – Dedicated templates for the home page, beer list, food menu and upcoming events.
-- **Shortcodes** – Includes `events_by_date`, `brewery_menu`, `brewery_legend` and `partners_grid` for embedding event feeds and menus.
+- **Shortcodes** – Includes `events_by_date`, `brewery_menu`, `drinks_menu`, `untappd_menu`, `keg_list`, `pairing_app`, `brewery_legend`, and `partners_grid` for embedding event feeds, menus, and the pairing app.
 - **Widget Areas** – Widgets power areas such as the home page hero text and footer columns.
 - **Gutenberg Palette** – Defines a custom colour palette matching the brewery brand colours.
 - **WooCommerce Support** – Styling and hooks for WooCommerce integration.
@@ -20,7 +20,7 @@ Node.js tooling is used to compile Sass and watch for changes. After cloning the
 npm install
 ```
 
-Use `gulp style` to compile the theme stylesheets and `gulp watch` during development for live reloading.
+Use `npx gulp style` to compile the theme stylesheets and `npx gulp watch` during development for live reloading.
 
 ## Credits
 

@@ -31,7 +31,8 @@
 	<!-- End Google Analytics -->
 
 	<script>history.scrollRestoration = 'manual';</script>
-	
+
+	<link rel="preload" as="image" href="<?php echo esc_url( the_post_thumbnail_url() ); ?>" fetchpriority="high">
 
 </head>
 
@@ -52,9 +53,7 @@
 	<a class="skip-link screen-reader-text" href="#primary"><?php esc_html_e( 'Skip to content', 'belltower' ); ?></a>
 	<div id="pixel-to-watch"></div>
 	<header id="masthead" class="site-header">
-
 		<div class="site-header-w1 cwidth">
-
 			<nav id="site-navigation" class="main-navigation">
 				
 				<button class="menu-toggle" aria-controls="primary-menu" aria-expanded="false">
@@ -77,9 +76,6 @@
 					)
 				);
 				?>
-			</nav><!-- #site-navigation -->
-
+			</nav>
 		</div>
-
-
-	</header><!-- #masthead -->
+	</header>

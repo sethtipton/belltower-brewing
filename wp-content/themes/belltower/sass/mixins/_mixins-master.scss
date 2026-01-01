@@ -1,11 +1,45 @@
 // Center block
 @mixin center-block {
-	display: block;
-	margin-left: auto;
-	margin-right: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 // Column width with margin
 @mixin column-width($numberColumns: 3) {
-	width: map-get($columns, $numberColumns) - ( ( $columns__margin * ( $numberColumns - 1 ) ) / $numberColumns );
+  width: map-get($columns, $numberColumns) -
+    (($columns__margin * ($numberColumns - 1)) / $numberColumns);
+}
+
+@mixin bt-visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+  border: 0;
+  margin: -1px;
+  padding: 0;
+}
+
+.has-small-font-size {
+  font-size: 0.8125rem !important;
+}
+.has-regular-font-size,
+.has-normal-font-size {
+  font-size: $basefontsize !important;
+}
+.has-medium-font-size {
+  font-size: 1.4rem !important;
+}
+.has-large-font-size {
+  font-size: 1.7rem !important;
+}
+.has-larger-font-size {
+  font-size: 2rem !important;
+}
+.has-huge-font-size {
+  font-size: 2.5rem !important;
 }

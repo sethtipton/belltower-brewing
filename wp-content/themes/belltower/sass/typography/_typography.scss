@@ -1,36 +1,25 @@
-
-
-
-$basefontsize: 1.1rem;
-
 body,
 button,
 input,
 select,
 optgroup,
 textarea {
-	color: $color__text-main;
-	font-family: $font__main;
-	//src: $font__src;
-	src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-	font-size: $basefontsize;
-	line-height: $font__line-height-body;
+  color: $color__text-main;
+  font-family: $font__main;
+  //src: $font__src;
+  src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
+  font-size: $basefontsize;
+  line-height: $font__line-height-body;
 }
 
 //untappd
 .ut-menu {
-	color: $color__text-main!important;
-	font-family: $font__main!important;
-	src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
-	font-size: $basefontsize!important;
-	line-height: $font__line-height-body!important;
+  color: $color__text-main !important;
+  font-family: $font__main !important;
+  src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
+  font-size: $basefontsize !important;
+  line-height: $font__line-height-body !important;
 }
 
 @import "headings";
 @import "copy";
-
-
-
-
-
-

@@ -12,6 +12,21 @@ if ( ! defined( '_S_VERSION' ) ) {
 	define( '_S_VERSION', '1.0.0' );
 }
 
+// OpenAI keys should be defined in wp-config.php or a private secrets file (e.g., BT_OPENAI_API_KEY).
+if ( ! defined( 'OPENAI_API_KEY' ) && defined( 'BT_OPENAI_API_KEY' ) ) {
+	define( 'OPENAI_API_KEY', BT_OPENAI_API_KEY );
+}
+if ( ! defined( 'OPENAI_MODEL' ) && defined( 'BT_OPENAI_MODEL' ) ) {
+	define( 'OPENAI_MODEL', BT_OPENAI_MODEL );
+}
+// Fallback placeholders (no real keys in repo).
+if ( ! defined( 'OPENAI_API_KEY' ) ) {
+	define( 'OPENAI_API_KEY', '' );
+}
+if ( ! defined( 'OPENAI_MODEL' ) ) {
+	define( 'OPENAI_MODEL', 'gpt-4.1-mini' );
+}
+
 if ( ! function_exists( 'belltower_setup' ) ) :
 	/**
 	 * Sets up theme defaults and registers support for various WordPress features.
@@ -348,12 +363,24 @@ function belltower_scripts() {
 	wp_style_add_data( 'belltower-style', 'rtl', 'replace' );
 	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], _S_VERSION, true );
 	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], _S_VERSION, true );
+	$profiles_ver = filemtime( get_stylesheet_directory() . '/js/pairing-profiles.js' );
+	wp_enqueue_script( 'belltower-pairing-profiles', get_stylesheet_directory_uri() . '/js/pairing-profiles.js', [], $profiles_ver, true );
 	$ver = filemtime( get_stylesheet_directory() . '/js/menu-from-sheets.js' );
-	wp_enqueue_script( 'belltower-menu', get_stylesheet_directory_uri() . '/js/menu-from-sheets.js', [], $ver, true );
+	wp_enqueue_script( 'belltower-menu', get_stylesheet_directory_uri() . '/js/menu-from-sheets.js', array( 'belltower-pairing-profiles' ), $ver, true );
 	$sheetId = '1o79G07EDWRihxOlh9GSJvG-_VBaE5ByZULdd_6lqm7Q';
 	$gid     = 0;
 	$csvURL  = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv&gid={$gid}";
-	wp_localize_script( 'belltower-menu', 'belltowerMenu', [ 'csvURL' => $csvURL ] );
+	$drinks_csv = "https://docs.google.com/spreadsheets/d/{$sheetId}/gviz/tq?tqx=out:csv&sheet=" . rawurlencode( 'Drinks' );
+	wp_localize_script(
+		'belltower-menu',
+		'belltowerMenu',
+		[
+			'csvURL'       => $csvURL,
+			'drinksCsvURL' => $drinks_csv,
+		]
+	);
+	$untappd_ver = filemtime( get_stylesheet_directory() . '/js/untappd-menu.js' );
+	wp_enqueue_script( 'belltower-untappd-menu', get_stylesheet_directory_uri() . '/js/untappd-menu.js', array( 'belltower-pairing-profiles' ), $untappd_ver, true );
 
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
@@ -371,6 +398,118 @@ function belltower_menu_shortcode( $atts ) {
 	);
 }
 add_shortcode( 'brewery_menu', 'belltower_menu_shortcode' );
+
+function belltower_drinks_menu_shortcode( $atts ) {
+	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'drinks_menu' );
+	$cat  = esc_attr( $atts['category'] );
+
+	return sprintf(
+		'<div class="drinks-menu" data-category="%s"></div>',
+		$cat
+	);
+}
+add_shortcode( 'drinks_menu', 'belltower_drinks_menu_shortcode' );
+
+/**
+ * Keg list shortcode: [keg_list type="retail|wholesale|both"].
+ */
+function belltower_enqueue_keg_list_assets() {
+	static $enqueued = false;
+	if ( $enqueued ) {
+		return;
+	}
+	$ver = filemtime( get_stylesheet_directory() . '/js/keg-list.js' );
+	wp_enqueue_script( 'belltower-keg-list', get_stylesheet_directory_uri() . '/js/keg-list.js', array(), $ver, true );
+
+	$base_csv = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH9pj_Qm42Yes2dksIPJIYAx3-0RdJr7hX_1rEQsKAaeDMrqBdNS0JE2tvNlMQReTOC2IHAwdT_Kvx/pub?output=csv';
+	wp_localize_script(
+		'belltower-keg-list',
+		'kegListConfig',
+		array(
+			'baseCsv' => $base_csv,
+			'sheets'  => array(
+				'retail'    => 'Retail Keg Pricing',
+				'wholesale' => 'Wholesale Keg Pricing',
+			),
+		)
+	);
+
+	$enqueued = true;
+}
+
+function belltower_keg_list_shortcode( $atts = array() ) {
+	$atts = shortcode_atts(
+		array(
+			'type' => 'retail',
+		),
+		$atts,
+		'keg_list'
+	);
+
+	$type = strtolower( $atts['type'] );
+	if ( ! in_array( $type, array( 'retail', 'wholesale', 'both' ), true ) ) {
+		$type = 'retail';
+	}
+
+	belltower_enqueue_keg_list_assets();
+
+	return sprintf(
+		'<div class="keg-list" data-type="%s" aria-live="polite"></div>',
+		esc_attr( $type )
+	);
+}
+add_shortcode( 'keg_list', 'belltower_keg_list_shortcode' );
+
+function belltower_untappd_menu_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		[
+			'location_id' => '38757',
+			'menu_id'     => '150549',
+			'class'       => '',
+			'id'          => '',
+		],
+		$atts,
+		'untappd_menu'
+	);
+
+	$container_id = $atts['id']
+		? sanitize_html_class( $atts['id'] )
+		: 'bt-untappd-' . wp_generate_uuid4();
+
+	$class_attr = $atts['class'] ? ' ' . esc_attr( $atts['class'] ) : '';
+
+	// Ensure the embed + snapshot script is present.
+	wp_enqueue_script( 'belltower-untappd-menu' );
+
+	return sprintf(
+		'<div id="%1$s" class="cwidth bt-untappd-menu%2$s" data-location-id="%3$s" data-menu-id="%4$s"></div>',
+		esc_attr( $container_id ),
+		$class_attr,
+		esc_attr( $atts['location_id'] ),
+		esc_attr( $atts['menu_id'] )
+	);
+}
+add_shortcode( 'untappd_menu', 'belltower_untappd_menu_shortcode' );
+
+require_once get_stylesheet_directory() . '/pairing-app/pairing-app-loader.php';
+
+// Ensure the pairing app bundle loads as an ES module.
+add_filter(
+	'script_loader_tag',
+	function( $tag, $handle, $src ) {
+		if ( 'bt-pairing-app' === $handle ) {
+			// Emit as ES module for Vite dev/prod.
+			return sprintf(
+				'<script type="module" id="%s-js" src="%s"></script>',
+				esc_attr( $handle ),
+				esc_url( $src )
+			);
+		}
+		return $tag;
+	},
+	10,
+	3
+);
 
 function belltower_legend_shortcode() {
 	return '<div class="brewery-legend"></div>';
@@ -428,13 +567,13 @@ add_shortcode( 'partners_grid', function() {
 
 			// keep the visible dash outside the location span (you can move it inside if you prefer)
 			$label_html = esc_html( $before )
-			            . ' <span class="partner__sep" aria-hidden="true">–</span> '
-			            . '<span class="partner__location">' . esc_html( $after ) . '</span>';
+			            . ' <span class="partner-sep" aria-hidden="true">–</span> '
+			            . '<span class="partner-location">' . esc_html( $after ) . '</span>';
 		}
 
 		$html .= '<li class="partner" role="listitem">';
 		if ( $website_url ) {
-			$html .= '<a class="partner__link" href="' . esc_url( $website_url ) . '" target="_blank" rel="noopener noreferrer">'
+			$html .= '<a class="partner-link" href="' . esc_url( $website_url ) . '" target="_blank" rel="noopener noreferrer">'
 			       . $label_html
 			       . '<span class="screen-reader-text"> — opens in a new tab</span>'
 				   . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Open in new window">
@@ -442,7 +581,7 @@ add_shortcode( 'partners_grid', function() {
 						</svg>'
 			       . '</a>';
 		} else {
-			$html .= '<span class="partner__name">' . $label_html . '</span>';
+			$html .= '<span class="partner-name">' . $label_html . '</span>';
 		}
 		$html .= '</li>';
 	}
@@ -455,8 +594,1199 @@ add_shortcode( 'partners_grid', function() {
 	return $html;
 } );
 
+/**
+ * Beer color REST endpoint: batches descriptions to Responses API and returns SRM/hex.
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/beer-colors',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_beer_colors_handler',
+				'permission_callback' => '__return_true', // Consider tightening if needed.
+			)
+		);
+	}
+);
 
+function bt_beer_colors_handler( WP_REST_Request $request ) {
+	$body = $request->get_json_params();
+	if ( empty( $body['items'] ) || ! is_array( $body['items'] ) ) {
+		return new WP_REST_Response( array( 'error' => 'missing items' ), 400 );
+	}
 
+	$items = array_map(
+		function( $it ) {
+			return array(
+				'id'          => isset( $it['id'] ) ? (string) $it['id'] : '',
+				'description' => isset( $it['description'] ) ? (string) $it['description'] : '',
+			);
+		},
+		$body['items']
+	);
+
+	$cache_key = 'bt_beer_colors_' . md5( wp_json_encode( $items ) );
+	$cached    = get_transient( $cache_key );
+	if ( $cached ) {
+		return rest_ensure_response( $cached );
+	}
+
+	$prompt = bt_build_color_extractor_prompt( $items );
+
+	$payload = array(
+		'model' => OPENAI_MODEL,
+		'input' => array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		),
+	);
+
+	// Log payload metrics for debugging.
+	error_log(
+		'[bt_beer_colors] request ' . wp_json_encode(
+			array(
+				'model'       => OPENAI_MODEL,
+				'items_count' => count( $items ),
+				'payload_len' => strlen( wp_json_encode( $payload ) ),
+				'prompt'      => $prompt,
+			)
+		)
+	);
+
+	$response = wp_remote_post(
+		'https://api.openai.com/v1/responses',
+		array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => 20,
+		)
+	);
+
+	// Debug logging for connectivity issues.
+	$log_ctx = array(
+		'route'       => 'beer-colors',
+		'url'         => 'https://api.openai.com/v1/responses',
+		'model'       => OPENAI_MODEL,
+		'items_count' => count( $items ),
+		'payload_len' => strlen( wp_json_encode( $payload ) ),
+	);
+	if ( is_wp_error( $response ) ) {
+		error_log( '[bt_beer_colors] error ' . wp_json_encode( array_merge( $log_ctx, array( 'error' => $response->get_error_message() ) ) ) );
+		return new WP_REST_Response( array( 'error' => $response->get_error_message() ), 500 );
+	}
+	$http_code = wp_remote_retrieve_response_code( $response );
+	error_log( '[bt_beer_colors] response ' . wp_json_encode( array_merge( $log_ctx, array( 'status' => $http_code ) ) ) );
+
+	if ( is_wp_error( $response ) ) {
+		return new WP_REST_Response( array( 'error' => $response->get_error_message() ), 500 );
+	}
+
+	$code       = wp_remote_retrieve_response_code( $response );
+	$resp_body  = wp_remote_retrieve_body( $response );
+	$resp_dec   = json_decode( $resp_body, true );
+	$answer_txt = '';
+
+	if ( isset( $resp_dec['output'][0]['content'][0]['text'] ) ) {
+		$answer_txt = $resp_dec['output'][0]['content'][0]['text'];
+	} elseif ( isset( $resp_dec['output_text'] ) ) {
+		$answer_txt = $resp_dec['output_text'];
+	} elseif ( isset( $resp_dec['output'][0]['text'] ) ) {
+		$answer_txt = $resp_dec['output'][0]['text'];
+	} elseif ( isset( $resp_dec['output'][0]['content'] ) && is_array( $resp_dec['output'][0]['content'] ) ) {
+		foreach ( $resp_dec['output'][0]['content'] as $c ) {
+			if ( is_string( $c ) ) {
+				$answer_txt .= $c;
+			} elseif ( is_array( $c ) && isset( $c['text'] ) ) {
+				$answer_txt .= $c['text'];
+			}
+		}
+	}
+
+	$json_array = bt_try_parse_response_json_array( $answer_txt ? $answer_txt : $resp_body );
+	if ( ! $json_array || ! is_array( $json_array ) ) {
+		return new WP_REST_Response(
+			array(
+				'error' => 'Could not parse model output',
+				'raw'   => $resp_body,
+				'body'  => $resp_dec,
+			),
+			$code >= 200 && $code < 300 ? 500 : $code
+		);
+	}
+
+	$results = array();
+	foreach ( $json_array as $obj ) {
+		$id       = isset( $obj['id'] ) ? (string) $obj['id'] : uniqid( 'beer_' );
+		$computed = bt_compute_color_from_attributes( $obj );
+		$results[] = array_merge( array( 'id' => $id ), $computed );
+	}
+
+	set_transient( $cache_key, $results, 12 * HOUR_IN_SECONDS );
+
+	return rest_ensure_response( $results );
+}
+
+function bt_build_color_extractor_prompt( $items ) {
+	$json = wp_json_encode( $items, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+	return "You are a precise extractor. Given the following JSON array of beer objects with fields {id, style, description}, return ONLY a JSON array of objects with fields:
+- id (string)
+- style (string|null)
+- explicit_color_words (array of strings)
+- clarity (\"clear\"|\"hazy\"|\"cloudy\"|\"opaque\"|null)
+- fruit_tint (string|null)
+- abv (number|null)
+- ibu (number|null)
+
+Rules:
+- Preserve the id exactly as provided (do NOT change, slugify, or rename).
+- If a field is unknown, set it to null or an empty array (for explicit_color_words).
+- Output only valid JSON, no extra text or commentary.
+
+Input:
+{$json}
+
+Return only valid JSON (no extra text).";
+}
+
+function bt_try_parse_response_json_array( $text ) {
+	if ( ! is_string( $text ) ) {
+		return null;
+	}
+	$first = strpos( $text, '[' );
+	$last  = strrpos( $text, ']' );
+	if ( false === $first || false === $last || $last <= $first ) {
+		return null;
+	}
+	$substr = substr( $text, $first, $last - $first + 1 );
+	$arr    = json_decode( $substr, true );
+	return is_array( $arr ) ? $arr : null;
+}
+
+/**
+ * Attempt to extract a JSON object from a model response, stripping markdown fences if present.
+ */
+function bt_extract_json_object( $text ) {
+	if ( ! is_string( $text ) ) {
+		return null;
+	}
+	$clean = trim( $text );
+
+	// Strip ```json ... ``` fences.
+	if ( preg_match( '/```json\s*(\{.*?\})\s*```/s', $clean, $matches ) ) {
+		$clean = $matches[1];
+	}
+
+	// Try to capture from first { to last }.
+	$first = strpos( $clean, '{' );
+	$last  = strrpos( $clean, '}' );
+	if ( false !== $first && false !== $last && $last > $first ) {
+		$substr = substr( $clean, $first, $last - $first + 1 );
+		$decoded = json_decode( $substr, true );
+		if ( is_array( $decoded ) ) {
+			return $decoded;
+		}
+	}
+
+	// Fallback: straight decode.
+	$decoded = json_decode( $clean, true );
+	return is_array( $decoded ) ? $decoded : null;
+}
+
+function bt_compute_color_from_attributes( $attrs ) {
+	$style = strtolower( sanitize_text_field( $attrs['style'] ?? '' ) );
+	$words = array_map( 'strtolower', (array) ( $attrs['explicit_color_words'] ?? array() ) );
+	$abv   = isset( $attrs['abv'] ) ? floatval( $attrs['abv'] ) : null;
+	$fruit = strtolower( sanitize_text_field( (string) ( $attrs['fruit_tint'] ?? '' ) ) );
+
+	$style_map = array(
+		'pilsner'            => array( 2, 6 ),
+		'schwarzbier'        => array( 16, 30 ),
+		'stout'              => array( 30, 45 ),
+		'porter'             => array( 20, 30 ),
+		'hefeweizen'         => array( 3, 6 ),
+		'brown ale'          => array( 15, 20 ),
+		'barleywine'         => array( 10, 22 ),
+		'cream ale'          => array( 3, 6 ),
+		'festbier'           => array( 4, 7 ),
+		'dubbel'             => array( 12, 18 ),
+		'california common'  => array( 8, 15 ),
+		'lager'              => array( 2, 6 ),
+		'ipa'                => array( 6, 12 ),
+		'pale ale'           => array( 4, 8 ),
+	);
+
+	if ( isset( $style_map[ $style ] ) ) {
+		list( $min, $max ) = $style_map[ $style ];
+	} else {
+		$min = 6;
+		$max = 12;
+	}
+
+	if ( in_array( 'black', $words, true ) || in_array( 'very dark', $words, true ) ) {
+		$min = 36;
+		$max = 45;
+	} elseif ( in_array( 'brown', $words, true ) ) {
+		$min = min( $min, 15 );
+		$max = max( $max, 22 );
+	} elseif ( in_array( 'amber', $words, true ) || in_array( 'copper', $words, true ) ) {
+		$min = min( $min, 10 );
+		$max = max( $max, 14 );
+	} elseif ( in_array( 'golden', $words, true ) ) {
+		$min = min( $min, 4 );
+		$max = max( $max, 8 );
+	} elseif ( in_array( 'crimson', $words, true ) || in_array( 'red', $words, true ) || $fruit ) {
+		$min = 6;
+		$max = 14;
+	}
+
+	if ( $abv !== null && $abv > 8 ) {
+		$min += 1;
+		$max += 2;
+	}
+
+	$srm = round( ( $min + $max ) / 2 );
+
+	if ( $srm <= 3 ) {
+		$hex = '#F4E9B9';
+	} elseif ( $srm <= 6 ) {
+		$hex = '#E9D792';
+	} elseif ( $srm <= 9 ) {
+		$hex = '#D8B055';
+	} elseif ( $srm <= 14 ) {
+		$hex = '#C07A2E';
+	} elseif ( $srm <= 18 ) {
+		$hex = '#8F4B2D';
+	} elseif ( $srm <= 25 ) {
+		$hex = '#624032';
+	} elseif ( $srm <= 35 ) {
+		$hex = '#442E2A';
+	} else {
+		$hex = '#0B0B0B';
+	}
+
+	return array(
+		'style'           => $attrs['style'] ?? null,
+		'srm'             => $srm,
+		'srm_range'       => array( $min, $max ),
+		'hex'             => $hex,
+		'confidence'      => 0.8,
+		'short_rationale' => $attrs['short_rationale'] ?? '',
+	);
+}
+
+function bt_compute_color_map_from_beers( $beer_catalog ) {
+	$map = array();
+	if ( ! is_array( $beer_catalog ) ) {
+		return $map;
+	}
+	foreach ( $beer_catalog as $beer_item ) {
+		if ( ! is_array( $beer_item ) ) {
+			continue;
+		}
+		$id = isset( $beer_item['id'] ) ? (string) $beer_item['id'] : ( isset( $beer_item['name'] ) ? sanitize_title( $beer_item['name'] ) : '' );
+		if ( ! $id ) {
+			continue;
+		}
+		$attrs = array(
+			'style'                => $beer_item['style'] ?? '',
+			'explicit_color_words' => array(),
+			'fruit_tint'           => '',
+			'abv'                  => isset( $beer_item['abv'] ) ? floatval( $beer_item['abv'] ) : null,
+		);
+		$computed = bt_compute_color_from_attributes( $attrs );
+		$map[ $id ] = array(
+			'hex' => $computed['hex'],
+			'srm' => $computed['srm'],
+		);
+	}
+	return $map;
+}
+
+/**
+ * Helpers for pairing/history caching.
+ */
+function bt_pairing_history_key( $slug ) {
+	return 'bt_history_' . sanitize_title( $slug );
+}
+
+function bt_pairing_history_index() {
+	$list = get_option( 'bt_history_cache_keys', array() );
+	return is_array( $list ) ? $list : array();
+}
+
+function bt_pairing_history_index_add( $slug ) {
+	$slug = sanitize_title( $slug );
+	if ( ! $slug ) {
+		return;
+	}
+	$list = bt_pairing_history_index();
+	if ( ! in_array( $slug, $list, true ) ) {
+		$list[] = $slug;
+		update_option( 'bt_history_cache_keys', $list, false );
+	}
+}
+
+function bt_pairing_history_index_remove( $slug ) {
+	$slug = sanitize_title( $slug );
+	if ( ! $slug ) {
+		return;
+	}
+	$list = bt_pairing_history_index();
+	$next = array_values( array_diff( $list, array( $slug ) ) );
+	update_option( 'bt_history_cache_keys', $next, false );
+}
+
+function bt_pairing_history_index_clear() {
+	update_option( 'bt_history_cache_keys', array(), false );
+}
+
+function bt_pairings_static_index() {
+	$list = get_option( 'bt_pairings_static_keys', array() );
+	return is_array( $list ) ? $list : array();
+}
+
+function bt_pairings_static_index_add( $cache_key ) {
+	if ( ! $cache_key ) {
+		return;
+	}
+	$list = bt_pairings_static_index();
+	if ( ! in_array( $cache_key, $list, true ) ) {
+		$list[] = $cache_key;
+		update_option( 'bt_pairings_static_keys', $list, false );
+	}
+}
+
+function bt_pairings_static_index_clear() {
+	update_option( 'bt_pairings_static_keys', array(), false );
+}
+
+/**
+ * Fetch a batch of histories from the external Responses API.
+ *
+ * @param array $items Array of beer items (slug, name, description).
+ * @param int   $timeout Timeout seconds.
+ * @return array Map slug => history text (only filled on success).
+ */
+function bt_fetch_history_batch( $items, $timeout = 3 ) {
+	if ( empty( $items ) ) {
+		return array();
+	}
+	$clean = array();
+	foreach ( $items as $it ) {
+		$slug = sanitize_title( $it['slug'] ?? '' );
+		if ( ! $slug ) {
+			continue;
+		}
+		$clean[] = array(
+			'slug'        => $slug,
+			'name'        => isset( $it['name'] ) ? sanitize_text_field( $it['name'] ) : '',
+			'description' => isset( $it['description'] ) ? wp_strip_all_tags( $it['description'] ) : '',
+		);
+	}
+	if ( empty( $clean ) ) {
+		return array();
+	}
+
+	$items_json = wp_json_encode( $clean );
+	$prompt     = <<<PROMPT
+You are a concise beer historian. For each beer provided (slug, description, style), return one "history_fun" string with two short paragraphs (3–5 sentences each, <=200 words total) about style/ingredient origin and fun-facts. Do NOT copy or paraphrase the beer description; avoid reusing its phrases or ingredients. Always key results by the provided slug exactly; if unsure, provide a brief history of the beer’s style and serving traditions (no placeholders, no “We are gathering…”, "…has a story rooted in its ingredients and brewing approach…" text). Never return placeholder phrases; always return style-based history and fun-facts distinct from the description.
+
+Input beers (array): {$items_json}
+Return JSON only: { "histories": { "slug-one": "history_fun text", "...": "..." } }
+PROMPT;
+
+	$payload = array(
+		'model' => OPENAI_MODEL,
+		'input' => array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		),
+	);
+
+	$response = wp_remote_post(
+		'https://api.openai.com/v1/responses',
+		array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => $timeout,
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return array();
+	}
+
+	$resp_body = wp_remote_retrieve_body( $response );
+	$decoded   = json_decode( $resp_body, true );
+	$text      = '';
+	if ( isset( $decoded['output'][0]['content'][0]['text'] ) ) {
+		$text = $decoded['output'][0]['content'][0]['text'];
+	} elseif ( isset( $decoded['output_text'] ) ) {
+		$text = $decoded['output_text'];
+	} elseif ( isset( $decoded['output'][0]['text'] ) ) {
+		$text = $decoded['output'][0]['text'];
+	} elseif ( isset( $decoded['output'][0]['content'] ) && is_array( $decoded['output'][0]['content'] ) ) {
+		foreach ( $decoded['output'][0]['content'] as $c ) {
+			if ( is_string( $c ) ) {
+				$text .= $c;
+			} elseif ( is_array( $c ) && isset( $c['text'] ) ) {
+				$text .= $c['text'];
+			}
+		}
+	}
+
+	$maybe = bt_extract_json_object( $text ? $text : $resp_body );
+	if ( is_array( $maybe ) && isset( $maybe['histories'] ) && is_array( $maybe['histories'] ) ) {
+		return $maybe['histories'];
+	}
+
+	return array();
+}
+
+/**
+ * REST: pairing histories (per-beer).
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/pairing/history',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_pairing_history',
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+);
+
+function bt_pairing_history( WP_REST_Request $request ) {
+	$body  = json_decode( $request->get_body(), true );
+	$slugs = isset( $body['slugs'] ) && is_array( $body['slugs'] ) ? $body['slugs'] : array();
+	$items = isset( $body['items'] ) && is_array( $body['items'] ) ? $body['items'] : array();
+	$requested = array();
+	// Prefer items (slug/name/description) when provided.
+	foreach ( $items as $it ) {
+		$name        = isset( $it['name'] ) ? sanitize_text_field( $it['name'] ) : '';
+		$slug        = sanitize_title( $it['slug'] ?? $name );
+		$description = isset( $it['description'] ) ? wp_strip_all_tags( $it['description'] ) : '';
+		$style       = isset( $it['style'] ) ? sanitize_text_field( $it['style'] ) : '';
+		if ( $slug ) {
+			$requested[ $slug ] = array(
+				'slug'        => $slug,
+				'name'        => $name,
+				'description' => $description,
+				'style'       => $style,
+			);
+		}
+	}
+	// Add any bare slugs not covered above.
+	if ( is_array( $slugs ) ) {
+		foreach ( $slugs as $slug_raw ) {
+			$slug = sanitize_title( $slug_raw );
+			if ( $slug && ! isset( $requested[ $slug ] ) ) {
+				$requested[ $slug ] = array(
+					'slug'        => $slug,
+					'name'        => '',
+					'description' => '',
+				);
+			}
+		}
+	}
+	if ( empty( $requested ) ) {
+		return new WP_REST_Response( array( 'error' => 'Missing slugs' ), 400 );
+	}
+	$slugs = array_keys( $requested );
+	error_log( '[bt_history] requested ' . wp_json_encode( $requested ) );
+
+	$allow_force = current_user_can( 'manage_options' );
+	$force       = ! empty( $body['force'] ) && $allow_force;
+
+	$histories = array();
+	$cached    = array();
+	$missing   = array();
+
+	foreach ( $slugs as $slug ) {
+		if ( $force ) {
+			$missing[] = $slug;
+			continue;
+		}
+		$key = bt_pairing_history_key( $slug );
+		$val = get_transient( $key );
+		if ( false !== $val && null !== $val ) {
+			$histories[ $slug ] = $val;
+			$cached[]           = $slug;
+		} else {
+			$missing[] = $slug;
+		}
+	}
+
+	if ( ! empty( $missing ) ) {
+		// Fetch one at a time to maximize success rate.
+		$batches = array_chunk( $missing, 1 );
+		foreach ( $batches as $batch ) {
+			$attempts = 0;
+			$fetched  = array();
+			while ( $attempts < 2 && empty( $fetched ) ) {
+				$attempts++;
+				$subset  = array();
+				foreach ( $batch as $slug ) {
+					if ( isset( $requested[ $slug ] ) ) {
+						$subset[] = $requested[ $slug ];
+					}
+				}
+				$fetched = bt_fetch_history_batch( $subset, 3 );
+				error_log( '[bt_history] batch fetched ' . wp_json_encode( $fetched ) );
+			}
+			if ( ! empty( $fetched ) ) {
+				$normalized = array();
+				foreach ( $fetched as $k => $v ) {
+					$norm = sanitize_title( $k );
+					if ( $norm ) {
+						$normalized[ $norm ] = $v;
+					}
+				}
+				foreach ( $batch as $slug ) {
+					$val = null;
+					if ( isset( $fetched[ $slug ] ) ) {
+						$val = $fetched[ $slug ];
+					} elseif ( isset( $normalized[ $slug ] ) ) {
+						$val = $normalized[ $slug ];
+					}
+					if ( $val ) {
+						$histories[ $slug ] = $val;
+						set_transient( bt_pairing_history_key( $slug ), $val, WEEK_IN_SECONDS );
+						bt_pairing_history_index_add( $slug );
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback: if any requested slug still lacks history, generate a short placeholder and cache it.
+	foreach ( $requested as $slug => $item ) {
+		if ( isset( $histories[ $slug ] ) && $histories[ $slug ] ) {
+			continue;
+		}
+		$name        = $item['name'] ?? $slug;
+		$description = $item['description'] ?? '';
+		$style       = $item['style'] ?? '';
+		$fallback    = $style
+			? sprintf(
+				'%s is a %s. This style has a long tradition; expect notes that reflect its classic roots. %s',
+				$name,
+				$style,
+				$description ? wp_strip_all_tags( $description ) : ''
+			)
+			: sprintf(
+				'%s has a story rooted in its ingredients and brewing approach. %s',
+				$name,
+				$description ? wp_strip_all_tags( $description ) : ''
+			);
+		$histories[ $slug ] = $fallback;
+		set_transient( bt_pairing_history_key( $slug ), $fallback, WEEK_IN_SECONDS );
+		bt_pairing_history_index_add( $slug );
+	}
+
+	$partial = array();
+	foreach ( $slugs as $slug ) {
+		if ( ! isset( $histories[ $slug ] ) || null === $histories[ $slug ] ) {
+			$partial[] = $slug;
+		}
+	}
+
+	return new WP_REST_Response(
+		array(
+			'histories' => $histories,
+			'partial'   => ! empty( $partial ),
+			'cached'    => $cached,
+		),
+		200
+	);
+}
+
+/**
+ * Static pairings (beer -> food) REST endpoint.
+ */
+define( 'BT_STATIC_PAIRINGS_PROMPT_VERSION', 1 );
+define( 'BT_STATIC_PAIRINGS_SCHEMA_VERSION', 1 );
+
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/pairings/static',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_pairings_static',
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+);
+
+function bt_pairings_static( WP_REST_Request $request ) {
+	$body     = json_decode( $request->get_body(), true );
+	$beer     = isset( $body['beerData'] ) && is_array( $body['beerData'] ) ? $body['beerData'] : null;
+	$food     = isset( $body['foodData'] ) && is_array( $body['foodData'] ) ? $body['foodData'] : null;
+	$force    = ! empty( $body['force'] );
+	$prompt_v = isset( $body['promptVersion'] ) ? intval( $body['promptVersion'] ) : BT_STATIC_PAIRINGS_PROMPT_VERSION;
+
+	if ( $force && ! current_user_can( 'manage_options' ) ) {
+		return new WP_REST_Response( array( 'error' => 'forbidden' ), 403 );
+	}
+
+	if ( empty( $beer['items'] ) || empty( $food['items'] ) || ! is_array( $beer['items'] ) || ! is_array( $food['items'] ) ) {
+		return new WP_REST_Response( array( 'error' => 'missing data' ), 400 );
+	}
+
+	$profile_v = isset( $beer['pairingProfileVersion'] ) ? intval( $beer['pairingProfileVersion'] ) : ( isset( $food['pairingProfileVersion'] ) ? intval( $food['pairingProfileVersion'] ) : 1 );
+	$beer_gen  = isset( $beer['generatedAt'] ) ? sanitize_text_field( $beer['generatedAt'] ) : 'unknown';
+	$food_gen  = isset( $food['generatedAt'] ) ? sanitize_text_field( $food['generatedAt'] ) : 'unknown';
+	$cache_key = 'bt_pairings_static_' . sha1( $profile_v . '|' . $prompt_v . '|' . $beer_gen . '|' . $food_gen );
+
+	if ( ! $force ) {
+		$cached = get_transient( $cache_key );
+		if ( $cached && is_array( $cached ) ) {
+			$cached['source']['cached'] = true;
+			return rest_ensure_response( $cached );
+		}
+	}
+
+	$beer_items = array_slice( $beer['items'], 0, 60 );
+	$food_items = array_slice( $food['items'], 0, 250 );
+	$beer_keys  = array();
+	$food_keys  = array();
+
+	$beer_payload = array();
+	foreach ( $beer_items as $item ) {
+		if ( ! is_array( $item ) || empty( $item['btKey'] ) ) {
+			continue;
+		}
+		$pp = isset( $item['pairingProfile'] ) && is_array( $item['pairingProfile'] ) ? $item['pairingProfile'] : array();
+		$beer_keys[] = $item['btKey'];
+		$beer_payload[] = array(
+			'beerKey'  => $item['btKey'],
+			'style'    => $item['style'] ?? ( $item['category'] ?? '' ),
+			'abv'      => $pp['abv'] ?? null,
+			'ibu'      => $pp['ibu'] ?? null,
+			'body'     => $pp['body'] ?? '',
+			'sweetness'=> $pp['sweetness'] ?? '',
+			'axes'     => $pp['axes'] ?? array(),
+			'tags'     => isset( $pp['tags'] ) && is_array( $pp['tags'] ) ? array_slice( $pp['tags'], 0, 6 ) : array(),
+		);
+	}
+
+	$food_payload = array();
+	foreach ( $food_items as $item ) {
+		if ( ! is_array( $item ) || empty( $item['btKey'] ) ) {
+			continue;
+		}
+		$pp = isset( $item['pairingProfile'] ) && is_array( $item['pairingProfile'] ) ? $item['pairingProfile'] : array();
+		$food_keys[] = $item['btKey'];
+		$food_payload[] = array(
+			'foodKey'  => $item['btKey'],
+			'category' => $item['category'] ?? 'uncategorized',
+			'primary'  => $pp['primary'] ?? '',
+			'prep'     => $pp['prep'] ?? '',
+			'axes'     => $pp['axes'] ?? array(),
+			'tags'     => isset( $pp['tags'] ) && is_array( $pp['tags'] ) ? array_slice( $pp['tags'], 0, 6 ) : array(),
+		);
+	}
+
+	if ( empty( $beer_payload ) || empty( $food_payload ) ) {
+		return new WP_REST_Response( array( 'error' => 'missing items' ), 400 );
+	}
+
+	$prompt = bt_build_static_pairings_prompt( $beer_payload, $food_payload );
+
+	$payload = array(
+		'model' => OPENAI_MODEL,
+		'input' => array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		),
+	);
+
+	$response = wp_remote_post(
+		'https://api.openai.com/v1/responses',
+		array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => 60,
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return new WP_REST_Response( array( 'error' => $response->get_error_message() ), 500 );
+	}
+
+	$resp_body = wp_remote_retrieve_body( $response );
+	$decoded   = json_decode( $resp_body, true );
+	$answer_text = '';
+	if ( isset( $decoded['output'][0]['content'][0]['text'] ) ) {
+		$answer_text = $decoded['output'][0]['content'][0]['text'];
+	} elseif ( isset( $decoded['output_text'] ) ) {
+		$answer_text = $decoded['output_text'];
+	} elseif ( isset( $decoded['output'][0]['text'] ) ) {
+		$answer_text = $decoded['output'][0]['text'];
+	} elseif ( isset( $decoded['output'][0]['content'] ) && is_array( $decoded['output'][0]['content'] ) ) {
+		foreach ( $decoded['output'][0]['content'] as $c ) {
+			if ( is_string( $c ) ) {
+				$answer_text .= $c;
+			} elseif ( is_array( $c ) && isset( $c['text'] ) ) {
+				$answer_text .= $c['text'];
+			}
+		}
+	}
+
+	$parsed = bt_extract_json_object( $answer_text ? $answer_text : $resp_body );
+	$pairings = bt_normalize_static_pairings_response( $parsed, $beer_keys, $food_keys );
+
+	$result = array(
+		'schemaVersion'     => BT_STATIC_PAIRINGS_SCHEMA_VERSION,
+		'kind'              => 'pairings-static',
+		'generatedAt'       => current_time( 'c' ),
+		'source'            => array(
+			'beerGeneratedAt'       => $beer_gen,
+			'foodGeneratedAt'       => $food_gen,
+			'pairingProfileVersion' => $profile_v,
+			'promptVersion'         => $prompt_v,
+			'cached'                => false,
+		),
+		'counts'            => array(
+			'beers' => count( $beer_payload ),
+			'food'  => count( $food_payload ),
+		),
+		'pairingsByBeerKey' => $pairings,
+	);
+
+	set_transient( $cache_key, $result, 7 * DAY_IN_SECONDS );
+	bt_pairings_static_index_add( $cache_key );
+
+	return rest_ensure_response( $result );
+}
+
+function bt_build_static_pairings_prompt( $beers, $foods ) {
+	$beer_json = wp_json_encode( $beers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	$food_json = wp_json_encode( $foods, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+	return <<<PROMPT
+You are pairing beers to menu items. Return ONLY JSON, no prose.
+
+Rules:
+- Use only provided beerKey and foodKey values.
+- For each beerKey, choose exactly 2 mains and 1 side.
+- why must be <= 20 words.
+- Output JSON format:
+{
+  "pairingsByBeerKey": {
+    "beerKey": {
+      "mains": [
+        { "foodKey": "...", "why": "..." },
+        { "foodKey": "...", "why": "..." }
+      ],
+      "side": { "foodKey": "...", "why": "..." }
+    }
+  }
+}
+
+Beers:
+{$beer_json}
+
+Food:
+{$food_json}
+PROMPT;
+}
+
+function bt_normalize_static_pairings_response( $parsed, $beer_keys, $food_keys ) {
+	$valid_beers = array_fill_keys( $beer_keys, true );
+	$valid_food  = array_fill_keys( $food_keys, true );
+	$result      = array();
+
+	foreach ( $beer_keys as $beer_key ) {
+		$result[ $beer_key ] = array(
+			'mains' => array(),
+			'side'  => null,
+		);
+	}
+
+	if ( ! is_array( $parsed ) || empty( $parsed['pairingsByBeerKey'] ) || ! is_array( $parsed['pairingsByBeerKey'] ) ) {
+		return $result;
+	}
+
+	foreach ( $parsed['pairingsByBeerKey'] as $beer_key => $data ) {
+		if ( ! isset( $valid_beers[ $beer_key ] ) || ! is_array( $data ) ) {
+			continue;
+		}
+		$mains = array();
+		if ( isset( $data['mains'] ) && is_array( $data['mains'] ) ) {
+			foreach ( $data['mains'] as $entry ) {
+				if ( count( $mains ) >= 2 || ! is_array( $entry ) ) {
+					continue;
+				}
+				$food_key = isset( $entry['foodKey'] ) ? sanitize_text_field( $entry['foodKey'] ) : '';
+				$why      = isset( $entry['why'] ) ? sanitize_text_field( $entry['why'] ) : '';
+				if ( ! $food_key || ! isset( $valid_food[ $food_key ] ) ) {
+					continue;
+				}
+				$mains[] = array(
+					'foodKey' => $food_key,
+					'why'     => $why,
+				);
+			}
+		}
+
+		$side = null;
+		if ( isset( $data['side'] ) && is_array( $data['side'] ) ) {
+			$food_key = isset( $data['side']['foodKey'] ) ? sanitize_text_field( $data['side']['foodKey'] ) : '';
+			$why      = isset( $data['side']['why'] ) ? sanitize_text_field( $data['side']['why'] ) : '';
+			if ( $food_key && isset( $valid_food[ $food_key ] ) ) {
+				$side = array(
+					'foodKey' => $food_key,
+					'why'     => $why,
+				);
+			}
+		}
+
+		$result[ $beer_key ] = array(
+			'mains' => array_slice( $mains, 0, 2 ),
+			'side'  => $side,
+		);
+	}
+
+	return $result;
+}
+
+/**
+ * Admin-only purge route for pairing/history caches.
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/pairing/purge',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_pairing_purge',
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+			)
+		);
+	}
+);
+
+function bt_pairing_purge( WP_REST_Request $request ) {
+	$body   = json_decode( $request->get_body(), true );
+	$target = isset( $body['target'] ) ? $body['target'] : 'all';
+	$slug   = isset( $body['slug'] ) ? sanitize_title( $body['slug'] ) : '';
+
+	if ( in_array( $target, array( 'history', 'all' ), true ) ) {
+		if ( $slug ) {
+			delete_transient( bt_pairing_history_key( $slug ) );
+			bt_pairing_history_index_remove( $slug );
+		} else {
+			$list = bt_pairing_history_index();
+			foreach ( $list as $s ) {
+				delete_transient( bt_pairing_history_key( $s ) );
+			}
+			bt_pairing_history_index_clear();
+		}
+	}
+
+	if ( in_array( $target, array( 'pairings-static', 'all' ), true ) ) {
+		$list = bt_pairings_static_index();
+		foreach ( $list as $key ) {
+			delete_transient( $key );
+		}
+		bt_pairings_static_index_clear();
+	}
+
+	if ( in_array( $target, array( 'pairing', 'all' ), true ) ) {
+		// Pairing caches can be wiped here if added later; safe no-op otherwise.
+		delete_transient( 'bt_pairing_cache_v1' );
+	}
+
+	return new WP_REST_Response( array( 'purged' => true ), 200 );
+}
+
+/**
+ * Pairing REST endpoint: proxies to OpenAI Responses API.
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/pairing',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_proxy_pairing',
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+);
+
+function bt_proxy_pairing( WP_REST_Request $request ) {
+	$body    = json_decode( $request->get_body(), true );
+	$answers = array();
+	$force   = ! empty( $body['force'] ) && current_user_can( 'manage_options' );
+	if ( isset( $body['answers'] ) && is_array( $body['answers'] ) ) {
+		$answers = $body['answers'];
+	}
+	// Allow refresh calls (e.g., /pairing/refresh) that pass only { force: true }.
+	if ( empty( $answers ) && $force ) {
+		$answers = array( 'refresh' => true );
+	}
+
+	if ( empty( $answers ) ) {
+		return new WP_REST_Response( array( 'error' => 'Missing answers' ), 400 );
+	}
+
+	$beer_data = ( isset( $body['beerData'] ) && is_array( $body['beerData'] ) ) ? $body['beerData'] : null;
+
+	$beer_catalog = $beer_data && isset( $beer_data['items'] ) ? $beer_data['items'] : ( is_array( $beer_data ) ? $beer_data : array() );
+	$color_map    = bt_compute_color_map_from_beers( $beer_catalog );
+	$allowed_beers = array();
+	foreach ( $beer_catalog as $beer_item ) {
+		if ( is_array( $beer_item ) && ! empty( $beer_item['name'] ) ) {
+			$allowed_beers[] = $beer_item['name'];
+		}
+	}
+
+	$inline_beer_json  = $beer_data ? wp_json_encode( $beer_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : 'null';
+	$user_answers_json = wp_json_encode( $answers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	$prompt            = <<<PROMPT
+		You are a sensory scientist and beer history educator. Be concise, fun and informative.
+		Data:
+		- inline_beer_json: {$inline_beer_json} (use these beers only)
+		- user_answers: {$user_answers_json}
+		Checklist:
+		1) Only recommend beers present in inline_beer_json; do not invent or rename.
+		2) Reuse beer.description verbatim; no fabricated local history.
+		3) Always return 5 matches: primary (best), neighbor (adjacent style), contrast (different profile but respect low-ABV requests).
+		4) Reference 1–2 user inputs in match_sentence; keep confidence bands (>0.75 High; 0.40–0.75 Medium; <0.40 Low).
+		5) Use canonical_tag_set and tag_synonyms seeded from the beer data; infer reasonably.
+		Return EXACTLY this JSON, no extra prose:
+		{
+		"matches": [
+			{
+			"beer": { "name": "string", "style": "string", "abv": "string", "ibu": "string", "description": "string" },
+			"score": 0.0,
+			"confidence": "High|Medium|Low",
+			"top_tags": ["string","string","string"],
+			"match_sentence": "string"
+			},
+			{ "..." : "..." },
+			{ "..." : "..." }
+		],
+		"canonical_tag_set": ["tropical","citrus","roasty","caramel","banana","clove","dry","creamy","crisp","smoky","spicy","tart","funky"],
+		"tag_synonyms": {
+			"tropical": ["mango","pineapple","passionfruit","juicy"],
+			"citrus": ["orange","grapefruit","lemon","lime"]
+		},
+		"explainers": {
+			"why_three": "string",
+			"confidence_thresholds": { "high_gt": 0.75, "medium_ge": 0.40, "low_lt": 0.40 }
+		}
+		}
+		PROMPT;
+
+	$payload = array(
+		'model' => OPENAI_MODEL,
+		'input' => array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		),
+	);
+
+	// Log payload metrics for debugging.
+	error_log(
+		'[bt_pairing] request ' . wp_json_encode(
+			array(
+				'model'       => OPENAI_MODEL,
+				'items_count' => is_array( $beer_catalog ) ? count( $beer_catalog ) : 0,
+				'payload_len' => strlen( wp_json_encode( $payload ) ),
+				'prompt'      => $prompt,
+			)
+		)
+	);
+
+	$response = wp_remote_post(
+		'https://api.openai.com/v1/responses',
+		array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => 50,
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return new WP_REST_Response( array( 'error' => $response->get_error_message() ), 500 );
+	}
+
+	$http      = wp_remote_retrieve_response_code( $response );
+	$resp_body = wp_remote_retrieve_body( $response );
+
+	try {
+		$decoded = json_decode( $resp_body, true );
+	} catch ( Exception $e ) {
+		return new WP_REST_Response( array( 'answer' => $resp_body, 'status' => $http ), $http );
+	}
+
+	if ( JSON_ERROR_NONE !== json_last_error() ) {
+		return new WP_REST_Response( array( 'answer' => $resp_body, 'status' => $http ), $http );
+	}
+
+	$answer_text = '';
+	if ( isset( $decoded['output'][0]['content'][0]['text'] ) ) {
+		$answer_text = $decoded['output'][0]['content'][0]['text'];
+	} elseif ( isset( $decoded['output_text'] ) ) {
+		$answer_text = $decoded['output_text'];
+	} elseif ( isset( $decoded['output'][0]['text'] ) ) {
+		$answer_text = $decoded['output'][0]['text'];
+	} elseif ( isset( $decoded['output'][0]['content'] ) && is_array( $decoded['output'][0]['content'] ) ) {
+		foreach ( $decoded['output'][0]['content'] as $c ) {
+			if ( is_string( $c ) ) {
+				$answer_text .= $c;
+			} elseif ( is_array( $c ) && isset( $c['text'] ) ) {
+				$answer_text .= $c['text'];
+			}
+		}
+	}
+
+	$maybe_json = json_decode( trim( $answer_text ), true );
+	if ( ! ( is_array( $maybe_json ) && isset( $maybe_json['matches'] ) ) ) {
+		$maybe_json = bt_extract_json_object( $answer_text ? $answer_text : $resp_body );
+	}
+	if ( is_array( $maybe_json ) && isset( $maybe_json['matches'] ) ) {
+		return new WP_REST_Response(
+			array(
+				'result' => $maybe_json,
+				'status' => $http,
+				'prompt' => $prompt,
+				'colors' => $color_map,
+			),
+			200
+		);
+	}
+
+	return new WP_REST_Response(
+		array(
+			'answer' => $answer_text ? $answer_text : $decoded,
+			'status' => $http,
+			'prompt' => $prompt,
+			'colors' => $color_map,
+		),
+		200
+	);
+}
+
+/**
+ * Minimal admin-only purge buttons (frontend).
+ */
+function bt_pairing_admin_buttons() {
+	if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$nonce    = wp_create_nonce( 'wp_rest' );
+	$endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/purge' ) );
+	?>
+	<div class="bt-pairing-admin-tools" style="position:fixed;right:1rem;bottom:1rem;z-index:9999;gap:0.5rem;display:flex;flex-direction:column;max-width:200px;">
+		<button type="button" class="bt-pairing-purge" data-target="history">Purge Histories</button>
+		<button type="button" class="bt-pairing-purge" data-target="pairings-static">Purge Static Pairings</button>
+		<button type="button" class="bt-pairing-purge" data-target="pairing">Purge Pairing</button>
+	</div>
+	<script>
+	(() => {
+		const buttons = document.querySelectorAll('.bt-pairing-purge');
+		if (!buttons.length) return;
+		const clearStaticPairingsCache = () => {
+			const keys = [];
+			try {
+				if (window.localStorage) {
+					for (let i = 0; i < window.localStorage.length; i++) {
+						const key = window.localStorage.key(i);
+						if (key && key.indexOf('bt_static_pairings_') === 0) keys.push(key);
+					}
+					keys.forEach((key) => window.localStorage.removeItem(key));
+				}
+			} catch (err) {
+				console.warn('Unable to clear localStorage static pairings', err);
+			}
+			try {
+				if (window.sessionStorage) {
+					for (let i = 0; i < window.sessionStorage.length; i++) {
+						const key = window.sessionStorage.key(i);
+						if (key && key.indexOf('bt_static_pairings_') === 0) keys.push(key);
+					}
+					keys.forEach((key) => window.sessionStorage.removeItem(key));
+				}
+			} catch (err) {
+				console.warn('Unable to clear sessionStorage static pairings', err);
+			}
+		};
+		buttons.forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const target = btn.getAttribute('data-target') || 'all';
+				btn.disabled = true;
+				if (target === 'pairings-static' || target === 'all') {
+					clearStaticPairingsCache();
+				}
+				try {
+					const res = await fetch('<?php echo esc_js( $endpoint ); ?>', {
+						method: 'POST',
+						credentials: 'same-origin',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+						},
+						body: JSON.stringify({ target }),
+					});
+					if (!res.ok) {
+						console.warn('Purge failed', res.status);
+					}
+				} catch (err) {
+					console.error('Purge error', err);
+				} finally {
+					btn.disabled = false;
+				}
+			});
+		});
+	})();
+	</script>
+	<?php
+}
+add_action( 'wp_footer', 'bt_pairing_admin_buttons' );
 
 add_filter( 'cmplz_autofocus', '__return_false' );
 
@@ -486,4 +1816,3 @@ require get_template_directory() . '/inc/customizer.php';
 if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
-
