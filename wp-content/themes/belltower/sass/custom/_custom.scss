@@ -13,9 +13,9 @@ html {
   --vt-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@view-transition {
-  navigation: auto;
-}
+//@view-transition {
+//  navigation: auto;
+//}
 
 body.pause * {
   animation: none !important;
