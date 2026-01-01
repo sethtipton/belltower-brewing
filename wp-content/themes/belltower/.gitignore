@@ -2,6 +2,7 @@ node_modules/
 pairing-app/node_modules/
 pairing-app.backup.*/node_modules/
 pairing-app/.vite/
-pairing-app/dist/.vite/
+pairing-app/dist/.vite/*
+!pairing-app/dist/.vite/manifest.json
 wp-config.php
 
