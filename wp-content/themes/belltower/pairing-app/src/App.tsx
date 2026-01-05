@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import type { PairingMatch as ApiPairingMatch, PairingResponse as ApiPairingResponse } from './api/pairing';
 import { useBeerData } from './hooks/useBeerData';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
@@ -11,27 +12,21 @@ import './styles/styles.scss';
 import useFlight from './hooks/useFlight';
 
 interface PreparedAnswers { mood: string; body: string; bitterness: string; flavorFocus: string[]; alcoholPreference: string }
-interface PairingMatch {
-  beer?: {
-    name?: string;
+interface PairingMatch extends ApiPairingMatch {
+  beer?: (ApiPairingMatch['beer'] & {
     id?: string | number;
-    description?: string;
-    style?: string;
     hex?: string | null;
     hexColor?: string | null;
-  } | null;
-  score?: number | null;
-  confidence?: string | null;
-  match_sentence?: string | null;
+  }) | null;
   matchSentence?: string | null;
 }
-interface PairingResponse {
-  matches?: PairingMatch[] | null;
-  history_map?: Record<string, string> | null;
-  colors?: Record<string, string> | null;
+type PairingResponse = ApiPairingResponse & {
+  matches?: PairingMatch[];
+  history_map?: Record<string, string>;
+  colors?: Record<string, string>;
   result?: unknown;
   data?: unknown;
-}
+};
 interface PairingCacheEntry { data?: PairingResponse | null; fetchedAt?: number | null }
 interface BeerItem {
   id: string;
@@ -39,7 +34,7 @@ interface BeerItem {
   description: string;
   style: string;
   hexColor: string | null;
-  btKey?: string | null;
+  btKey?: string;
   pairingProfile?: unknown;
   recommended?: boolean;
   recommendationScore?: number | null;
@@ -100,15 +95,20 @@ function toMatches(raw: unknown): PairingMatch[] {
         : null;
       const match: PairingMatch = {
         beer,
-        score: 'score' in entry && typeof entry.score === 'number' ? entry.score : null,
-        confidence: 'confidence' in entry && typeof entry.confidence === 'string' ? entry.confidence : null,
-        match_sentence: 'match_sentence' in entry && typeof entry.match_sentence === 'string' ? entry.match_sentence : null,
-        matchSentence: 'matchSentence' in entry && typeof entry.matchSentence === 'string' ? entry.matchSentence : null,
+        score: 'score' in entry && typeof entry.score === 'number' ? entry.score : undefined,
+        confidence: 'confidence' in entry && typeof entry.confidence === 'string' ? entry.confidence : undefined,
+        match_sentence: 'match_sentence' in entry && typeof entry.match_sentence === 'string' ? entry.match_sentence : undefined,
+        matchSentence: 'matchSentence' in entry && typeof entry.matchSentence === 'string' ? entry.matchSentence : undefined,
       };
       matches.push(match);
     }
   });
   return matches;
+}
+
+function toPairingResponse(raw: unknown): PairingResponse | null {
+  if (!isRecord(raw)) return null;
+  return raw as PairingResponse;
 }
 
 function toHistoryMap(raw: unknown): Record<string, string> {
@@ -145,7 +145,7 @@ function toBeerItem(raw: unknown): BeerItem | null {
   const description = typeof obj.description === 'string' ? obj.description : '';
   const style = typeof obj.style === 'string' ? obj.style : '';
   const hexColor = typeof obj.hexColor === 'string' ? obj.hexColor : typeof obj.hex === 'string' ? obj.hex : null;
-  const btKey = typeof obj.btKey === 'string' ? obj.btKey : null;
+  const btKey = typeof obj.btKey === 'string' ? obj.btKey : undefined;
   const pairingProfile = 'pairingProfile' in obj ? obj.pairingProfile : undefined;
   const item: BeerItem = {
     id,
@@ -535,7 +535,7 @@ export default function App(): React.ReactElement {
     try {
       logger.log('[Pairing] preload starting');
       // Preload should only hydrate cache/history/colors, not compute recommendations.
-      const result = await preloadPairing(safeItems, prepared);
+      const result = toPairingResponse(await preloadPairing(safeItems, prepared as unknown as Record<string, unknown>));
       logger.log('[Pairing] preload result', result);
       setPairingData(result);
       setShowRecommendations(false); // defer highlighting until user submits
@@ -603,7 +603,7 @@ export default function App(): React.ReactElement {
 
     try {
       const fetchedRaw = /** @type {unknown} */ (await fetchPairing(prepared));
-      const fetched = isRecord(fetchedRaw) ? /** @type {PairingResponse} */ (fetchedRaw) : null;
+      const fetched = toPairingResponse(fetchedRaw);
       logger.log('[Pairing] submit fetchPairing result', fetched);
       if (fetched && session) {
         session.setItem('bt_pairing_cache_v1', JSON.stringify({ data: fetched, fetchedAt: Date.now() }));
@@ -646,7 +646,7 @@ export default function App(): React.ReactElement {
         </header>
         <PairingFetcher
           onPairing={(data) => setPairingData(data)}
-          onFetch={handleFetchPairing}
+          onFetch={() => handleFetchPairing()}
           status={fetchStatus}
           errorMessage={fetchError}
           lastFetched={lastFetched}
@@ -663,7 +663,7 @@ export default function App(): React.ReactElement {
           onSubmit={(vals) => {
             void handleSubmit(vals);
           }}
-          onPreparedChange={setPreparedAnswers}
+          onPreparedChange={(vals) => setPreparedAnswers(vals)}
           onInteraction={() => setShowRecommendations(false)}
         />
         <div className="flight-toggle-bar">
@@ -677,7 +677,7 @@ export default function App(): React.ReactElement {
             {flightOpen ? 'Hide flight' : 'Show flight'}
           </button>
         </div>
-        <div className="beerWrapper" style={{ '--tray-width': trayWidth, '--tray-gap': trayGap }}>
+        <div className="beerWrapper" style={{ '--tray-width': trayWidth, '--tray-gap': trayGap } as React.CSSProperties}>
           {body}
           <FlightTray open={flightOpen} colorMap={colorMapOverride} />
         </div>
