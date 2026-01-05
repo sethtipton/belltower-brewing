@@ -12,7 +12,7 @@ jobs:
       with:
         server: ftp.sethtipton.com
         username: sethtipt
-        password: ${{ secrets.SSH_PRIVATE_KEY }}
+        password: 59z^};wM)X+#
         server-dir: public_html/belltowerbrewing/
         exclude: |
           **/.git*
