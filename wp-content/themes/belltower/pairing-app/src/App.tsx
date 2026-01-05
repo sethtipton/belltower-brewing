@@ -7,7 +7,7 @@ import { preloadPairing, getHistories } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
 import { useStaticPairings } from './staticPairings';
-import './styles.scss';
+import './styles/styles.scss';
 import useFlight from './hooks/useFlight';
 
 interface PreparedAnswers { mood: string; body: string; bitterness: string; flavorFocus: string[]; alcoholPreference: string }
