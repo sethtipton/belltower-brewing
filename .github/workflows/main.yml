@@ -12,7 +12,7 @@ jobs:
       with:
         server: ftp.sethtipton.com
         username: sethtipt
-        password: 59z^};wM)X+#
+        password: 9u!yKBs2E9y
         server-dir: public_html/belltowerbrewing/
         exclude: |
           **/.git*
