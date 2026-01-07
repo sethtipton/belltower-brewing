@@ -25,9 +25,14 @@ export interface PairingResponse {
 
 export const PAIRING_STORAGE_KEY = 'bt_pairing_cache_v1';
 
+export function getPairingStorageKey(hash?: string | null): string {
+  const safe = typeof hash === 'string' && hash ? hash : '';
+  return safe ? `${PAIRING_STORAGE_KEY}_${safe}` : PAIRING_STORAGE_KEY;
+}
+
 function getGlobals(): { restUrl?: string; nonce?: string } {
   if (typeof window === 'undefined') return {};
-  const win = window as Record<string, unknown>;
+  const win = window as unknown as Record<string, unknown>;
   const candidate = (win.PAIRING_APP ?? win.PAIRINGAPP) as Record<string, unknown> | undefined;
   if (!candidate || typeof candidate !== 'object') return {};
   const restUrl = typeof candidate.restUrl === 'string' ? candidate.restUrl : undefined;
@@ -46,7 +51,7 @@ function getNonce(): string {
 }
 
 function readInlineBeerData(): unknown {
-  const win = typeof window !== 'undefined' ? (window as Record<string, unknown>) : {};
+  const win = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : {};
   const inline = win.__BT_BEER_DATA
     ?? (typeof win.__BT_DATA === 'object' && win.__BT_DATA
       ? (win.__BT_DATA as { beer?: unknown }).beer
@@ -83,8 +88,29 @@ async function wpFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function getCachedPairing(): Promise<PairingResponse | null> {
-  return wpFetch<PairingResponse>('/bt/v1/pairing').catch(() => null);
+export async function getCachedPairing(hash?: string | null): Promise<PairingResponse | null> {
+  const suffix = typeof hash === 'string' && hash ? `?hash=${encodeURIComponent(hash)}` : '';
+  const url = `/bt/v1/pairing${suffix}`;
+  const res = await fetch(url.startsWith('http') ? url : `${getBase().replace(/\/$/, '')}${url}`, {
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-WP-Nonce': getNonce(),
+    },
+  }).catch(() => null);
+  if (!res) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(text ?? 'Request failed');
+  }
+  const data = (await res.json().catch(() => null)) as unknown;
+  if (!data || typeof data !== 'object') return data as PairingResponse | null;
+  if ('data' in data) {
+    const wrapped = data as { data?: PairingResponse | null };
+    return wrapped.data ?? null;
+  }
+  return data as PairingResponse;
 }
 
 export async function refreshPairing(force = false): Promise<PairingResponse> {

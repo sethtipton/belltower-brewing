@@ -1,32 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getCachedPairing, refreshPairing, PairingResponse, PAIRING_STORAGE_KEY } from '../api/pairing';
+import { getCachedPairing, refreshPairing, PairingResponse, getPairingStorageKey } from '../api/pairing';
 
 interface CacheRecord {
   data: PairingResponse;
   fetchedAt: number;
 }
 
-function readSession(): CacheRecord | null {
+function readSession(storageKey: string): CacheRecord | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(PAIRING_STORAGE_KEY);
+    const raw = sessionStorage.getItem(storageKey);
     return raw ? (JSON.parse(raw) as CacheRecord) : null;
   } catch {
     return null;
   }
 }
 
-function writeSession(record: CacheRecord) {
+function writeSession(storageKey: string, record: CacheRecord) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.setItem(PAIRING_STORAGE_KEY, JSON.stringify(record));
+    sessionStorage.setItem(storageKey, JSON.stringify(record));
   } catch {
     // ignore quota errors
   }
 }
 
-export function usePairingCache() {
-  const initialRecord = useRef<CacheRecord | null>(readSession()).current;
+export function usePairingCache(hash?: string | null) {
+  const storageKey = getPairingStorageKey(hash);
+  const initialRecord = useRef<CacheRecord | null>(readSession(storageKey)).current;
   const [pairing, setPairingState] = useState<PairingResponse | null>(initialRecord?.data ?? null);
   const [lastFetched, setLastFetched] = useState<number | null>(initialRecord?.fetchedAt ?? null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(initialRecord ? 'success' : 'idle');
@@ -43,11 +44,11 @@ export function usePairingCache() {
     setAvailable(!!data);
     setStatus(data ? 'success' : 'idle');
     if (data) {
-      writeSession({ data, fetchedAt });
+      writeSession(storageKey, { data, fetchedAt });
     } else if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem(PAIRING_STORAGE_KEY);
+      sessionStorage.removeItem(storageKey);
     }
-  }, []);
+  }, [storageKey]);
 
   const refresh = useCallback(
     async (force = false) => {
@@ -57,7 +58,7 @@ export function usePairingCache() {
         const data = await refreshPairing(force);
         if (!isMounted.current) return null;
         const rec = { data, fetchedAt: Date.now() };
-        writeSession(rec);
+        writeSession(storageKey, rec);
         setPairingState(data);
         setLastFetched(rec.fetchedAt);
         setAvailable(true);
@@ -84,21 +85,26 @@ export function usePairingCache() {
     setPairingState(null);
     setLastFetched(null);
     if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem(PAIRING_STORAGE_KEY);
+      sessionStorage.removeItem(storageKey);
     }
-  }, []);
+  }, [storageKey]);
 
   // Initialize from sessionStorage, then try server if missing.
   useEffect(() => {
     if (initialRecord) return;
+    if (!hash) {
+      setAvailable(false);
+      setStatus('idle');
+      return;
+    }
     void (async () => {
       setStatus('loading');
       try {
-        const data = await getCachedPairing();
+        const data = await getCachedPairing(hash);
         if (!isMounted.current) return;
         if (data) {
           const rec = { data, fetchedAt: Date.now() };
-          writeSession(rec);
+          writeSession(storageKey, rec);
           setPairingState(data);
           setLastFetched(rec.fetchedAt);
           setAvailable(true);
@@ -120,7 +126,7 @@ export function usePairingCache() {
         setError(msg);
       }
     })();
-  }, [initialRecord]);
+  }, [initialRecord, hash, storageKey]);
 
   return { pairing, lastFetched, status, error, setPairing, refresh, clear, available };
 }

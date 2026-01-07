@@ -45,7 +45,8 @@ function toMenuPayload(payload) {
   const items = itemsRaw.filter(isMenuItem);
   const generatedAt = typeof payload.generatedAt === 'string' ? payload.generatedAt : undefined;
   const pairingProfileVersion = typeof payload.pairingProfileVersion === 'number' ? payload.pairingProfileVersion : undefined;
-  return { items, generatedAt, pairingProfileVersion };
+  const kind = typeof payload.kind === 'string' ? payload.kind : undefined;
+  return { items, generatedAt, pairingProfileVersion, kind };
 }
 
 /**
@@ -89,35 +90,38 @@ export function readJsonScript(id) {
  * @param {unknown} payload
  * @returns {MenuPayload | null}
  */
-function normalizePayload(payload) {
+function normalizePayload(payload, expectedKind) {
   if (!payload) return null;
-  return toMenuPayload(payload);
+  const parsed = toMenuPayload(payload);
+  if (!parsed) return null;
+  if (expectedKind && parsed.kind && parsed.kind !== expectedKind) return null;
+  return parsed;
 }
 
 /** @returns {MenuPayload | null} */
 export function getCanonicalFoodData() {
   if (typeof window !== 'undefined') {
     const win = /** @type {Window & { __BT_FOOD_DATA?: unknown; __BT_DATA?: { food?: unknown } }} */ (window);
-    const direct = normalizePayload(win.__BT_FOOD_DATA);
+    const direct = normalizePayload(win.__BT_FOOD_DATA, 'food');
     if (direct) return direct;
-    const nested = normalizePayload(win.__BT_DATA?.food);
+    const nested = normalizePayload(win.__BT_DATA?.food, 'food');
     if (nested) return nested;
   }
-  const fromScript = normalizePayload(readJsonScript('bt-food-data'));
+  const fromScript = normalizePayload(readJsonScript('bt-food-data'), 'food');
   if (fromScript) return fromScript;
-  return normalizePayload(readJsonScript('bt-menu-data'));
+  return normalizePayload(readJsonScript('bt-menu-data'), 'food');
 }
 
 /** @returns {MenuPayload | null} */
 export function getCanonicalBeerDataFallback() {
   if (typeof window !== 'undefined') {
     const win = /** @type {Window & { __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
-    const direct = normalizePayload(win.__BT_BEER_DATA);
+    const direct = normalizePayload(win.__BT_BEER_DATA, 'beer');
     if (direct) return direct;
-    const nested = normalizePayload(win.__BT_DATA?.beer);
+    const nested = normalizePayload(win.__BT_DATA?.beer, 'beer');
     if (nested) return nested;
   }
-  return normalizePayload(readJsonScript('bt-beer-data'));
+  return normalizePayload(readJsonScript('bt-beer-data'), 'beer');
 }
 
 /**
@@ -260,6 +264,25 @@ export function getStaticPairingsCacheKey({ beerData, foodData }) {
     foodGen,
   ].map(sanitizeCacheKey);
   return `bt_static_pairings_${parts.join('_')}`;
+}
+
+/**
+ * @returns {{ hash: string; key: string; beerFingerprint: string; foodFingerprint: string } | null}
+ */
+export function getPairingCacheMeta() {
+  const beerData = getCanonicalBeerDataFallback();
+  const foodData = getCanonicalFoodData();
+  if (!beerData || !foodData || !Array.isArray(beerData.items) || !Array.isArray(foodData.items)) {
+    return null;
+  }
+  const beerFingerprint = getBeerFingerprintFromItems(beerData.items);
+  const foodFingerprint = getFoodFingerprintFromItems(foodData.items);
+  if (!beerFingerprint || !foodFingerprint || beerFingerprint === 'empty' || foodFingerprint === 'empty') {
+    return null;
+  }
+  const hash = `${beerFingerprint}.${foodFingerprint}`;
+  const key = `bt_pairing_cache_${sanitizeCacheKey(beerFingerprint)}_${sanitizeCacheKey(foodFingerprint)}`;
+  return { hash, key, beerFingerprint, foodFingerprint };
 }
 
 /**

@@ -4,10 +4,10 @@ import { useBeerData } from './hooks/useBeerData';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
 import { PairingFetcher } from './components/PairingFetcher';
-import { preloadPairing, getHistories } from './api';
+import { preloadPairing, getHistories, getPairingCache, getPairingCacheStatus } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
-import { useStaticPairings } from './staticPairings';
+import { useStaticPairings, getPairingCacheMeta, getCanonicalFoodData } from './staticPairings';
 import './styles/styles.scss';
 import useFlight from './hooks/useFlight';
 
@@ -50,9 +50,26 @@ const HISTORY_CACHE_KEY = 'bt_history_cache_v1';
 const EMPTY_PREPARED: PreparedAnswers = { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' };
 const noop = (): void => undefined;
 const session = typeof globalThis !== 'undefined' ? globalThis.sessionStorage : null;
+const localStore = typeof globalThis !== 'undefined' ? globalThis.localStorage : null;
 const logger = typeof globalThis !== 'undefined' && globalThis.console
   ? globalThis.console
   : { log: noop, warn: noop, error: noop };
+const pairingGlobals = typeof globalThis !== 'undefined'
+  ? (globalThis as { PAIRING_APP?: { isAdmin?: boolean }; PAIRINGAPP?: { isAdmin?: boolean } })
+  : null;
+const isAdmin = Boolean(pairingGlobals?.PAIRING_APP?.isAdmin ?? pairingGlobals?.PAIRINGAPP?.isAdmin);
+const scheduleIdle = (task: () => void, delay = 500): void => {
+  if (typeof globalThis === 'undefined') {
+    task();
+    return;
+  }
+  const idle = globalThis.requestIdleCallback;
+  if (typeof idle === 'function') {
+    idle(() => task(), { timeout: delay });
+    return;
+  }
+  globalThis.setTimeout(task, delay);
+};
 const isRecord = (val: unknown): val is Record<string, unknown> => Boolean(val) && typeof val === 'object' && !Array.isArray(val);
 const formatError = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 const isMatchLike = (val: unknown): val is MatchLike => isRecord(val);
@@ -179,6 +196,10 @@ interface BeerDataHook {
 export default function App(): React.ReactElement {
   const { items, ready, refreshColors, fetchPairing } = useBeerData() as BeerDataHook;
   const { slots } = useFlight();
+  const [pairingCacheMeta, setPairingCacheMeta] = useState(() => getPairingCacheMeta());
+  const pairingCacheHash = pairingCacheMeta?.hash ?? '';
+  const [stableCacheHash, setStableCacheHash] = useState('');
+  const pairingCacheMapKey = stableCacheHash ? `${PAIRING_MAP_KEY}_${stableCacheHash}` : '';
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [allowColors, setAllowColors] = useState(() => {
@@ -215,6 +236,31 @@ export default function App(): React.ReactElement {
   const [successMessage, setSuccessMessage] = useState('');
   const staticPairings = useStaticPairings({ beers: safeItems });
 
+  useEffect(() => {
+    const update = () => setPairingCacheMeta(getPairingCacheMeta());
+    if (typeof document !== 'undefined') {
+      document.addEventListener('btBeerDataReady', update);
+      document.addEventListener('btFoodDataReady', update);
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('btBeerDataReady', update);
+        document.removeEventListener('btFoodDataReady', update);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pairingCacheHash) {
+      setStableCacheHash('');
+      return;
+    }
+    const timer = setTimeout(() => {
+      setStableCacheHash(pairingCacheHash);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [pairingCacheHash]);
+
   const makeAnswerKey = useCallback((a: PreparedAnswers | null | undefined) => {
     const prepared = toPreparedAnswers(a);
     const flavors = prepared.flavorFocus.length ? [...prepared.flavorFocus].sort().join(',') : 'none';
@@ -225,9 +271,9 @@ export default function App(): React.ReactElement {
 
   const readPairingCache = useCallback(
     (key: string): PairingCacheEntry | null => {
-      if (!session) return null;
+      if (!session || !pairingCacheMapKey) return null;
       try {
-        const raw = session.getItem(PAIRING_MAP_KEY);
+        const raw = session.getItem(pairingCacheMapKey);
         if (!raw) return null;
         const map = toPairingCacheMap(JSON.parse(raw));
         const found = Object.entries(map).find(([cacheKey]) => cacheKey === key);
@@ -236,14 +282,14 @@ export default function App(): React.ReactElement {
         return null;
       }
     },
-    []
+    [pairingCacheMapKey]
   );
 
   const writePairingCache = useCallback(
     (key: string, data: unknown) => {
-      if (!session) return;
+      if (!session || !pairingCacheMapKey) return;
       try {
-        const raw = session.getItem(PAIRING_MAP_KEY);
+        const raw = session.getItem(pairingCacheMapKey);
         const parsed: Record<string, PairingCacheEntry> = raw ? toPairingCacheMap(JSON.parse(raw)) : {};
         const nextMap: Record<string, PairingCacheEntry> = {};
         Object.assign(nextMap, parsed);
@@ -252,12 +298,12 @@ export default function App(): React.ReactElement {
           fetchedAt: Date.now(),
         };
         nextMap[String(key)] = entry;
-        session.setItem(PAIRING_MAP_KEY, JSON.stringify(nextMap));
+        session.setItem(pairingCacheMapKey, JSON.stringify(nextMap));
       } catch {
         // ignore storage errors
       }
     },
-    []
+    [pairingCacheMapKey]
   );
 
   const persistHistoryCache = useCallback((map: Record<string, string>) => {
@@ -288,27 +334,18 @@ export default function App(): React.ReactElement {
   );
 
   const readAnyCachedPairing = useCallback((): PairingResponse | null => {
-    if (!session) return null;
+    if (!session || !pairingCacheMapKey) return null;
     try {
-      const rawMap = session.getItem(PAIRING_MAP_KEY);
-      if (rawMap) {
-        const parsedMap = toPairingCacheMap(JSON.parse(rawMap));
-        const firstKey = Object.keys(parsedMap || {})[0];
-        if (firstKey && parsedMap[firstKey]?.data) return parsedMap[firstKey].data;
-      }
-      const rawSingle = session.getItem('bt_pairing_cache_v1');
-      if (rawSingle) {
-        const parsed: unknown = JSON.parse(rawSingle);
-        if (parsed && typeof parsed === 'object' && 'data' in parsed) {
-          const entry = parsed as { data?: unknown };
-          if (entry.data) return entry.data as PairingResponse;
-        }
-      }
+      const rawMap = session.getItem(pairingCacheMapKey);
+      if (!rawMap) return null;
+      const parsedMap = toPairingCacheMap(JSON.parse(rawMap));
+      const firstKey = Object.keys(parsedMap || {})[0];
+      if (firstKey && parsedMap[firstKey]?.data) return parsedMap[firstKey].data;
     } catch {
       // ignore
     }
     return null;
-  }, []);
+  }, [pairingCacheMapKey]);
 
   const fetchAndMergeHistories = useCallback(async () => {
     if (historyRequestInProgress.current) return;
@@ -468,7 +505,7 @@ export default function App(): React.ReactElement {
       }
       const safeMatches = toMatches(matches);
       if (safeMatches.length) {
-        void fetchAndMergeHistories();
+        scheduleIdle(() => void fetchAndMergeHistories(), 800);
       }
     },
     [fetchAndMergeHistories, mergeHistories, pairingData]
@@ -491,23 +528,56 @@ export default function App(): React.ReactElement {
   })();
 
   useEffect(() => {
+    if (!stableCacheHash) return;
     const cached = readAnyCachedPairing();
-    if (!cached) return;
-    setPairingData(cached);
-    setShowRecommendations(false);
-    const cachedColors = extractColorMap(cached);
-    if (Object.keys(cachedColors).length) {
-      setColorMapOverride(cachedColors);
-    }
-    const { matches, historyMap } = extractMatchesAndHistory(cached);
-    if (matches.length) {
-      applyHistoryOnly(matches, historyMap);
-      // Do not apply recommendations/highlights on cached load; wait for explicit submit.
+    const hydrate = (data: PairingResponse, fetchedAt?: number | null) => {
+      setPairingData(data);
       setShowRecommendations(false);
+      const cachedColors = extractColorMap(data);
+      if (Object.keys(cachedColors).length) {
+        setColorMapOverride(cachedColors);
+      }
+      const { matches, historyMap } = extractMatchesAndHistory(data);
+      if (matches.length) {
+        applyHistoryOnly(matches, historyMap);
+        // Do not apply recommendations/highlights on cached load; wait for explicit submit.
+        setShowRecommendations(false);
+      }
+      setPairingFetched(true);
+      if (typeof fetchedAt === 'number') {
+        setLastFetched(fetchedAt);
+      }
+    };
+    if (cached) {
+      hydrate(cached);
+      return;
     }
-    setPairingFetched(true);
-    void fetchAndMergeHistories();
-  }, [readAnyCachedPairing, applyHistoryOnly, extractColorMap, setColorMapOverride, extractMatchesAndHistory, fetchAndMergeHistories]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await getPairingCache(stableCacheHash);
+        if (cancelled || !res?.data) return;
+        const fetchedAtMs = typeof res.fetchedAt === 'number' ? res.fetchedAt * 1000 : Date.now();
+        writePairingCache(makeAnswerKey(EMPTY_PREPARED), res.data);
+        hydrate(res.data, fetchedAtMs);
+      } catch {
+        // ignore missing cache
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    stableCacheHash,
+    readAnyCachedPairing,
+    applyHistoryOnly,
+    extractColorMap,
+    setColorMapOverride,
+    extractMatchesAndHistory,
+    fetchAndMergeHistories,
+    writePairingCache,
+    makeAnswerKey,
+  ]);
 
   const colorApplied = useRef(false);
 
@@ -535,7 +605,12 @@ export default function App(): React.ReactElement {
     try {
       logger.log('[Pairing] preload starting');
       // Preload should only hydrate cache/history/colors, not compute recommendations.
-      const result = toPairingResponse(await preloadPairing(safeItems, prepared as unknown as Record<string, unknown>));
+      const foodData = getCanonicalFoodData();
+      const result = toPairingResponse(await preloadPairing(
+        safeItems,
+        prepared as unknown as Record<string, unknown>,
+        foodData ?? null
+      ));
       logger.log('[Pairing] preload result', result);
       setPairingData(result);
       setShowRecommendations(false); // defer highlighting until user submits
@@ -552,13 +627,14 @@ export default function App(): React.ReactElement {
         applyHistoryOnly(resultMatches, resultHistory);
       }
       if (result && session) {
-        session.setItem('bt_pairing_cache_v1', JSON.stringify({ data: result, fetchedAt: Date.now() }));
         writePairingCache(key, result);
       }
       setPairingFetched(true);
       if (refreshColors && !colorApplied.current) {
-        refreshColors(true);
-        colorApplied.current = true;
+        scheduleIdle(() => {
+          refreshColors(true);
+          colorApplied.current = true;
+        }, 800);
       }
       setAllowColors(true);
       setLastFetched(Date.now());
@@ -594,6 +670,30 @@ export default function App(): React.ReactElement {
     }
   };
 
+  useEffect(() => {
+    if (!isAdmin || !stableCacheHash || !localStore) return;
+    const throttleKey = `bt_pairing_autopreload_${stableCacheHash}`;
+    const lastRaw = localStore.getItem(throttleKey);
+    const last = lastRaw ? Number(lastRaw) : 0;
+    const now = Date.now();
+    const THROTTLE_MS = 24 * 60 * 60 * 1000;
+    if (last && now - last < THROTTLE_MS) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const status = await getPairingCacheStatus(stableCacheHash);
+        if (cancelled || status?.cached) return;
+        localStore.setItem(throttleKey, String(now));
+        await handleFetchPairing(EMPTY_PREPARED);
+      } catch {
+        // ignore status failures
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [stableCacheHash, isAdmin, localStore, handleFetchPairing]);
+
   const handleSubmit = async (preparedOverride?: PreparedAnswers | null): Promise<void> => {
     setError('');
     setSuccessMessage('');
@@ -606,7 +706,6 @@ export default function App(): React.ReactElement {
       const fetched = toPairingResponse(fetchedRaw);
       logger.log('[Pairing] submit fetchPairing result', fetched);
       if (fetched && session) {
-        session.setItem('bt_pairing_cache_v1', JSON.stringify({ data: fetched, fetchedAt: Date.now() }));
         writePairingCache(key, fetched);
       }
       setPairingData(fetched ?? null);
@@ -643,15 +742,21 @@ export default function App(): React.ReactElement {
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
         <header>
           <h2>Beers on tap</h2>
+          {isAdmin && lastFetched ? (
+            <div className="muted small">Last refreshed: {new Date(lastFetched).toLocaleString()}</div>
+          ) : null}
         </header>
-        <PairingFetcher
-          onPairing={(data) => setPairingData(data)}
-          onFetch={() => handleFetchPairing()}
-          status={fetchStatus}
-          errorMessage={fetchError}
-          lastFetched={lastFetched}
-          pairingsReady={staticPairings.available}
-        />
+        {isAdmin ? (
+          <PairingFetcher
+            onPairing={(data) => setPairingData(data)}
+            onFetch={() => handleFetchPairing()}
+            status={fetchStatus}
+            errorMessage={fetchError}
+            lastFetched={lastFetched}
+            pairingsReady={staticPairings.available && pairingFetched}
+            cacheHash={stableCacheHash}
+          />
+        ) : null}
         <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
           {formOpen ? 'Close - Help me decide' : 'Help me decide'}
         </button>

@@ -119,13 +119,58 @@ export function getPairing(answers = {}, beerItems = [], options = {}) {
 /**
  * @param {unknown[]} beerItems
  * @param {Record<string, unknown>} answers
+ * @param {unknown | null} foodData
  * @returns {Promise<unknown>}
  */
-export async function preloadPairing(beerItems = [], answers = {}) {
+export async function preloadPairing(beerItems = [], answers = {}, foodData = null) {
   return /** @type {Promise<unknown>} */ (wpFetch('/bt/v1/pairing', {
     method: 'POST',
-    body: JSON.stringify({ beerData: beerItems, preload: true, answers }),
+    body: JSON.stringify({ beerData: beerItems, foodData, preload: true, answers }),
   }));
+}
+
+/**
+ * @param {string} hash
+ * @returns {Promise<{ data?: unknown; fetchedAt?: number | null; hash?: string } | null>}
+ */
+export async function getPairingCache(hash) {
+  if (!hash) return null;
+  const base = getWPBase().replace(/\/$/, '');
+  const url = `${base}/bt/v1/pairing?hash=${encodeURIComponent(hash)}`;
+  const startedAt = Date.now();
+  try {
+    const res = await fetch(url, {
+      credentials: 'same-origin',
+      headers: {
+        'X-WP-Nonce': getNonce(),
+        'Content-Type': 'application/json',
+      },
+    });
+    const duration = Date.now() - startedAt;
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      console.warn('[API] fetch failed', { url, status: res.status, duration, text });
+      throw new Error(`Request failed: ${res.status} ${text}`);
+    }
+    console.log('[API] fetch ok', { url, status: res.status, duration });
+    const json = /** @type {unknown} */ (await res.json().catch(() => null));
+    return /** @type {{ data?: unknown; fetchedAt?: number | null; hash?: string } | null} */ (json);
+  } catch (err) {
+    console.error('[API] fetch exception', { url, err });
+    throw err instanceof Error ? err : new Error(String(err));
+  }
+}
+
+/**
+ * @param {string} hash
+ * @returns {Promise<{ cached?: boolean; fetchedAt?: number | null; hash?: string } | null>}
+ */
+export async function getPairingCacheStatus(hash) {
+  if (!hash) return null;
+  return /** @type {Promise<{ cached?: boolean; fetchedAt?: number | null; hash?: string } | null>} */ (
+    wpFetch(`/bt/v1/pairing/status?hash=${encodeURIComponent(hash)}`)
+  );
 }
 
 /**

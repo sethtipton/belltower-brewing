@@ -106,6 +106,7 @@ function bt_pairing_app_enqueue_assets() {
 				'siteUrl' => get_site_url(),
 				'restUrl' => get_rest_url(),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'isAdmin' => current_user_can( 'manage_options' ),
 			)
 		);
 
@@ -123,6 +124,8 @@ add_action( 'wp_enqueue_scripts', 'bt_pairing_app_enqueue_assets' );
  * Shortcode [pairing_app] — prints the root div where React will mount.
  */
 function bt_pairing_app_shortcode( $atts = array() ) {
+	global $bt_pairing_app_present;
+	$bt_pairing_app_present = true;
 	bt_pairing_app_enqueue_assets();
 	return '<div id="pairing-app-root" aria-live="polite"></div><script>console.info("[pairing-app] shortcode rendered", { root: !!document.getElementById("pairing-app-root") });</script>';
 }

@@ -914,6 +914,118 @@ function bt_compute_color_map_from_beers( $beer_catalog ) {
 /**
  * Helpers for pairing/history caching.
  */
+function bt_pairing_hash_string( $value ) {
+	$str  = (string) $value;
+	$hash = 5381;
+	$len  = strlen( $str );
+	for ( $i = 0; $i < $len; $i++ ) {
+		$hash = ( ( $hash << 5 ) + $hash ) ^ ord( $str[ $i ] );
+		$hash = $hash & 0xffffffff;
+	}
+	if ( $hash < 0 ) {
+		$hash += 0x100000000;
+	}
+	return base_convert( $hash, 10, 36 );
+}
+
+function bt_pairing_fingerprint_beers( $items ) {
+	if ( ! is_array( $items ) ) {
+		return 'empty';
+	}
+	$normalized = array();
+	foreach ( $items as $item ) {
+		if ( ! is_array( $item ) ) {
+			continue;
+		}
+		$key = '';
+		if ( ! empty( $item['btKey'] ) ) {
+			$key = (string) $item['btKey'];
+		} elseif ( isset( $item['id'] ) ) {
+			$key = (string) $item['id'];
+		} elseif ( ! empty( $item['slug'] ) ) {
+			$key = (string) $item['slug'];
+		} elseif ( ! empty( $item['name'] ) ) {
+			$key = (string) $item['name'];
+		}
+		$style   = isset( $item['style'] ) ? (string) $item['style'] : '';
+		$profile = '';
+		if ( isset( $item['pairingProfile'] ) ) {
+			$profile = wp_json_encode( $item['pairingProfile'] );
+		}
+		$normalized[] = $key . '|' . $style . '|' . $profile;
+	}
+	sort( $normalized );
+	$joined = implode( '||', $normalized );
+	return $joined ? bt_pairing_hash_string( $joined ) : 'empty';
+}
+
+function bt_pairing_fingerprint_food( $items ) {
+	if ( ! is_array( $items ) ) {
+		return 'empty';
+	}
+	$normalized = array();
+	foreach ( $items as $item ) {
+		if ( ! is_array( $item ) ) {
+			continue;
+		}
+		$key = '';
+		if ( ! empty( $item['btKey'] ) ) {
+			$key = (string) $item['btKey'];
+		} elseif ( isset( $item['id'] ) ) {
+			$key = (string) $item['id'];
+		} elseif ( ! empty( $item['slug'] ) ) {
+			$key = (string) $item['slug'];
+		} elseif ( ! empty( $item['name'] ) ) {
+			$key = (string) $item['name'];
+		}
+		$category = isset( $item['category'] ) ? (string) $item['category'] : '';
+		$normalized[] = $key . '|' . $category;
+	}
+	sort( $normalized );
+	$joined = implode( '||', $normalized );
+	return $joined ? bt_pairing_hash_string( $joined ) : 'empty';
+}
+
+function bt_pairing_cache_hash_from_payload( $beer_data, $food_data ) {
+	$beer_items = is_array( $beer_data ) && isset( $beer_data['items'] ) && is_array( $beer_data['items'] )
+		? $beer_data['items']
+		: ( is_array( $beer_data ) ? $beer_data : array() );
+	$food_items = is_array( $food_data ) && isset( $food_data['items'] ) && is_array( $food_data['items'] )
+		? $food_data['items']
+		: ( is_array( $food_data ) ? $food_data : array() );
+	if ( empty( $beer_items ) || empty( $food_items ) ) {
+		return '';
+	}
+	$beer_hash = bt_pairing_fingerprint_beers( $beer_items );
+	$food_hash = bt_pairing_fingerprint_food( $food_items );
+	return $beer_hash . '.' . $food_hash;
+}
+
+function bt_pairing_cache_key_from_hash( $hash ) {
+	$hash = sanitize_key( (string) $hash );
+	return $hash ? 'bt_pairing_cache_' . $hash : '';
+}
+
+function bt_pairing_cache_index() {
+	$list = get_option( 'bt_pairing_cache_keys', array() );
+	return is_array( $list ) ? $list : array();
+}
+
+function bt_pairing_cache_index_add( $key ) {
+	if ( ! $key ) {
+		return;
+	}
+	$list = bt_pairing_cache_index();
+	if ( ! in_array( $key, $list, true ) ) {
+		$list[] = $key;
+		update_option( 'bt_pairing_cache_keys', $list, false );
+	}
+}
+
+function bt_pairing_cache_index_clear() {
+	update_option( 'bt_pairing_cache_keys', array(), false );
+}
+
 function bt_pairing_history_key( $slug ) {
 	return 'bt_history_' . sanitize_title( $slug );
 }
@@ -1526,8 +1638,11 @@ function bt_pairing_purge( WP_REST_Request $request ) {
 	}
 
 	if ( in_array( $target, array( 'pairing', 'all' ), true ) ) {
-		// Pairing caches can be wiped here if added later; safe no-op otherwise.
-		delete_transient( 'bt_pairing_cache_v1' );
+		$list = bt_pairing_cache_index();
+		foreach ( $list as $key ) {
+			delete_transient( $key );
+		}
+		bt_pairing_cache_index_clear();
 	}
 
 	return new WP_REST_Response( array( 'purged' => true ), 200 );
@@ -1543,18 +1658,81 @@ add_action(
 			'bt/v1',
 			'/pairing',
 			array(
-				'methods'             => 'POST',
-				'callback'            => 'bt_proxy_pairing',
-				'permission_callback' => '__return_true',
+				array(
+					'methods'             => 'GET',
+					'callback'            => 'bt_pairing_get_cached',
+					'permission_callback' => '__return_true',
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => 'bt_proxy_pairing',
+					'permission_callback' => '__return_true',
+				),
+			)
+		);
+		register_rest_route(
+			'bt/v1',
+			'/pairing/status',
+			array(
+				'methods'             => 'GET',
+				'callback'            => 'bt_pairing_cache_status',
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}
 );
 
+function bt_pairing_get_cached( WP_REST_Request $request ) {
+	$hash = sanitize_key( $request->get_param( 'hash' ) );
+	if ( ! $hash ) {
+		return new WP_REST_Response( array( 'error' => 'Missing hash' ), 400 );
+	}
+	$key = bt_pairing_cache_key_from_hash( $hash );
+	if ( ! $key ) {
+		return new WP_REST_Response( array( 'error' => 'Invalid hash' ), 400 );
+	}
+	$cached = get_transient( $key );
+	if ( ! is_array( $cached ) || empty( $cached['data'] ) ) {
+		return new WP_REST_Response( array( 'error' => 'Not found' ), 404 );
+	}
+	return new WP_REST_Response(
+		array(
+			'data'      => $cached['data'],
+			'fetchedAt' => isset( $cached['fetchedAt'] ) ? intval( $cached['fetchedAt'] ) : null,
+			'hash'      => $hash,
+		),
+		200
+	);
+}
+
+function bt_pairing_cache_status( WP_REST_Request $request ) {
+	$hash = sanitize_key( $request->get_param( 'hash' ) );
+	if ( ! $hash ) {
+		return new WP_REST_Response( array( 'error' => 'Missing hash' ), 400 );
+	}
+	$key = bt_pairing_cache_key_from_hash( $hash );
+	if ( ! $key ) {
+		return new WP_REST_Response( array( 'error' => 'Invalid hash' ), 400 );
+	}
+	$cached = get_transient( $key );
+	$cached_ok = is_array( $cached ) && ! empty( $cached['data'] );
+	return new WP_REST_Response(
+		array(
+			'cached'    => $cached_ok,
+			'fetchedAt' => $cached_ok && isset( $cached['fetchedAt'] ) ? intval( $cached['fetchedAt'] ) : null,
+			'hash'      => $hash,
+		),
+		200
+	);
+}
+
 function bt_proxy_pairing( WP_REST_Request $request ) {
 	$body    = json_decode( $request->get_body(), true );
 	$answers = array();
 	$force   = ! empty( $body['force'] ) && current_user_can( 'manage_options' );
+	$preload = ! empty( $body['preload'] );
 	if ( isset( $body['answers'] ) && is_array( $body['answers'] ) ) {
 		$answers = $body['answers'];
 	}
@@ -1568,6 +1746,7 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
 	}
 
 	$beer_data = ( isset( $body['beerData'] ) && is_array( $body['beerData'] ) ) ? $body['beerData'] : null;
+	$food_data = ( isset( $body['foodData'] ) && is_array( $body['foodData'] ) ) ? $body['foodData'] : null;
 
 	$beer_catalog = $beer_data && isset( $beer_data['items'] ) ? $beer_data['items'] : ( is_array( $beer_data ) ? $beer_data : array() );
 	$color_map    = bt_compute_color_map_from_beers( $beer_catalog );
@@ -1689,26 +1868,48 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
 		$maybe_json = bt_extract_json_object( $answer_text ? $answer_text : $resp_body );
 	}
 	if ( is_array( $maybe_json ) && isset( $maybe_json['matches'] ) ) {
-		return new WP_REST_Response(
-			array(
-				'result' => $maybe_json,
-				'status' => $http,
-				'prompt' => $prompt,
-				'colors' => $color_map,
-			),
-			200
-		);
-	}
-
-	return new WP_REST_Response(
-		array(
-			'answer' => $answer_text ? $answer_text : $decoded,
+		$payload = array(
+			'result' => $maybe_json,
 			'status' => $http,
 			'prompt' => $prompt,
 			'colors' => $color_map,
-		),
-		200
+		);
+		if ( $preload ) {
+			$hash = bt_pairing_cache_hash_from_payload( $beer_data, $food_data );
+			$key  = bt_pairing_cache_key_from_hash( $hash );
+			if ( $key ) {
+				$cached = array(
+					'data'      => $payload,
+					'fetchedAt' => time(),
+					'hash'      => $hash,
+				);
+				set_transient( $key, $cached, 7 * DAY_IN_SECONDS );
+				bt_pairing_cache_index_add( $key );
+			}
+		}
+		return new WP_REST_Response( $payload, 200 );
+	}
+
+	$payload = array(
+		'answer' => $answer_text ? $answer_text : $decoded,
+		'status' => $http,
+		'prompt' => $prompt,
+		'colors' => $color_map,
 	);
+	if ( $preload ) {
+		$hash = bt_pairing_cache_hash_from_payload( $beer_data, $food_data );
+		$key  = bt_pairing_cache_key_from_hash( $hash );
+		if ( $key ) {
+			$cached = array(
+				'data'      => $payload,
+				'fetchedAt' => time(),
+				'hash'      => $hash,
+			);
+			set_transient( $key, $cached, 7 * DAY_IN_SECONDS );
+			bt_pairing_cache_index_add( $key );
+		}
+	}
+	return new WP_REST_Response( $payload, 200 );
 }
 
 /**
@@ -1718,18 +1919,168 @@ function bt_pairing_admin_buttons() {
 	if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
+	global $bt_pairing_app_present;
+	if ( empty( $bt_pairing_app_present ) ) {
+		return;
+	}
 	$nonce    = wp_create_nonce( 'wp_rest' );
 	$endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/purge' ) );
+	$status_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/status' ) );
+	$pairing_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing' ) );
 	?>
-	<div class="bt-pairing-admin-tools" style="position:fixed;right:1rem;bottom:1rem;z-index:9999;gap:0.5rem;display:flex;flex-direction:column;max-width:200px;">
+	<div class="bt-pairing-admin-tools" style="position:fixed;right:1rem;bottom:1rem;z-index:9999;gap:0.5rem;display:flex;flex-direction:column;max-width:240px;">
 		<button type="button" class="bt-pairing-purge" data-target="history">Purge Histories</button>
 		<button type="button" class="bt-pairing-purge" data-target="pairings-static">Purge Static Pairings</button>
 		<button type="button" class="bt-pairing-purge" data-target="pairing">Purge Pairing</button>
+		<button type="button" class="bt-pairing-refresh">Refresh Now</button>
+		<div id="bt-pairing-status" style="font-size:0.8rem;line-height:1.2;">Pairing cache: checking…</div>
 	</div>
 	<script>
 	(() => {
 		const buttons = document.querySelectorAll('.bt-pairing-purge');
+		const refreshBtn = document.querySelector('.bt-pairing-refresh');
+		const statusEl = document.getElementById('bt-pairing-status');
 		if (!buttons.length) return;
+		const safeString = (value) => {
+			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+			return '';
+		};
+		const hashString = (value) => {
+			const str = safeString(value);
+			let hash = 5381;
+			for (let i = 0; i < str.length; i++) {
+				hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+				hash = hash >>> 0;
+			}
+			return hash.toString(36);
+		};
+		const toItems = (payload) => {
+			if (Array.isArray(payload)) return payload;
+			if (payload && typeof payload === 'object' && Array.isArray(payload.items)) return payload.items;
+			return [];
+		};
+		const getBeerFingerprint = (items) => {
+			if (!Array.isArray(items) || !items.length) return null;
+			const normalized = items.map((item) => {
+				if (!item || typeof item !== 'object') return '';
+				const key = item.btKey || item.id || item.slug || item.name || '';
+				const style = item.style || '';
+				const profile = item.pairingProfile ? JSON.stringify(item.pairingProfile) : '';
+				return `${key}|${style}|${profile}`;
+			}).filter(Boolean).sort().join('||');
+			return normalized ? hashString(normalized) : null;
+		};
+		const getFoodFingerprint = (items) => {
+			if (!Array.isArray(items) || !items.length) return null;
+			const normalized = items.map((item) => {
+				if (!item || typeof item !== 'object') return '';
+				const key = item.btKey || item.id || item.slug || item.name || '';
+				const category = item.category || '';
+				return `${key}|${category}`;
+			}).filter(Boolean).sort().join('||');
+			return normalized ? hashString(normalized) : null;
+		};
+		const readJsonScript = (id) => {
+			const script = document.getElementById(id);
+			if (!script || !script.textContent) return null;
+			try {
+				return JSON.parse(script.textContent);
+			} catch (err) {
+				return null;
+			}
+		};
+		const isKind = (payload, kind) => payload && typeof payload === 'object' && (!payload.kind || payload.kind === kind);
+		const readBeerData = () => {
+			const win = window;
+			const direct = win.__BT_BEER_DATA;
+			if (isKind(direct, 'beer')) return direct;
+			const nested = win.__BT_DATA && win.__BT_DATA.beer;
+			if (isKind(nested, 'beer')) return nested;
+			const script = readJsonScript('bt-beer-data');
+			if (isKind(script, 'beer')) return script;
+			return null;
+		};
+		const readFoodData = () => {
+			const win = window;
+			const direct = win.__BT_FOOD_DATA;
+			if (isKind(direct, 'food')) return direct;
+			const nested = win.__BT_DATA && win.__BT_DATA.food;
+			if (isKind(nested, 'food')) return nested;
+			const scriptFood = readJsonScript('bt-food-data');
+			if (isKind(scriptFood, 'food')) return scriptFood;
+			const scriptLegacy = readJsonScript('bt-menu-data');
+			if (isKind(scriptLegacy, 'food')) return scriptLegacy;
+			return null;
+		};
+		const updateStatus = async () => {
+			if (!statusEl) return;
+			const beerData = readBeerData();
+			const foodData = readFoodData();
+			const beerItems = toItems(beerData);
+			const foodItems = toItems(foodData);
+			const beerHash = getBeerFingerprint(beerItems);
+			const foodHash = getFoodFingerprint(foodItems);
+			if (!beerHash || !foodHash) {
+				statusEl.textContent = 'Pairing cache: waiting for beer + food data.';
+				return;
+			}
+			const hash = `${beerHash}.${foodHash}`;
+			statusEl.textContent = `Pairing cache: checking (${hash})`;
+			try {
+				const res = await fetch(`<?php echo esc_js( $status_endpoint ); ?>?hash=${encodeURIComponent(hash)}`, {
+					credentials: 'same-origin',
+					headers: { 'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>' },
+				});
+				const json = await res.json().catch(() => null);
+				if (!json || !res.ok) {
+					statusEl.textContent = `Pairing cache: error (${hash})`;
+					return;
+				}
+				const fetchedAt = json.fetchedAt ? new Date(json.fetchedAt * 1000).toLocaleString() : 'never';
+				statusEl.textContent = json.cached
+					? `Pairing cache: ready (${hash}) — last refreshed ${fetchedAt}`
+					: `Pairing cache: needs refetch (${hash})`;
+			} catch (err) {
+				statusEl.textContent = `Pairing cache: error (${hash})`;
+			}
+		};
+		const refreshPairingCache = async () => {
+			if (!refreshBtn) return;
+			const beerData = readBeerData();
+			const foodData = readFoodData();
+			if (!beerData || !foodData) {
+				if (statusEl) statusEl.textContent = 'Pairing cache: waiting for beer + food data.';
+				return;
+			}
+			const payload = {
+				beerData,
+				foodData,
+				preload: true,
+				answers: { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' },
+			};
+			refreshBtn.disabled = true;
+			refreshBtn.textContent = 'Refreshing…';
+			try {
+				const res = await fetch('<?php echo esc_js( $pairing_endpoint ); ?>', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+					},
+					body: JSON.stringify(payload),
+				});
+				if (!res.ok) {
+					console.warn('Refresh failed', res.status);
+				}
+			} catch (err) {
+				console.error('Refresh error', err);
+			} finally {
+				refreshBtn.disabled = false;
+				refreshBtn.textContent = 'Refresh Now';
+				updateStatus();
+			}
+		};
 		const clearStaticPairingsCache = () => {
 			const keys = [];
 			try {
@@ -1782,6 +2133,12 @@ function bt_pairing_admin_buttons() {
 				}
 			});
 		});
+		if (refreshBtn) {
+			refreshBtn.addEventListener('click', refreshPairingCache);
+		}
+		updateStatus();
+		document.addEventListener('btBeerDataReady', updateStatus);
+		document.addEventListener('btFoodDataReady', updateStatus);
 	})();
 	</script>
 	<?php

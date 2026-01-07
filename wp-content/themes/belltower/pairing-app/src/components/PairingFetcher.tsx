@@ -9,6 +9,7 @@ interface PairingFetcherProps {
   errorMessage?: string | null;
   lastFetched?: number | null;
   pairingsReady?: boolean;
+  cacheHash?: string | null;
 }
 
 function parseHistory(text?: string | null): string[] {
@@ -35,8 +36,9 @@ export function PairingFetcher({
   errorMessage,
   lastFetched,
   pairingsReady = false,
+  cacheHash,
 }: PairingFetcherProps): ReactElement {
-  const { pairing, lastFetched: cacheFetched, status, error, refresh } = usePairingCache();
+  const { pairing, lastFetched: cacheFetched, status, error, refresh } = usePairingCache(cacheHash);
   const [historyOpen, setHistoryOpen] = useState<Record<string, boolean>>({});
   const mergedStatus = upstreamStatus ?? status;
   const mergedError = errorMessage ?? error;
