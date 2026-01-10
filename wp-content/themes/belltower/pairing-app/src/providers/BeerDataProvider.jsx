@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { normalizeBeer } from '../schemas/beerSchema';
 import { getBeerColors, getPairing } from '../api';
+import { createLogger } from '../logger';
+
+const log = createLogger('beerData');
 
 /**
  * @typedef {{ id: string | number; name: string; style?: string | null; abv?: number | null; ibu?: number | null; description?: string | null; hexColor?: string | null; srm?: number | null }} Beer
@@ -29,7 +32,7 @@ function readSnapshot() {
       }
     }
   } catch (err) {
-    console.warn('Could not parse bt-beer-data script JSON', err instanceof Error ? err.message : err);
+    log.warn('parseScript', { phase: 'beerData', error: err instanceof Error ? err.message : String(err) });
   }
   return [];
 }
@@ -57,7 +60,7 @@ export function BeerDataProvider({ children }) {
         try {
           normalized.push(/** @type {Beer} */ (normalizeBeer(it)));
         } catch (err) {
-          console.warn('Skipping invalid beer', it, err instanceof Error ? err.message : err);
+          log.warn('skipInvalidBeer', { phase: 'beerData', error: err instanceof Error ? err.message : String(err) });
         }
       });
       return normalized;
@@ -208,7 +211,7 @@ export function BeerDataProvider({ children }) {
         }
         setColorLoaded(true);
       } catch (err) {
-        console.warn('refreshColors failed', err);
+        log.warn('refreshColors.failed', { phase: 'beerData', error: err instanceof Error ? err.message : String(err) });
       } finally {
         colorFetchInFlight.current = false;
       }

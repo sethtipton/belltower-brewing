@@ -1,4 +1,7 @@
 import { getWPBase } from '../api';
+import { createLogger } from '../logger';
+
+const log = createLogger('beerColors');
 
 /**
  * @param {string | null | undefined} hex
@@ -24,67 +27,78 @@ export function pickForeground(hex) {
  * @param {BeerColorInput[]} items
  * @returns {Promise<Record<string, string>>}
  */
+let nextBeerColorAllowedAt = 0;
+let beerColorInFlight = null;
+
 export async function fetchBeerColorsBatch(items = []) {
   if (!Array.isArray(items) || !items.length) return {};
+  if (Date.now() < nextBeerColorAllowedAt || beerColorInFlight) return null;
   const url = `${getWPBase().replace(/\/$/, '')}/bt/v1/beer-colors`;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items }),
-      credentials: 'same-origin',
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => res.statusText);
-      console.warn('Beer colors - React2 fetch failed', res.status, text);
-      return {};
-    }
-    /** @type {BeerColorResponse | BeerColorResult[] | null | unknown} */
-    const data = await res.json().catch(() => null);
-    /** @type {BeerColorResult[]} */
-    const entries = [];
+  beerColorInFlight = (async () => {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText);
+        log.warn('response', { phase: 'beerColors', status: res.status, text });
+        nextBeerColorAllowedAt = Date.now() + 60 * 1000;
+        return null;
+      }
+      /** @type {BeerColorResponse | BeerColorResult[] | null | unknown} */
+      const data = await res.json().catch(() => null);
+      /** @type {BeerColorResult[]} */
+      const entries = [];
 
-    /** @param {unknown} entry */
-    const addEntry = (entry) => {
-      if (!entry || typeof entry !== 'object') return;
-      const rec = /** @type {Record<string, unknown>} */ (entry);
-      const id = 'id' in rec && (typeof rec.id === 'string' || typeof rec.id === 'number') ? String(rec.id) : undefined;
-      const hex = 'hex' in rec && typeof rec.hex === 'string' ? rec.hex : undefined;
-      const hexColor = 'hexColor' in rec && typeof rec.hexColor === 'string' ? rec.hexColor : undefined;
-      if (id) {
-        entries.push({ id, hex, hexColor });
-      }
-    };
+      /** @param {unknown} entry */
+      const addEntry = (entry) => {
+        if (!entry || typeof entry !== 'object') return;
+        const rec = /** @type {Record<string, unknown>} */ (entry);
+        const id = 'id' in rec && (typeof rec.id === 'string' || typeof rec.id === 'number') ? String(rec.id) : undefined;
+        const hex = 'hex' in rec && typeof rec.hex === 'string' ? rec.hex : undefined;
+        const hexColor = 'hexColor' in rec && typeof rec.hexColor === 'string' ? rec.hexColor : undefined;
+        if (id) {
+          entries.push({ id, hex, hexColor });
+        }
+      };
 
-    if (Array.isArray(data)) {
-      data.forEach(addEntry);
-    } else if (data && typeof data === 'object') {
-      const colors = /** @type {unknown} */ (data.colors);
-      if (Array.isArray(colors)) {
-        colors.forEach(addEntry);
-      } else if (colors && typeof colors === 'object' && !Array.isArray(colors)) {
-        Object.entries(/** @type {Record<string, unknown>} */ (colors)).forEach(([id, hex]) => addEntry({ id, hex }));
+      if (Array.isArray(data)) {
+        data.forEach(addEntry);
+      } else if (data && typeof data === 'object') {
+        const colors = /** @type {unknown} */ (data.colors);
+        if (Array.isArray(colors)) {
+          colors.forEach(addEntry);
+        } else if (colors && typeof colors === 'object' && !Array.isArray(colors)) {
+          Object.entries(/** @type {Record<string, unknown>} */ (colors)).forEach(([id, hex]) => addEntry({ id, hex }));
+        }
+        const results = /** @type {unknown} */ (data.results);
+        if (Array.isArray(results)) {
+          results.forEach(addEntry);
+        }
       }
-      const results = /** @type {unknown} */ (data.results);
-      if (Array.isArray(results)) {
-        results.forEach(addEntry);
-      }
+      /** @type {Record<string, string>} */
+      const map = {};
+      entries.forEach((r) => {
+        if (!r) return;
+        const id = r.id ?? '';
+        const hex = r.hex ?? r.hexColor ?? '';
+        if (id && hex) {
+          map[String(id)] = String(hex);
+        }
+      });
+      return map;
+    } catch (err) {
+      log.warn('exception', { phase: 'beerColors', error: err instanceof Error ? err.message : String(err) });
+      nextBeerColorAllowedAt = Date.now() + 60 * 1000;
+      return null;
+    } finally {
+      beerColorInFlight = null;
     }
-    /** @type {Record<string, string>} */
-    const map = {};
-    entries.forEach((r) => {
-      if (!r) return;
-      const id = r.id ?? '';
-      const hex = r.hex ?? r.hexColor ?? '';
-      if (id && hex) {
-        map[String(id)] = String(hex);
-      }
-    });
-    return map;
-  } catch (err) {
-    console.warn('Beer colors - React2 fetch exception', err instanceof Error ? err.message : err);
-    return {};
-  }
+  })();
+  return beerColorInFlight;
 }
 
 /**

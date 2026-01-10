@@ -7,12 +7,20 @@
 	function formatBeerData(items, meta = {}) {
 		if (!Array.isArray(items)) return null;
 
+		const toNumberString = (value) => {
+			if (value === null || value === undefined) return '';
+			const text = String(value).trim();
+			if (!text) return '';
+			const match = text.match(/(\d+(?:\.\d+)?)/);
+			return match ? match[1] : '';
+		};
+
 		const normalized = items.map((item) => ({
 			name: item.name || '',
 			category: item.category || item.style || '',
 			style: item.style || item.category || '',
-			abv: item.abv || '',
-			ibu: item.ibu || '',
+			abv: toNumberString(item.abv),
+			ibu: toNumberString(item.ibu),
 			description: item.description || '',
 		}));
 
@@ -240,7 +248,12 @@
 			items.push({
 				name: name ? name.textContent.trim() : '',
 				category: category ? category.textContent.trim() : '',
-				abv: abv ? abv.textContent.trim() : '',
+				abv: (() => {
+					const text = abv ? abv.textContent.trim() : '';
+					if (!text) return '';
+					const match = text.match(/(\d+(?:\.\d+)?)/);
+					return match ? match[1] : '';
+				})(),
 				ibu: ibu ? ibu.textContent.trim() : '',
 				description: desc ? desc.textContent.trim() : '',
 			});

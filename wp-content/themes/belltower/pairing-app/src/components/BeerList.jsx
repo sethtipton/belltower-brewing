@@ -7,6 +7,7 @@ import {
   isCacheStale,
   observeVisibleIds,
 } from '../utils/beerColor';
+import { createLogger } from '../logger';
 
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 import useFlight from '../hooks/useFlight';
@@ -30,6 +31,7 @@ import useFlight from '../hooks/useFlight';
  */
 
 const CACHE_KEY = 'bt_beer_colors_v1';
+const log = createLogger('beerColors');
 /**
  * @param {{
  *  items?: Beer[];
@@ -45,6 +47,8 @@ const CACHE_KEY = 'bt_beer_colors_v1';
  *    foodByKey?: Record<string, { name?: string }>;
  *    ensureLoaded?: (force?: boolean) => void;
  *    available?: boolean;
+ *    lastUpdated?: string | null;
+ *    cacheStore?: string;
  *  };
  * }} props
  */
@@ -68,6 +72,8 @@ export default function BeerList({
   const { slots } = /** @type {{ slots: Array<Beer | null> }} */ (useFlight());
   const orderedIds = useMemo(() => itemList.map((b) => String(b.id)), [itemList]);
   const [colorFetchFailed, setColorFetchFailed] = useState(false);
+  const colorFetchInFlight = useRef(false);
+  const colorFetchAttempted = useRef(false);
   const [colorMap, setColorMap] = useState(() => {
     const cached = getCachedColors(CACHE_KEY);
     if (
@@ -107,8 +113,12 @@ export default function BeerList({
   }, [itemList, mergedColorMap]);
 
   useEffect(() => {
-    if (!allowColorFetch || !missingIds.length || colorFetchFailed) return;
+    if (!allowColorFetch || !missingIds.length || colorFetchFailed || colorFetchInFlight.current) return;
+    if (colorFetchAttempted.current) return;
     let cancelled = false;
+    let fetchFailed = false;
+    colorFetchInFlight.current = true;
+    colorFetchAttempted.current = true;
 
     /**
      * @param {Record<string, string>} incoming
@@ -136,9 +146,16 @@ export default function BeerList({
       if (!payload.length) return;
       try {
         const map = await fetchBeerColorsBatch(payload);
-        if (!cancelled) mergeAndCache(map);
+        if (cancelled) return;
+        if (!map || (typeof map === 'object' && !Object.keys(map).length)) {
+          fetchFailed = true;
+          setColorFetchFailed(true);
+          return;
+        }
+        mergeAndCache(map);
       } catch (err) {
-        console.warn('Beer colors - React2 batch failed', err);
+        log.warn('batch.failed', { phase: 'beerColors', error: err instanceof Error ? err.message : String(err) });
+        fetchFailed = true;
         setColorFetchFailed(true); // stop retrying if the endpoint is failing
       }
     };
@@ -154,7 +171,7 @@ export default function BeerList({
       }
 
       const fetchRest = () => {
-        if (cancelled || !restBatch.length) return;
+        if (cancelled || !restBatch.length || fetchFailed) return;
         void fetchBatch(restBatch);
       };
 
@@ -165,10 +182,13 @@ export default function BeerList({
       }
     };
 
-    void run();
+    void run().finally(() => {
+      colorFetchInFlight.current = false;
+    });
 
     return () => {
       cancelled = true;
+      colorFetchInFlight.current = false;
     };
   }, [missingIds, itemsById, allowColorFetch, colorFetchFailed]);
 
@@ -199,7 +219,7 @@ export default function BeerList({
           const entry = beerKey && pairingsState?.pairingsByBeerKey
             ? pairingsState.pairingsByBeerKey[beerKey]
             : null;
-          const pairingsToken = `${pairingsState?.status ?? 'idle'}:${beerKey}:${entry?.mains?.length ?? 0}:${entry?.side?.foodKey ?? ''}`;
+          const pairingsToken = `${pairingsState?.status ?? 'idle'}:${pairingsState?.available ? '1' : '0'}:${beerKey}:${entry?.mains?.length ?? 0}:${entry?.side?.foodKey ?? ''}`;
           return (
             <BeerCard
               key={id}

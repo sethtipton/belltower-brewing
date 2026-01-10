@@ -107,6 +107,7 @@ function bt_pairing_app_enqueue_assets() {
 				'restUrl' => get_rest_url(),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'isAdmin' => current_user_can( 'manage_options' ),
+				'cacheHash' => get_option( 'bt_pairing_latest_hash', '' ),
 			)
 		);
 

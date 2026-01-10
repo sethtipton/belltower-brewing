@@ -3,7 +3,7 @@
 $muted: #666;
 $accent: #0b79d0;
 $card-border: #ececec;
-$text: #222;
+$text: #000;
 $beeercardgap: 0.5rem;
 $rightcolumnshift: -7px;
 $cardpadding: 1rem;
@@ -67,9 +67,13 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 100%;
 }
 
+.beer-name {
+  font-size: 1.2rem;
+}
+
 .beer-card {
-  padding: $cardpadding;
-  padding-bottom: calc($cardpadding + $rightcolumnshift);
+  //padding: $cardpadding;
+  //padding-bottom: calc($cardpadding + $rightcolumnshift);
   border-radius: 2px;
   touch-action: manipulation;
   display: flex;
@@ -111,7 +115,8 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   .beer-card-layout {
     display: grid;
     grid-template-columns: 60px 1fr;
-    gap: $beerlistgap;
+    //gap: $beerlistgap;
+    gap: clamp(1vw, 1vw, $beerlistgap);
     align-items: start;
     transition: grid-template-columns $anim-fast $anim-ease;
     &.with-recommendation {
@@ -128,6 +133,49 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     flex-direction: column;
     gap: 0.5rem;
     transform: translate(0px, -5px);
+  }
+
+  //.beer-card-details {
+  //margin-top: 0.5rem;
+  //}
+
+  .beer-card-tabs {
+    display: flex;
+    gap: 0.5rem;
+    //border-bottom: 1px solid #ddd;
+    //margin-bottom: 0.5rem;
+  }
+
+  .beer-card-tab {
+    border-radius: 2px;
+    cursor: pointer;
+    border: 2px solid var(--beer-color, #000);
+    //background-color: var(--beer-color);
+    transition: background-color $anim-fast $anim-ease,
+      color $anim-fast $anim-ease, border-color $anim-fast $anim-ease;
+    //color: var(--beer-foreground, #000);
+    color: #000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 1rem;
+  }
+
+  .beer-card-tab[aria-selected="true"] {
+    border-color: var(--beer-color, #000);
+    background-color: var(--beer-color);
+    color: var(--beer-foreground, #fff);
+    font-weight: 600;
+  }
+
+  .beer-details-panel {
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.8);
+    border-left: 2px solid var(--beer-color, #000);
+    padding-inline-start: 0.5rem;
+    padding-top: 0.5rem;
+    //padding: 0.5rem;
   }
 
   .beer-match {
@@ -183,6 +231,18 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
 
+//.pairings-block {
+//.small.cat {
+//border-bottom: 1px solid var(--beer-color, #000);
+//padding-left: 0.5em;
+//}
+//}
+
+//.small.why {
+//color: var(--beer-color, #000);
+//border-bottom: 1px solid var(--beer-color, #000);
+//}
+
 .flight-toggle {
   display: block;
   font-size: 0.9rem;
@@ -196,6 +256,109 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: opacity;
   position: absolute;
   top: 100%;
+}
+
+.bt-pairing-admin-tools {
+  --bt-admin-peek: 68px;
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  inline-size: min(300px, 90vw);
+  max-block-size: min(90dvh, 90vh);
+  overflow: auto;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.82);
+  border-top-left-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  font-size: 1rem;
+  scroll-behavior: smooth;
+  background: rgba(255, 255, 255, 0.8);
+  transition: transform 0.25s ease;
+  will-change: transform;
+}
+
+.bt-pairing-admin-tools--collapsed {
+  transform: translateX(calc(100% - var(--bt-admin-peek)));
+  padding-left: var(--bt-admin-peek);
+  .bt-pairing-admin-header {
+    transform: translate(calc(-1 * var(--bt-admin-peek) + 0.75rem), 0);
+  }
+}
+/*
+@supports (
+  (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))
+) {
+  .bt-pairing-admin-tools {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+*/
+
+.bt-pairing-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 2vh;
+}
+
+.bt-pairing-admin-title {
+  line-height: 1rem;
+  margin: 0;
+}
+
+.bt-pairing-admin-toggle {
+  border: 1px solid #000;
+  background: #f9f9f9;
+  color: #111;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+}
+
+.bt-pairing-admin-tools button {
+  font: inherit;
+  padding: 3px;
+  border: 1px solid #000;
+  background: #f9f9f9;
+  color: #111;
+  border-radius: 2px;
+}
+
+.bt-pairing-admin-tools button:hover:not(:disabled) {
+  background: #efefef;
+  cursor: pointer;
+}
+
+.bt-pairing-admin-tools button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bt-pairing-admin-tools .bt-pairing-help {
+  //margin-top: -0.25rem;
+  font-size: 0.8rem;
+  //border-bottom: 1px solid black;
+}
+
+.pairings-updated {
+  display: flex;
+  justify-content: end;
+  gap: 0.5rem;
+}
+
+.pairings-updated-time {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pairings-item-desc,
+.pairings-item-add {
+  padding-inline-start: 0.5em;
 }
 
 .beer-svg-wrap {
@@ -331,7 +494,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 .beer-history-content {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.8);
-  margin-top: $beeercardgap;
+  //margin-top: $beeercardgap;
   p {
     margin: 0;
     &:not(:first-of-type) {
@@ -343,22 +506,24 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 .pairings-panel {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.8);
-  margin-top: $beeercardgap;
+  //margin-top: $beeercardgap;
 }
 
 .pairings-results {
   padding: 0;
-  .muted.small {
-    //background-color: var(--beer-color);
-    padding: 0.3em 0;
-    border-bottom: 1px solid var(--beer-color, #000);
-    color: 000;
-  }
+  gap: 0.5rem;
+  display: grid;
   ul {
     padding-inline-start: 0.5em;
     li {
-      margin: 0.5em 0;
+      margin: 0.5em 0 0 0;
     }
+  }
+  .pairings-updated {
+    padding: 0.3em 0;
+    border-bottom: 1px solid var(--beer-color, #000);
+    color: #000;
+    display: none;
   }
 }
 
@@ -485,8 +650,13 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .flight-tray-overlay-copy {
     margin: 0;
-    text-align: left;
+    text-align: center;
     grid-column: 1 / 3;
+    font-size: 1rem;
+    //border: 1px solid red;
+    color: white;
+    background-color: #000;
+    padding: 1vh 0;
     //max-width: 250px;
   }
   .flight-tray-overlay-copy-highlight {

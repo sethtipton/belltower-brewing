@@ -3,13 +3,18 @@ import type { PairingMatch as ApiPairingMatch, PairingResponse as ApiPairingResp
 import { useBeerData } from './hooks/useBeerData';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
-import { PairingFetcher } from './components/PairingFetcher';
 import { preloadPairing, getHistories, getPairingCache, getPairingCacheStatus } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
-import { useStaticPairings, getPairingCacheMeta, getCanonicalFoodData } from './staticPairings';
+import {
+  useStaticPairings,
+  getPairingCacheMeta,
+  getCanonicalBeerDataFallback,
+  getCanonicalFoodData,
+} from './staticPairings';
 import './styles/styles.scss';
 import useFlight from './hooks/useFlight';
+import { createLogger } from './logger';
 
 interface PreparedAnswers { mood: string; body: string; bitterness: string; flavorFocus: string[]; alcoholPreference: string }
 interface PairingMatch extends ApiPairingMatch {
@@ -34,6 +39,8 @@ interface BeerItem {
   description: string;
   style: string;
   hexColor: string | null;
+  abv?: number | null;
+  ibu?: number | null;
   btKey?: string;
   pairingProfile?: unknown;
   recommended?: boolean;
@@ -44,20 +51,35 @@ interface BeerItem {
 }
 interface MatchLike { beer?: unknown; score?: unknown; confidence?: unknown; match_sentence?: unknown; matchSentence?: unknown }
 type FetchStatus = 'idle' | 'loading' | 'success' | 'error';
+interface PairingCacheMeta {
+  hash: string;
+  key: string;
+  beerFingerprint: string;
+  foodFingerprint: string;
+  beerData: { items?: unknown[] } | null;
+  foodData: { items?: unknown[] } | null;
+}
 
 const PAIRING_MAP_KEY = 'bt_pairing_cache_v1_map';
 const HISTORY_CACHE_KEY = 'bt_history_cache_v1';
 const EMPTY_PREPARED: PreparedAnswers = { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' };
-const noop = (): void => undefined;
 const session = typeof globalThis !== 'undefined' ? globalThis.sessionStorage : null;
 const localStore = typeof globalThis !== 'undefined' ? globalThis.localStorage : null;
-const logger = typeof globalThis !== 'undefined' && globalThis.console
-  ? globalThis.console
-  : { log: noop, warn: noop, error: noop };
+const log = createLogger('pairing');
+const historyLog = createLogger('history');
+const staticLog = createLogger('staticPairings');
+const recLog = createLogger('recommendations');
 const pairingGlobals = typeof globalThis !== 'undefined'
-  ? (globalThis as { PAIRING_APP?: { isAdmin?: boolean }; PAIRINGAPP?: { isAdmin?: boolean } })
+  ? (globalThis as {
+      PAIRING_APP?: { isAdmin?: boolean; cacheHash?: string };
+      PAIRINGAPP?: { isAdmin?: boolean; cacheHash?: string };
+    })
   : null;
 const isAdmin = Boolean(pairingGlobals?.PAIRING_APP?.isAdmin ?? pairingGlobals?.PAIRINGAPP?.isAdmin);
+const getServerCacheHash = (): string => {
+  const hash = pairingGlobals?.PAIRING_APP?.cacheHash ?? pairingGlobals?.PAIRINGAPP?.cacheHash;
+  return typeof hash === 'string' ? hash : '';
+};
 const scheduleIdle = (task: () => void, delay = 500): void => {
   if (typeof globalThis === 'undefined') {
     task();
@@ -70,9 +92,48 @@ const scheduleIdle = (task: () => void, delay = 500): void => {
   }
   globalThis.setTimeout(task, delay);
 };
+
+const detectDataSources = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return { beerSource: 'server', foodSource: 'server' };
+  }
+  const win = window as { __BT_BEER_DATA?: unknown; __BT_FOOD_DATA?: unknown; __BT_DATA?: { beer?: unknown; food?: unknown } };
+  const beerSource = win.__BT_BEER_DATA || win.__BT_DATA?.beer
+    ? 'window'
+    : document.getElementById('bt-beer-data')
+    ? 'script'
+    : 'missing';
+  const foodSource = win.__BT_FOOD_DATA || win.__BT_DATA?.food
+    ? 'window'
+    : document.getElementById('bt-food-data') || document.getElementById('bt-menu-data')
+    ? 'script'
+    : 'missing';
+  return { beerSource, foodSource };
+};
+
+const toErrorType = (message: string): string => {
+  const msg = message.toLowerCase();
+  if (msg.includes('timeout')) return 'timeout';
+  if (msg.includes('network') || msg.includes('failed to fetch')) return 'network';
+  if (msg.includes('parse')) return 'parse';
+  if (msg.includes('http') || msg.includes('request failed')) return 'http';
+  return 'unknown';
+};
 const isRecord = (val: unknown): val is Record<string, unknown> => Boolean(val) && typeof val === 'object' && !Array.isArray(val);
 const formatError = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 const isMatchLike = (val: unknown): val is MatchLike => isRecord(val);
+
+function toPairingCacheMeta(raw: unknown): PairingCacheMeta | null {
+  if (!isRecord(raw)) return null;
+  const hash = typeof raw.hash === 'string' ? raw.hash : '';
+  const key = typeof raw.key === 'string' ? raw.key : '';
+  if (!hash || !key) return null;
+  const beerFingerprint = typeof raw.beerFingerprint === 'string' ? raw.beerFingerprint : '';
+  const foodFingerprint = typeof raw.foodFingerprint === 'string' ? raw.foodFingerprint : '';
+  const beerData = isRecord(raw.beerData) ? (raw.beerData as { items?: unknown[] }) : null;
+  const foodData = isRecord(raw.foodData) ? (raw.foodData as { items?: unknown[] }) : null;
+  return { hash, key, beerFingerprint, foodFingerprint, beerData, foodData };
+}
 
 function toPairingCacheEntry(raw: unknown): PairingCacheEntry | null {
   if (!isRecord(raw)) return null;
@@ -153,6 +214,18 @@ function toPreparedAnswers(raw: unknown): PreparedAnswers {
   };
 }
 
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const match = /(\d+(?:\.\d+)?)/.exec(value);
+    if (!match) return null;
+    const num = Number.parseFloat(match[1]);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
 function toBeerItem(raw: unknown): BeerItem | null {
   if (!isRecord(raw)) return null;
   const obj = raw;
@@ -162,6 +235,8 @@ function toBeerItem(raw: unknown): BeerItem | null {
   const description = typeof obj.description === 'string' ? obj.description : '';
   const style = typeof obj.style === 'string' ? obj.style : '';
   const hexColor = typeof obj.hexColor === 'string' ? obj.hexColor : typeof obj.hex === 'string' ? obj.hex : null;
+  const abv = toNumber(obj.abv);
+  const ibu = toNumber(obj.ibu);
   const btKey = typeof obj.btKey === 'string' ? obj.btKey : undefined;
   const pairingProfile = 'pairingProfile' in obj ? obj.pairingProfile : undefined;
   const item: BeerItem = {
@@ -170,6 +245,8 @@ function toBeerItem(raw: unknown): BeerItem | null {
     description,
     style,
     hexColor,
+    abv,
+    ibu,
     btKey,
     pairingProfile,
   };
@@ -196,8 +273,13 @@ interface BeerDataHook {
 export default function App(): React.ReactElement {
   const { items, ready, refreshColors, fetchPairing } = useBeerData() as BeerDataHook;
   const { slots } = useFlight();
-  const [pairingCacheMeta, setPairingCacheMeta] = useState(() => getPairingCacheMeta());
+  const [pairingCacheMeta, setPairingCacheMeta] = useState<PairingCacheMeta | null>(
+    () => toPairingCacheMeta(getPairingCacheMeta())
+  );
   const pairingCacheHash = pairingCacheMeta?.hash ?? '';
+  const serverCacheHash = useMemo(() => getServerCacheHash(), []);
+  const pairingCacheBeerData = pairingCacheMeta?.beerData ?? null;
+  const pairingCacheFoodData = pairingCacheMeta?.foodData ?? null;
   const [stableCacheHash, setStableCacheHash] = useState('');
   const pairingCacheMapKey = stableCacheHash ? `${PAIRING_MAP_KEY}_${stableCacheHash}` : '';
   const [formOpen, setFormOpen] = useState(false);
@@ -227,6 +309,7 @@ export default function App(): React.ReactElement {
   const historyResolved = useRef<Set<string>>(new Set(Object.keys(historyByName || {})));
   const historyAttempts = useRef<Record<string, number>>({});
   const historyRequestInProgress = useRef(false);
+  const historyCooldownUntil = useRef(0);
   const [pairingFetched, setPairingFetched] = useState(false);
   const [flightOpen, setFlightOpen] = useState(true);
   const [colorMapOverride, setColorMapOverride] = useState<Record<string, string>>({});
@@ -235,9 +318,23 @@ export default function App(): React.ReactElement {
   const safeItems = useMemo<BeerItem[]>(() => toBeerArray(items), [items]);
   const [successMessage, setSuccessMessage] = useState('');
   const staticPairings = useStaticPairings({ beers: safeItems });
+  const cacheMetaLogged = useRef(false);
+  const fallbackHashLogged = useRef(false);
+  const staticPairingsTriggered = useRef<string | null>(null);
+  const uiPairingsLogged = useRef(false);
 
   useEffect(() => {
-    const update = () => setPairingCacheMeta(getPairingCacheMeta());
+    const sources = detectDataSources();
+    log.info('boot.dataSources', {
+      phase: 'boot',
+      ...sources,
+      hasGlobals: Boolean(pairingGlobals?.PAIRING_APP ?? pairingGlobals?.PAIRINGAPP),
+      serverCacheHash: serverCacheHash ?? null,
+    });
+  }, [serverCacheHash]);
+
+  useEffect(() => {
+    const update = () => setPairingCacheMeta(toPairingCacheMeta(getPairingCacheMeta()));
     if (typeof document !== 'undefined') {
       document.addEventListener('btBeerDataReady', update);
       document.addEventListener('btFoodDataReady', update);
@@ -251,15 +348,101 @@ export default function App(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    if (!pairingCacheHash) {
+    if (pairingCacheMeta) return;
+    if (!cacheMetaLogged.current) {
+      const beerData = getCanonicalBeerDataFallback();
+      const foodData = getCanonicalFoodData();
+      const hasBeerData = !!(beerData && Array.isArray(beerData.items) && beerData.items.length);
+      const hasFoodData = !!(foodData && Array.isArray(foodData.items) && foodData.items.length);
+      log.info('cacheMeta.missing', {
+        phase: 'cache',
+        hasBeerData,
+        hasFoodData,
+        serverCacheHash: serverCacheHash || null,
+      });
+      cacheMetaLogged.current = true;
+    }
+    let attempts = 0;
+    const tick = () => {
+      const next = toPairingCacheMeta(getPairingCacheMeta());
+      if (next) {
+        setPairingCacheMeta(next);
+        return;
+      }
+      attempts += 1;
+      if (attempts < 6) {
+        setTimeout(tick, 500);
+      }
+    };
+    const timer = setTimeout(tick, 300);
+    return () => clearTimeout(timer);
+  }, [pairingCacheMeta, serverCacheHash]);
+
+  useEffect(() => {
+    const hashCandidate = pairingCacheHash || serverCacheHash;
+    if (!hashCandidate) {
       setStableCacheHash('');
       return;
     }
+    if (staticPairingsTriggered.current && staticPairingsTriggered.current !== hashCandidate) {
+      staticPairingsTriggered.current = null;
+    }
+    if (!pairingCacheHash && serverCacheHash && !fallbackHashLogged.current) {
+      log.info('cacheMeta.fallbackHash', { phase: 'cache', hash: serverCacheHash });
+      fallbackHashLogged.current = true;
+    }
     const timer = setTimeout(() => {
-      setStableCacheHash(pairingCacheHash);
+      setStableCacheHash(hashCandidate);
     }, 400);
     return () => clearTimeout(timer);
-  }, [pairingCacheHash]);
+  }, [pairingCacheHash, serverCacheHash]);
+
+  const triggerStaticPairings = useCallback(
+    (source: 'cached' | 'preload') => {
+      if (!stableCacheHash) return;
+      if (staticPairingsTriggered.current === stableCacheHash) return;
+      staticPairingsTriggered.current = stableCacheHash;
+      staticLog.info('trigger', { phase: 'staticPairings', source, hash: stableCacheHash });
+      void staticPairings.ensureLoaded();
+    },
+    [stableCacheHash, staticPairings]
+  );
+
+  useEffect(() => {
+    if (uiPairingsLogged.current) return;
+    if (staticPairings.available && staticPairings.status === 'ready') {
+      uiPairingsLogged.current = true;
+      log.info('ui.pairingsToggle', {
+        phase: 'ui',
+        available: staticPairings.available,
+        status: staticPairings.status,
+        hash: stableCacheHash || null,
+      });
+    }
+  }, [staticPairings.available, staticPairings.status]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const detail = {
+      lastFetched,
+      pairingsReady: staticPairings.available && pairingFetched,
+      cacheHash: stableCacheHash || null,
+      staticLastUpdated: staticPairings.lastUpdated ?? null,
+      staticStore: staticPairings.cacheStore ?? null,
+      status: fetchStatus,
+      error: fetchError || null,
+    };
+    document.dispatchEvent(new CustomEvent('btPairingStatus', { detail }));
+  }, [
+    lastFetched,
+    pairingFetched,
+    staticPairings.available,
+    staticPairings.lastUpdated,
+    staticPairings.cacheStore,
+    stableCacheHash,
+    fetchStatus,
+    fetchError,
+  ]);
 
   const makeAnswerKey = useCallback((a: PreparedAnswers | null | undefined) => {
     const prepared = toPreparedAnswers(a);
@@ -324,7 +507,7 @@ export default function App(): React.ReactElement {
         Object.entries(safeHistory).forEach(([slug, val]) => {
           historyResolved.current.add(slug);
           next[slug] = val;
-          logger.log('[History] saved', slug, val.slice(0, 80) + '…');
+          historyLog.debug('saved', { phase: 'history', slug, preview: val.slice(0, 80) + '...' });
         });
         persistHistoryCache(next);
         return next;
@@ -350,6 +533,7 @@ export default function App(): React.ReactElement {
   const fetchAndMergeHistories = useCallback(async () => {
     if (historyRequestInProgress.current) return;
     if (!safeItems.length) return;
+    if (Date.now() < historyCooldownUntil.current) return;
     const payload = safeItems.map((it) => ({
       slug: slugify(it.name ?? it.id ?? ''),
       name: it.name ?? '',
@@ -362,16 +546,27 @@ export default function App(): React.ReactElement {
     });
     if (!missing.length) return;
     historyRequestInProgress.current = true;
-    logger.log('[History] request', missing.map((p) => p.slug));
+    const historyStarted = Date.now();
+    historyLog.info('request', {
+      phase: 'history',
+      count: missing.length,
+      slugsSample: missing.slice(0, 5).map((p) => p.slug),
+      hash: stableCacheHash || null,
+    });
     try {
       const res = await getHistories(missing);
       const incoming = toHistoryMap(res?.histories);
       if (!Object.keys(incoming).length) {
-        logger.warn('[History] empty response', { payload: missing, res });
+        historyLog.warn('empty', { phase: 'history', count: missing.length, ms: Date.now() - historyStarted });
       } else {
-        logger.log('[History] response', incoming);
+        historyLog.debug('response', {
+          phase: 'history',
+          count: Object.keys(incoming).length,
+          ms: Date.now() - historyStarted,
+        });
       }
       mergeHistories(incoming);
+      historyCooldownUntil.current = 0;
       Object.keys(incoming).forEach((slug) => {
         const prev = historyAttempts.current[slug] ?? 0;
         historyAttempts.current[slug] = prev + 1;
@@ -385,7 +580,14 @@ export default function App(): React.ReactElement {
         }
       });
     } catch (err) {
-      logger.warn('[History] fetch failed', formatError(err));
+      const error = formatError(err);
+      historyLog.warn('failed', {
+        phase: 'history',
+        error,
+        errorType: toErrorType(error),
+        ms: Date.now() - historyStarted,
+      });
+      historyCooldownUntil.current = Date.now() + 60 * 1000;
       missing.forEach((it) => {
         const prev = historyAttempts.current[it.slug] ?? 0;
         historyAttempts.current[it.slug] = prev + 1;
@@ -394,10 +596,10 @@ export default function App(): React.ReactElement {
         }
       });
     } finally {
-      logger.log('[History] resolved slugs', Array.from(historyResolved.current));
+      historyLog.debug('resolved', { phase: 'history', count: historyResolved.current.size });
       historyRequestInProgress.current = false;
     }
-  }, [safeItems, mergeHistories]);
+  }, [safeItems, mergeHistories, stableCacheHash]);
 
   const trayWidth = flightOpen ? '250px' : '0px';
   const trayGap = flightOpen ? '2vw' : '0';
@@ -464,7 +666,7 @@ export default function App(): React.ReactElement {
           }
         : b;
       if (showRecommendations) {
-        logger.log('[Rec]', { name: b.name, slug, isRec, recommended: next.recommended, recommendedIds: Array.from(recommendedIds) });
+        recLog.debug('rank', { phase: 'recommendations', name: b.name, slug, isRec, recommended: next.recommended });
       }
       return next;
     });
@@ -492,7 +694,7 @@ export default function App(): React.ReactElement {
         };
       }
     });
-    logger.log('[Pairing] applyRecommendations', { ids: Array.from(ids), metaMap });
+    recLog.info('apply', { phase: 'recommendations', count: ids.size });
     setRecommendedIds(ids);
     setRecMeta(metaMap);
   }, []);
@@ -517,7 +719,7 @@ export default function App(): React.ReactElement {
     return (
       <BeerList
         items={decoratedItems}
-        allowColorFetch={allowColors}
+        allowColorFetch={allowColors && pairingFetched}
         showHistory={pairingFetched}
         onFlightOpen={() => setFlightOpen(true)}
         colorMapOverride={colorMapOverride}
@@ -544,6 +746,7 @@ export default function App(): React.ReactElement {
         setShowRecommendations(false);
       }
       setPairingFetched(true);
+      triggerStaticPairings('cached');
       if (typeof fetchedAt === 'number') {
         setLastFetched(fetchedAt);
       }
@@ -581,14 +784,14 @@ export default function App(): React.ReactElement {
 
   const colorApplied = useRef(false);
 
-  const handleFetchPairing = async (preparedOverride?: PreparedAnswers | null): Promise<PairingResponse | null> => {
+  const handleFetchPairing = useCallback(async (preparedOverride?: PreparedAnswers | null): Promise<PairingResponse | null> => {
     setFetchStatus('loading');
     setFetchError('');
     const prepared = toPreparedAnswers(preparedOverride ?? preparedAnswers ?? EMPTY_PREPARED);
     const key = makeAnswerKey(prepared);
     const cached = readPairingCache(key);
       if (cached?.data) {
-        logger.log('[Pairing] using cached pairing for key', key, cached);
+        log.info('cache.hit', { phase: 'cache', key, fetchedAt: cached?.fetchedAt ?? null, hash: stableCacheHash || null });
         setPairingData(cached.data);
         const { matches: cachedMatches, historyMap: cachedHistory } = extractMatchesAndHistory(cached.data);
         if (cachedMatches.length) {
@@ -598,24 +801,40 @@ export default function App(): React.ReactElement {
         setLastFetched(cached.fetchedAt ?? Date.now());
         setPairingFetched(true);
         setFetchStatus('success');
-        logger.log('[Static pairings] trigger after cached pairing');
-        void staticPairings.ensureLoaded();
+        triggerStaticPairings('cached');
         return cached.data;
-      }
+    }
     try {
-      logger.log('[Pairing] preload starting');
       // Preload should only hydrate cache/history/colors, not compute recommendations.
-      const foodData = getCanonicalFoodData();
+      const cacheBeerItems = Array.isArray(pairingCacheBeerData?.items) ? pairingCacheBeerData?.items : null;
+      const preloadStarted = Date.now();
+      log.info('preload.start', {
+        phase: 'preload',
+        hasBeerData: !!cacheBeerItems,
+        hasFoodData: !!pairingCacheFoodData,
+        hash: stableCacheHash || null,
+      });
       const result = toPairingResponse(await preloadPairing(
-        safeItems,
+        cacheBeerItems ?? safeItems,
         prepared as unknown as Record<string, unknown>,
-        foodData ?? null
+        pairingCacheFoodData ?? null
       ));
-      logger.log('[Pairing] preload result', result);
+      const preloadColors = extractColorMap(result);
+      const { matches: preloadMatches, historyMap: preloadHistory } = extractMatchesAndHistory(result);
+      log.info('preload.success', {
+        phase: 'preload',
+        hasResult: !!result,
+        colors: Object.keys(preloadColors).length,
+        matches: preloadMatches.length,
+        history: Object.keys(preloadHistory).length,
+        ms: Date.now() - preloadStarted,
+        hash: stableCacheHash || null,
+      });
       setPairingData(result);
       setShowRecommendations(false); // defer highlighting until user submits
       const colors = extractColorMap(result);
-      if (Object.keys(colors).length) {
+      const hasColors = Object.keys(colors).length > 0;
+      if (hasColors) {
         setColorMapOverride(colors);
         const hasAllColors = safeItems.length > 0 && Object.keys(colors).length >= safeItems.length;
         if (hasAllColors) {
@@ -630,7 +849,7 @@ export default function App(): React.ReactElement {
         writePairingCache(key, result);
       }
       setPairingFetched(true);
-      if (refreshColors && !colorApplied.current) {
+      if (refreshColors && !colorApplied.current && !hasColors) {
         scheduleIdle(() => {
           refreshColors(true);
           colorApplied.current = true;
@@ -639,11 +858,16 @@ export default function App(): React.ReactElement {
       setAllowColors(true);
       setLastFetched(Date.now());
       setFetchStatus('success');
-      logger.log('[Static pairings] trigger after preload pairing');
-      void staticPairings.ensureLoaded();
+      triggerStaticPairings('preload');
       return result;
     } catch (err) {
-      logger.error(formatError(err));
+      const error = formatError(err);
+      log.error('preload.error', {
+        phase: 'preload',
+        error,
+        errorType: toErrorType(error),
+        hash: stableCacheHash || null,
+      });
       const fallback = readAnyCachedPairing();
       if (fallback) {
         setPairingData(fallback);
@@ -668,10 +892,29 @@ export default function App(): React.ReactElement {
       setFetchError('Unable to fetch data (service timed out).');
       return null;
     }
-  };
+  }, [
+    preparedAnswers,
+    makeAnswerKey,
+    readPairingCache,
+    extractMatchesAndHistory,
+    applyHistoryOnly,
+    extractColorMap,
+    safeItems,
+    refreshColors,
+    staticPairings,
+    writePairingCache,
+    pairingCacheBeerData,
+    pairingCacheFoodData,
+    fetchAndMergeHistories,
+  ]);
+
+  const statusCheckedRef = useRef<string>('');
 
   useEffect(() => {
     if (!isAdmin || !stableCacheHash || !localStore) return;
+    if (!pairingCacheMeta?.hash) return;
+    if (statusCheckedRef.current === stableCacheHash) return;
+    statusCheckedRef.current = stableCacheHash;
     const throttleKey = `bt_pairing_autopreload_${stableCacheHash}`;
     const lastRaw = localStore.getItem(throttleKey);
     const last = lastRaw ? Number(lastRaw) : 0;
@@ -704,7 +947,7 @@ export default function App(): React.ReactElement {
     try {
       const fetchedRaw = /** @type {unknown} */ (await fetchPairing(prepared));
       const fetched = toPairingResponse(fetchedRaw);
-      logger.log('[Pairing] submit fetchPairing result', fetched);
+      log.info('submit.success', { phase: 'submit', hasResult: !!fetched, hash: stableCacheHash || null });
       if (fetched && session) {
         writePairingCache(key, fetched);
       }
@@ -728,7 +971,8 @@ export default function App(): React.ReactElement {
         }
       }
     } catch (err) {
-      logger.error('[Pairing] submit fetch failed', formatError(err));
+      const error = formatError(err);
+      log.error('submit.error', { phase: 'submit', error, errorType: toErrorType(error), hash: stableCacheHash || null });
       setError('Unable to fetch pairing right now.');
       setSuccessMessage('');
     } finally {
@@ -742,21 +986,7 @@ export default function App(): React.ReactElement {
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
         <header>
           <h2>Beers on tap</h2>
-          {isAdmin && lastFetched ? (
-            <div className="muted small">Last refreshed: {new Date(lastFetched).toLocaleString()}</div>
-          ) : null}
         </header>
-        {isAdmin ? (
-          <PairingFetcher
-            onPairing={(data) => setPairingData(data)}
-            onFetch={() => handleFetchPairing()}
-            status={fetchStatus}
-            errorMessage={fetchError}
-            lastFetched={lastFetched}
-            pairingsReady={staticPairings.available && pairingFetched}
-            cacheHash={stableCacheHash}
-          />
-        ) : null}
         <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
           {formOpen ? 'Close - Help me decide' : 'Help me decide'}
         </button>

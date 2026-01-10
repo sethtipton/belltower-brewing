@@ -1,7 +1,6 @@
 // BeerCard.jsx
-import React, { useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import BeerHistory from './BeerHistory';
+import React, { useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { pickForeground } from '../utils/beerColor';
 import Pint from './Pint';
 import useFlight from '../hooks/useFlight';
@@ -40,6 +39,8 @@ const MotionCard = React.memo(
  *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; why?: string }>; side?: { foodKey?: string; why?: string } | null }>;
  *    foodByKey?: Record<string, { name?: string }>;
  *    ensureLoaded?: (force?: boolean) => void;
+ *    lastUpdated?: string | null;
+ *    cacheStore?: string;
  *  };
  *  pairingsToken?: string;
  * }} props
@@ -56,8 +57,6 @@ const MotionCard = React.memo(
     pairingsState,
     pairingsToken,
   }) {
-    const [showHistory, setShowHistory] = useState(false);
-    const [showPairings, setShowPairings] = useState(false);
     const tint = useMemo(() => beer?.hexColor ?? '#fff', [beer?.hexColor]);
     const fg = useMemo(() => pickForeground(tint), [tint]);
     const rgb = useMemo(() => hexToRgb(tint), [tint]);
@@ -65,20 +64,68 @@ const MotionCard = React.memo(
     const historyText = enableHistory
       ? beer?.history_fun ?? `History & fun facts coming soon for ${beer?.name ?? 'this beer'}.`
       : '';
+    const historyParagraphs = useMemo(() => {
+      if (!historyText) return [];
+      return historyText
+        .split(/\n+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+    }, [historyText]);
+    const hasHistory = Boolean(historyParagraphs.length);
+    const hasPairings = Boolean(pairingsState);
+    const [activeTab, setActiveTab] = useState(/** @type {'history' | 'pairings' | 'none'} */ ('none'));
+    /** @type {React.MutableRefObject<Record<string, HTMLButtonElement | null>>} */
+    const tabRefs = useRef({});
     const score = beer?.recommendationScore;
     const confidence = beer?.recommendationConfidence;
     const scoreText = typeof score === 'number' ? score.toFixed(2) : null;
     const pairingsStatus = pairingsState?.status ?? 'idle';
     const pairingsError = pairingsState?.error ?? '';
+    const pairingsUpdatedAt = useMemo(() => {
+      if (!pairingsState?.lastUpdated) return null;
+      const date = new Date(pairingsState.lastUpdated);
+      return Number.isNaN(date.getTime()) ? null : date.toLocaleString();
+    }, [pairingsState?.lastUpdated]);
     const beerKey = beer?.btKey ?? '';
     const pairings = beerKey ? pairingsState?.pairingsByBeerKey?.[beerKey] : null;
     const foodByKey = pairingsState?.foodByKey ?? {};
-    const pairingsId = `pairings-${beer.id}`;
-    const showPairingsToggle = Boolean(pairingsState?.available && pairingsStatus === 'ready');
+    const panelId = `beer-panel-${beer.id}`;
+    /** @type {{ history: string; pairings: string }} */
+    const tabIds = {
+      history: `beer-tab-history-${beer.id}`,
+      pairings: `beer-tab-pairings-${beer.id}`,
+    };
 
-    const handlePairingsToggle = () => {
-      const next = !showPairings;
-      setShowPairings(next);
+    const showTabs = hasHistory && hasPairings;
+    /** @type {{ key: 'history' | 'pairings'; label: string }[]} */
+    const tabs = showTabs
+      ? [
+        { key: 'history', label: 'History & fun facts' },
+        { key: 'pairings', label: 'Food pairings we suggest' },
+      ]
+      : [];
+
+    const resolvedActiveTab = tabs.find((tab) => tab.key === activeTab)
+      ? activeTab
+      : 'none';
+
+    /** @param {React.KeyboardEvent<HTMLDivElement>} event */
+    const handleTabKeyDown = (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      if (!tabs.length) return;
+      const idx = resolvedActiveTab === 'none'
+        ? 0
+        : tabs.findIndex((tab) => tab.key === resolvedActiveTab);
+      const delta = event.key === 'ArrowRight' ? 1 : -1;
+      const nextIndex = (idx + delta + tabs.length) % tabs.length;
+      const nextTab = tabs[nextIndex];
+      if (!nextTab) return;
+      setActiveTab(nextTab.key);
+      const ref = tabRefs.current[nextTab.key];
+      if (ref && typeof ref.focus === 'function') {
+        ref.focus();
+      }
     };
 
     return (
@@ -134,113 +181,168 @@ const MotionCard = React.memo(
                 </div>
               </div>
               {beer.description && <p className="beer-card-desc">{beer.description}</p>}
-              {enableHistory && historyText ? (
-                <BeerHistory
-                  id={`history-${beer.id}`}
-                  text={historyText}
-                  open={showHistory}
-                  onToggle={() => setShowHistory((v) => !v)}
-                />
-              ) : null}
-              {showPairingsToggle ? (
-                <div className="beer-card-pairings">
-                  <button
-                    type="button"
-                    className="pairings-toggle"
-                    aria-expanded={showPairings}
-                    aria-controls={pairingsId}
-                    onClick={handlePairingsToggle}
-                  >
-                    Food pairings
-                    <svg
-                      className={`pairings-toggle-icon${showPairings ? ' pairings-toggle-icon-open' : ''}`}
-                      width="14"
-                      height="14"
-                      viewBox="0 0 12 12"
-                      aria-hidden="true"
-                      focusable="false"
-                    >
-                      <path
-                        d="M2.5 4.5 L9.5 4.5 L6 8.5 Z"
-                        fill="var(--beer-color, transparent)"
-                        stroke="var(--beer-foreground, currentColor)"
-                        strokeWidth="1"
-                      />
-                    </svg>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {showPairings ? (
-                      <motion.div
-                        id={pairingsId}
-                        className="pairings-panel"
-                        aria-live="polite"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+              {tabs.length ? (
+                <motion.div className="beer-card-details" layout="position">
+                  <div className="beer-card-tabs" role="tablist" aria-label="Beer details" onKeyDown={handleTabKeyDown}>
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.key}
+                        ref={(el) => {
+                          if (el) tabRefs.current[tab.key] = el;
+                        }}
+                        type="button"
+                        role="tab"
+                        className="beer-card-tab"
+                        id={tabIds[tab.key]}
+                        aria-selected={resolvedActiveTab === tab.key}
+                        aria-controls={panelId}
+                        tabIndex={0}
+                        onClick={() => setActiveTab(resolvedActiveTab === tab.key ? 'none' : tab.key)}
                       >
-                        {pairingsStatus === 'loading' ? (
-                          <p className="muted small">Loading pairings…</p>
-                        ) : pairingsStatus === 'error' ? (
-                          <div className="muted small">
-                            <p>Couldn’t load pairings. Try again.</p>
-                            <button type="button" onClick={() => pairingsState?.ensureLoaded?.(true)}>
-                              Retry
-                            </button>
-                            {pairingsError ? <div className="muted small">{pairingsError}</div> : null}
-                          </div>
-                        ) : pairingsStatus === 'ready' ? (
-                          beerKey && pairings ? (
-                            <div className="pairings-results">
-                              <div className="pairings-block">
-                                <div className="muted small">Mains</div>
-                                <ul>
-                                  {(pairings.mains ?? []).map((entry, index) => {
-                                    const foodKey = entry?.foodKey ?? '';
-                                    const foodEntry = foodKey ? foodByKey?.[foodKey] : null;
-                                    const dish = foodEntry && typeof foodEntry.name === 'string' ? foodEntry.name : null;
-                                    const dishLabel = dish ?? (foodKey ? foodKey : null) ?? 'Menu item';
-                                    return (
-                                      <li key={`${foodKey}-${index}`}>
-                                        <strong>{dishLabel}</strong>
-                                        {entry?.why ? ` — ${entry.why}` : ''}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                              <div className="pairings-block">
-                                <div className="muted small">Side</div>
-                                {pairings.side ? (
-                                  <ul>
-                                  <li>
-                                    {(() => {
-                                      const sideKey = pairings.side?.foodKey ?? '';
-                                      const sideEntry = sideKey ? foodByKey?.[sideKey] : null;
-                                      const sideName = sideEntry && typeof sideEntry.name === 'string' ? sideEntry.name : null;
-                                      const sideLabel = sideName ?? (sideKey ? sideKey : null) ?? 'Menu item';
-                                      return (
-                                        <>
-                                          <strong>{sideLabel}</strong>
-                                          {pairings.side?.why ? ` — ${pairings.side.why}` : ''}
-                                        </>
-                                      );
-                                    })()}
-                                  </li>
-                                </ul>
-                                ) : (
-                                  <p className="muted small">No side pairing yet.</p>
-                                )}
-                              </div>
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  {resolvedActiveTab !== 'none' ? (
+                    <motion.div
+                      id={panelId}
+                      role="tabpanel"
+                      aria-labelledby={tabIds[resolvedActiveTab]}
+                      className="beer-details-panel"
+                      layout
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    >
+                      {resolvedActiveTab === 'history' ? (
+                        <motion.div
+                          key="history"
+                          className="beer-history-content"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.2, ease: 'easeOut', delay: 0.12 }}
+                        >
+                          {historyParagraphs.length
+                            ? historyParagraphs.map((p, idx) => <p key={idx}>{p}</p>)
+                            : <p>{historyText}</p>}
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="pairings"
+                          className="pairings-panel"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.2, ease: 'easeOut', delay: 0.12 }}
+                        >
+                          {pairingsStatus === 'loading' ? (
+                            <p className="muted small">Loading pairings…</p>
+                          ) : pairingsStatus === 'error' ? (
+                            <div className="muted small">
+                              <p>Couldn’t load pairings. Try again.</p>
+                              <button type="button" onClick={() => pairingsState?.ensureLoaded?.(true)}>
+                                Retry
+                              </button>
+                              {pairingsError ? <div className="muted small">{pairingsError}</div> : null}
                             </div>
+                          ) : pairingsStatus === 'ready' ? (
+                            beerKey && pairings ? (
+                              <div className="pairings-results">
+                                {pairingsUpdatedAt ? (
+                                  <div className="muted small pairings-updated">
+                                    <span>Pairings updated:</span>
+                                    <span className="pairings-updated-time">{pairingsUpdatedAt}</span>
+                                  </div>
+                                ) : null}
+                                <div className="pairings-block">
+                                  <div className="muted small cat">Main</div>
+                                  <ul>
+                                    {(pairings.mains ?? []).map((entry, index) => {
+                                      const foodKey = entry?.foodKey ?? '';
+                                      const foodEntry = foodKey ? foodByKey?.[foodKey] : null;
+                                      const dish = foodEntry && typeof foodEntry.name === 'string' ? foodEntry.name : null;
+                                      const dishDescription = (() => {
+                                        const entry = /** @type {unknown} */ (foodEntry);
+                                        if (!entry || typeof entry !== 'object') return null;
+                                        const desc = /** @type {Record<string, unknown>} */ (entry).description;
+                                        return typeof desc === 'string' ? desc : null;
+                                      })();
+                                      const dishAdd = (() => {
+                                        const entry = /** @type {unknown} */ (foodEntry);
+                                        if (!entry || typeof entry !== 'object') return null;
+                                        const add = /** @type {Record<string, unknown>} */ (entry).add;
+                                        return typeof add === 'string' ? add : null;
+                                      })();
+                                      const dishLabel = dish ?? (foodKey ? foodKey : null) ?? 'Menu item';
+                                      return (
+                                        <li key={`${foodKey}-${index}`}>
+                                          <strong>{dishLabel}</strong>
+                                          <span className="muted small why">{entry?.why ? ` — ${entry.why}` : ''}</span>
+                                          {dishDescription ? (
+                                            <div className="muted small pairings-item-desc">{dishDescription}</div>
+                                          ) : null}
+                                          {dishAdd ? (
+                                            <div className="muted small pairings-item-add">
+                                              <span>Add:</span> {dishAdd}
+                                            </div>
+                                          ) : null}
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                                <div className="pairings-block">
+                                  <div className="muted small cat">Side</div>
+                                  {pairings.side ? (
+                                    <ul>
+                                    <li>
+                                        {(() => {
+                                          const sideKey = pairings.side?.foodKey ?? '';
+                                          const sideEntry = sideKey ? foodByKey?.[sideKey] : null;
+                                          const sideName = sideEntry && typeof sideEntry.name === 'string' ? sideEntry.name : null;
+                                          const sideDescription = (() => {
+                                            const entry = /** @type {unknown} */ (sideEntry);
+                                            if (!entry || typeof entry !== 'object') return null;
+                                            const desc = /** @type {Record<string, unknown>} */ (entry).description;
+                                            return typeof desc === 'string' ? desc : null;
+                                          })();
+                                          const sideAdd = (() => {
+                                            const entry = /** @type {unknown} */ (sideEntry);
+                                            if (!entry || typeof entry !== 'object') return null;
+                                            const add = /** @type {Record<string, unknown>} */ (entry).add;
+                                            return typeof add === 'string' ? add : null;
+                                          })();
+                                          const sideLabel = sideName ?? (sideKey ? sideKey : null) ?? 'Menu item';
+                                          return (
+                                            <>
+                                              <strong>{sideLabel}</strong>
+                                              <span className="muted small why">{pairings.side?.why ? ` — ${pairings.side.why}` : ''}</span>
+                                              {sideDescription ? (
+                                                <div className="muted small pairings-item-desc">{sideDescription}</div>
+                                              ) : null}
+                                              {sideAdd ? (
+                                                <div className="muted small pairings-item-add">
+                                                  <span>Add:</span> {sideAdd}
+                                                </div>
+                                              ) : null}
+                                            </>
+                                          );
+                                        })()}
+                                    </li>
+                                  </ul>
+                                  ) : (
+                                    <p className="muted small">No side pairing yet.</p>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="muted small">No pairings yet.</p>
+                            )
                           ) : (
-                            <p className="muted small">No pairings yet.</p>
-                          )
-                        ) : null}
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
+                            <p className="muted small">Pairings not ready.</p>
+                          )}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ) : null}
+                </motion.div>
               ) : null}
             </div>
 

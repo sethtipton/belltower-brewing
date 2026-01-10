@@ -1,4 +1,7 @@
 // Minimal API helpers that respect WP localization data.
+import { createLogger } from './logger';
+
+const log = createLogger('api');
 
 /**
  * @typedef {{ restUrl?: string; nonce?: string }} PairingGlobals
@@ -38,7 +41,7 @@ async function wpFetch(path, options = {}) {
   const base = getWPBase().replace(/\/$/, '');
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;
   const startedAt = Date.now();
-  console.log('[API] fetch →', url, options);
+  log.debug('request', { phase: 'api', url, method: options.method ?? 'GET' });
   try {
     const res = await fetch(url, {
       credentials: 'same-origin',
@@ -52,14 +55,14 @@ async function wpFetch(path, options = {}) {
     const duration = Date.now() - startedAt;
     if (!res.ok) {
       const text = await res.text().catch(() => res.statusText);
-      console.warn('[API] fetch failed', { url, status: res.status, duration, text });
+      log.warn('response', { phase: 'api', url, status: res.status, duration, text, errorType: 'http' });
       throw new Error(`Request failed: ${res.status} ${text}`);
     }
-    console.log('[API] fetch ok', { url, status: res.status, duration });
+    log.debug('response', { phase: 'api', url, status: res.status, duration });
     const json = /** @type {unknown} */ (await res.json().catch(() => null));
     return /** @type {T} */ (json);
   } catch (err) {
-    console.error('[API] fetch exception', { url, err });
+    log.error('exception', { phase: 'api', url, err: err instanceof Error ? err.message : String(err), errorType: 'network' });
     throw err instanceof Error ? err : new Error(String(err));
   }
 }
@@ -68,12 +71,19 @@ export function fetchPosts() {
   return wpFetch('/wp/v2/posts?per_page=5');
 }
 
+/** @type {Promise<Record<string, { hex: string | null; srm: number | null }> | null> | null} */
+let beerColorsInFlight = null;
+let beerColorsCooldownUntil = 0;
+
 /**
  * @param {Array<{ id?: string | number; name?: string; description?: string }> | Array<string | number>} items
  * @returns {Promise<Record<string, { hex: string | null; srm: number | null }> | null>}
  */
 export async function getBeerColors(items = []) {
   if (!items.length) return null;
+  if (Date.now() < beerColorsCooldownUntil) return null;
+  if (beerColorsInFlight) return beerColorsInFlight;
+  log.debug('beerColors.start', { phase: 'api', count: items.length });
   const normalized = items.map((item) => {
     if (typeof item === 'string' || typeof item === 'number') {
       return { id: item };
@@ -81,25 +91,42 @@ export async function getBeerColors(items = []) {
     return { id: item?.id ?? item?.name ?? '', description: item?.description ?? '' };
   });
 
-  /** @type {Array<Record<string, unknown>> | null} */
-  const data = await wpFetch('/bt/v1/beer-colors', {
-    method: 'POST',
-    body: JSON.stringify({ items: normalized }),
-  });
-  if (!Array.isArray(data)) return null;
-  const entries = data.filter((entry) => entry && typeof entry === 'object');
-  /** @type {Record<string, { hex: string | null; srm: number | null }>} */
-  const map = {};
-  /** @type {Array<Record<string, unknown>>} */
-  const safeEntries = /** @type {Array<Record<string, unknown>>} */ (entries);
-  safeEntries.forEach((entry) => {
-    const id = 'id' in entry && (typeof entry.id === 'string' || typeof entry.id === 'number') ? String(entry.id) : '';
-    const hex = 'hex' in entry && typeof entry.hex === 'string' ? entry.hex : ('hexColor' in entry && typeof entry.hexColor === 'string' ? entry.hexColor : null);
-    const srm = 'srm' in entry && typeof entry.srm === 'number' ? entry.srm : null;
-    if (!id) return;
-    map[id] = { hex, srm };
-  });
-  return map;
+  beerColorsInFlight = (async () => {
+    try {
+      /** @type {Array<Record<string, unknown>> | null} */
+      const data = await wpFetch('/bt/v1/beer-colors', {
+        method: 'POST',
+        body: JSON.stringify({ items: normalized }),
+      });
+      if (!Array.isArray(data)) return null;
+      const entries = data.filter((entry) => entry && typeof entry === 'object');
+      /** @type {Record<string, { hex: string | null; srm: number | null }>} */
+      const map = {};
+      /** @type {Array<Record<string, unknown>>} */
+      const safeEntries = /** @type {Array<Record<string, unknown>>} */ (entries);
+      safeEntries.forEach((entry) => {
+        const id = 'id' in entry && (typeof entry.id === 'string' || typeof entry.id === 'number') ? String(entry.id) : '';
+        const hex = 'hex' in entry && typeof entry.hex === 'string'
+          ? entry.hex
+          : ('hexColor' in entry && typeof entry.hexColor === 'string' ? entry.hexColor : null);
+        const srm = 'srm' in entry && typeof entry.srm === 'number' ? entry.srm : null;
+        if (!id) return;
+        map[id] = { hex, srm };
+      });
+      return map;
+    } catch (err) {
+      beerColorsCooldownUntil = Date.now() + 60 * 1000;
+      throw err;
+    } finally {
+      beerColorsInFlight = null;
+    }
+  })();
+
+  try {
+    return await beerColorsInFlight;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -109,7 +136,12 @@ export async function getBeerColors(items = []) {
  * @returns {Promise<unknown>}
  */
 export function getPairing(answers = {}, beerItems = [], options = {}) {
-  console.log('[API] getPairing', { answers, beerItems });
+  log.debug('pairing.start', {
+    phase: 'api',
+    answers: Object.keys(answers ?? {}).length,
+    beers: Array.isArray(beerItems) ? beerItems.length : 0,
+    force: !!options.force,
+  });
   return /** @type {Promise<unknown>} */ (wpFetch('/bt/v1/pairing', {
     method: 'POST',
     body: JSON.stringify({ answers, beerData: beerItems, force: options.force ? true : false }),
@@ -147,17 +179,17 @@ export async function getPairingCache(hash) {
       },
     });
     const duration = Date.now() - startedAt;
-    if (res.status === 404) return null;
+    if (res.status === 404 || res.status === 204) return null;
     if (!res.ok) {
       const text = await res.text().catch(() => res.statusText);
-      console.warn('[API] fetch failed', { url, status: res.status, duration, text });
+      log.warn('cache.response', { phase: 'api', url, status: res.status, duration, text, errorType: 'http' });
       throw new Error(`Request failed: ${res.status} ${text}`);
     }
-    console.log('[API] fetch ok', { url, status: res.status, duration });
+    log.debug('cache.response', { phase: 'api', url, status: res.status, duration });
     const json = /** @type {unknown} */ (await res.json().catch(() => null));
     return /** @type {{ data?: unknown; fetchedAt?: number | null; hash?: string } | null} */ (json);
   } catch (err) {
-    console.error('[API] fetch exception', { url, err });
+    log.error('cache.exception', { phase: 'api', url, err: err instanceof Error ? err.message : String(err), errorType: 'network' });
     throw err instanceof Error ? err : new Error(String(err));
   }
 }

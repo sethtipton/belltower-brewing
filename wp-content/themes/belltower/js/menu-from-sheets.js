@@ -65,6 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	function isKidsItem(item) {
+		if (!item) return false;
+		const category = (item.category || '').toString().toLowerCase();
+		const name = (item.name || '').toString().toLowerCase();
+		const tags = Array.isArray(item.tagsArray) ? item.tagsArray.map(t => String(t).toLowerCase()) : [];
+		if (category.includes('kids')) return true;
+		if (name.includes('kids')) return true;
+		return tags.some(tag => tag.includes('kids'));
+	}
+
 	function renderAll(kind, items) {
 		const menus = kind === 'food' ? foodMenus : drinksMenus;
 		const hasMenus = kind === 'food' ? hasFoodMenus : hasDrinksMenus;
@@ -120,7 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
 						items = pairingTools.attachKeysAndProfiles({ kind, items: stripped });
 					}
 				}
-				publishCanonicalMenuData(items, { sourceUrl: url, kind });
+				const pairingItems = kind === 'food'
+					? items.filter(item => !isKidsItem(item))
+					: items;
+				publishCanonicalMenuData(pairingItems, { sourceUrl: url, kind });
 				renderAll(kind, items);
 			})
 			.catch(err => {

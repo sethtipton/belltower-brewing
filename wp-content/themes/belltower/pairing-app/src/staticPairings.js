@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchStaticPairings } from './api';
+import { createLogger } from './logger';
+
+const log = createLogger('staticPairings');
 
 /**
  * @typedef {{ btKey?: string; id?: string | number; slug?: string; name?: string; category?: string; style?: string; pairingProfile?: unknown }} MenuItem
@@ -7,13 +10,26 @@ import { fetchStaticPairings } from './api';
  * @typedef {{ foodKey?: string; why?: string }} PairingEntry
  * @typedef {{ mains?: PairingEntry[]; side?: PairingEntry | null }} BeerPairings
  * @typedef {Record<string, BeerPairings>} PairingsByBeerKey
- * @typedef {{ pairingsByBeerKey?: PairingsByBeerKey; source?: string | null }} StaticPairingsResponse
+ * @typedef {{ pairingsByBeerKey?: PairingsByBeerKey; source?: string | null; generatedAt?: string | null }} StaticPairingsResponse
  */
 
 const STATIC_PAIRINGS_CACHE_VERSION = 1;
 const STATIC_PAIRINGS_PROMPT_VERSION = 1;
 /** @type {Promise<StaticPairingsResponse | null> | null} */
 let inflightPromise = null;
+
+/**
+ * @param {string} message
+ * @returns {string}
+ */
+function toErrorType(message) {
+  const msg = message.toLowerCase();
+  if (msg.includes('timeout')) return 'timeout';
+  if (msg.includes('network') || msg.includes('failed to fetch')) return 'network';
+  if (msg.includes('parse')) return 'parse';
+  if (msg.includes('http') || msg.includes('request failed')) return 'http';
+  return 'unknown';
+}
 
 /**
  * @param {unknown} value
@@ -81,7 +97,7 @@ export function readJsonScript(id) {
   try {
     return /** @type {unknown} */ (JSON.parse(raw));
   } catch (err) {
-    console.warn(`Could not parse ${id}`, err instanceof Error ? err.message : err);
+    log.warn('parseScript', { phase: 'staticPairings', id, error: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
@@ -282,7 +298,7 @@ export function getPairingCacheMeta() {
   }
   const hash = `${beerFingerprint}.${foodFingerprint}`;
   const key = `bt_pairing_cache_${sanitizeCacheKey(beerFingerprint)}_${sanitizeCacheKey(foodFingerprint)}`;
-  return { hash, key, beerFingerprint, foodFingerprint };
+  return { hash, key, beerFingerprint, foodFingerprint, beerData, foodData };
 }
 
 /**
@@ -348,25 +364,77 @@ function hasPairings(map) {
 }
 
 /**
+ * @param {PairingsByBeerKey} map
+ * @param {Record<string, MenuItem>} foodIndex
+ */
+function validatePairings(map, foodIndex) {
+  if (!map || typeof map !== 'object') return;
+  const missingMains = [];
+  const missingSide = [];
+  const unknownFoodKeys = new Set();
+  Object.entries(map).forEach(([beerKey, entry]) => {
+    const mains = Array.isArray(entry?.mains) ? entry.mains : [];
+    if (mains.length < 2) missingMains.push(beerKey);
+    const sideKey = entry?.side?.foodKey ?? '';
+    if (!sideKey) missingSide.push(beerKey);
+    mains.forEach((m) => {
+      const key = m?.foodKey ?? '';
+      if (key && !foodIndex[key]) unknownFoodKeys.add(key);
+    });
+    if (sideKey && !foodIndex[sideKey]) unknownFoodKeys.add(sideKey);
+  });
+  if (unknownFoodKeys.size) {
+    log.warn('validation.unknownFoodKeys', {
+      phase: 'staticPairings',
+      count: unknownFoodKeys.size,
+      sample: Array.from(unknownFoodKeys).slice(0, 5),
+    });
+  }
+  if (missingMains.length) {
+    log.warn('validation.missingMains', {
+      phase: 'staticPairings',
+      count: missingMains.length,
+      sample: missingMains.slice(0, 5),
+    });
+  }
+  if (missingSide.length) {
+    log.warn('validation.missingSide', {
+      phase: 'staticPairings',
+      count: missingSide.length,
+      sample: missingSide.slice(0, 5),
+    });
+  }
+}
+
+/**
  * @param {{ beerData?: MenuPayload | null; foodData?: MenuPayload | null; force?: boolean; promptVersion?: number }} [input]
  * @returns {Promise<StaticPairingsResponse | null>}
  */
 export function loadStaticPairings({ beerData, foodData, force = false, promptVersion } = {}) {
   if (inflightPromise) return inflightPromise;
   inflightPromise = (async () => {
+    const startedAt = Date.now();
     const payload = {
       beerData,
       foodData,
       force: force ? true : false,
       promptVersion: typeof promptVersion === 'number' ? promptVersion : undefined,
     };
-    console.log('[Static pairings] fetch start', {
+    log.info('fetch.start', {
+      phase: 'staticPairings',
       beerGeneratedAt: beerData?.generatedAt ?? null,
       foodGeneratedAt: foodData?.generatedAt ?? null,
     });
     const responseRaw = await fetchStaticPairings(payload);
     const response = isStaticPairingsResponse(responseRaw) ? responseRaw : null;
-    console.log('[Static pairings] fetch ok', response?.source ?? null);
+    log.info('fetch.ok', {
+      phase: 'staticPairings',
+      cached: !!response?.source?.cached,
+      beerGeneratedAt: response?.source?.beerGeneratedAt ?? null,
+      foodGeneratedAt: response?.source?.foodGeneratedAt ?? null,
+      ms: Date.now() - startedAt,
+      source: response?.source?.cached ? 'server-cache' : 'server',
+    });
     return response;
   })();
   void inflightPromise.finally(() => {
@@ -385,6 +453,9 @@ export function useStaticPairings({ beers = [] } = {}) {
   const [error, setError] = useState('');
   const [available, setAvailable] = useState(false);
   const hasLoadedRef = useRef(false);
+  const [lastUpdated, setLastUpdated] = useState(/** @type {string | null} */ (null));
+  const [cacheStore, setCacheStore] = useState('none');
+  const resetGuardRef = useRef(false);
 
   const [foodData, setFoodData] = useState(/** @type {MenuPayload | null} */ (getCanonicalFoodData()));
   const foodIndex = useMemo(() => buildFoodByKey(foodData), [foodData]);
@@ -431,6 +502,25 @@ export function useStaticPairings({ beers = [] } = {}) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onReset = () => {
+      resetGuardRef.current = true;
+      hasLoadedRef.current = false;
+      setAvailable(false);
+      setStatus('idle');
+    };
+    const onRefresh = () => {
+      resetGuardRef.current = false;
+    };
+    document.addEventListener('btPairingReset', onReset);
+    document.addEventListener('btPairingRefresh', onRefresh);
+    return () => {
+      document.removeEventListener('btPairingReset', onReset);
+      document.removeEventListener('btPairingRefresh', onRefresh);
+    };
+  }, []);
+
   const cacheKey = useMemo(
     () => getStaticPairingsCacheKey({ beerData, foodData }),
     [beerData, foodData]
@@ -458,6 +548,13 @@ export function useStaticPairings({ beers = [] } = {}) {
   const ensureLoaded = useCallback(
     async (force = false) => {
       if (hasLoadedRef.current && !force) return;
+      if (resetGuardRef.current && !force) {
+        log.info('blocked.afterReset', { phase: 'staticPairings' });
+        return;
+      }
+      if (force) {
+        setCacheStore('none');
+      }
       let currentFood = foodData;
       if (!currentFood) {
         const nextFood = getCanonicalFoodData();
@@ -469,7 +566,7 @@ export function useStaticPairings({ beers = [] } = {}) {
       if (!currentFood) {
         setStatus('no-food-data');
         setAvailable(false);
-        console.log('[Static pairings] no food data available');
+        log.warn('noFoodData', { phase: 'staticPairings' });
         return;
       }
       if (!beerData) {
@@ -478,7 +575,8 @@ export function useStaticPairings({ beers = [] } = {}) {
         setAvailable(false);
         return;
       }
-      setFoodByKey(foodIndex);
+      const nextFoodIndex = buildFoodByKey(currentFood);
+      setFoodByKey(nextFoodIndex);
       const localCached = !force ? readLocal(cacheKey) : null;
       const sessionCached = !force ? readSession(cacheKey) : null;
       const cached = isStaticPairingsResponse(localCached)
@@ -486,12 +584,18 @@ export function useStaticPairings({ beers = [] } = {}) {
         : isStaticPairingsResponse(sessionCached)
         ? sessionCached
         : null;
+      const cachedStore = isStaticPairingsResponse(localCached) ? 'local' : isStaticPairingsResponse(sessionCached) ? 'session' : 'none';
       if (cached && hasPairings(cached.pairingsByBeerKey)) {
         setPairingsByBeerKey(cached.pairingsByBeerKey ?? {});
         setStatus('ready');
         setAvailable(true);
         hasLoadedRef.current = true;
-        console.log('[Static pairings] cache hit', cacheKey);
+        setCacheStore(cachedStore);
+        if (cached.generatedAt && typeof cached.generatedAt === 'string') {
+          setLastUpdated(cached.generatedAt);
+        }
+        log.info('cache.hit', { phase: 'staticPairings', cacheKey, store: cachedStore, source: `${cachedStore}-cache` });
+        validatePairings(cached.pairingsByBeerKey ?? {}, nextFoodIndex);
         return;
       }
       setStatus('loading');
@@ -509,19 +613,32 @@ export function useStaticPairings({ beers = [] } = {}) {
           setStatus('ready');
           setAvailable(true);
           hasLoadedRef.current = true;
-          writeSession(cacheKey, { pairingsByBeerKey: map, source: response?.source ?? null });
-          writeLocal(cacheKey, { pairingsByBeerKey: map, source: response?.source ?? null });
+          setCacheStore('server');
+          if (response?.generatedAt && typeof response.generatedAt === 'string') {
+            setLastUpdated(response.generatedAt);
+          }
+          log.info('ready', {
+            phase: 'staticPairings',
+            beers: Object.keys(map).length,
+            food: Object.keys(nextFoodIndex ?? {}).length,
+            store: 'server',
+            lastUpdated: response?.generatedAt ?? null,
+          });
+          writeSession(cacheKey, { pairingsByBeerKey: map, source: response?.source ?? null, generatedAt: response?.generatedAt ?? null });
+          writeLocal(cacheKey, { pairingsByBeerKey: map, source: response?.source ?? null, generatedAt: response?.generatedAt ?? null });
+          validatePairings(map, nextFoodIndex);
         } else {
           setPairingsByBeerKey(/** @type {PairingsByBeerKey} */ ({}));
           setStatus('idle');
           setAvailable(false);
-          console.log('[Static pairings] empty response, not enabling UI');
+          log.warn('empty', { phase: 'staticPairings' });
         }
       } catch (err) {
         setStatus('error');
         setError(err instanceof Error ? err.message : 'Unable to load pairings.');
         setAvailable(false);
-        console.log('[Static pairings] fetch error', err);
+        const message = err instanceof Error ? err.message : String(err);
+        log.error('fetch.error', { phase: 'staticPairings', error: message, errorType: toErrorType(message) });
       }
     },
     [beerData, foodData, foodIndex]
@@ -534,5 +651,7 @@ export function useStaticPairings({ beers = [] } = {}) {
     foodByKey: effectiveFoodByKey,
     ensureLoaded,
     available: effectiveAvailable,
+    lastUpdated,
+    cacheStore,
   };
 }

@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { createLogger } from '../logger';
+
+const log = createLogger('workerPool');
 
 /**
  * Lightweight worker pool for color calculation.
@@ -12,7 +15,7 @@ export function useWorkerPool(path = 'worker/colorWorker.js') {
     try {
       workerRef.current = new Worker(new URL(`../${path}`, import.meta.url), { type: 'module' });
     } catch (err) {
-      console.warn('Worker not available', err);
+      log.warn('init.failed', { phase: 'workerPool', error: err instanceof Error ? err.message : String(err) });
       workerRef.current = null;
     }
     return () => {

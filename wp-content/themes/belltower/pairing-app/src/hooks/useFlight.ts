@@ -202,9 +202,9 @@ function normalizeBeer(beer: BeerInput | Slot | null | undefined): Slot | null {
   });
   if (candidate) return candidate;
   const name = 'name' in (beer as BeerInput) && typeof (beer as BeerInput).name === 'string' ? (beer as BeerInput).name : 'Unknown beer';
-  const hexColor = 'hexColor' in (beer as BeerInput) && typeof (beer as BeerInput).hexColor === 'string'
+  const hexColor = typeof (beer as BeerInput).hexColor === 'string'
     ? (beer as BeerInput).hexColor
-    : 'hex' in (beer as BeerInput) && typeof (beer as BeerInput).hex === 'string'
+    : typeof (beer as BeerInput).hex === 'string'
       ? (beer as BeerInput).hex
       : null;
   return {

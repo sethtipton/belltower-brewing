@@ -99,7 +99,7 @@ export async function getCachedPairing(hash?: string | null): Promise<PairingRes
     },
   }).catch(() => null);
   if (!res) return null;
-  if (res.status === 404) return null;
+  if (res.status === 404 || res.status === 204) return null;
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
     throw new Error(text ?? 'Request failed');
