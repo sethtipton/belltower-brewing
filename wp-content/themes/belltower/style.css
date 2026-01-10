@@ -777,6 +777,37 @@ a:hover, a:active {
   flex: 1 0 50%;
 }
 
+.footer-legal {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+#legal-menu {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  justify-content: center;
+}
+#legal-menu li:last-child {
+  position: relative;
+}
+#legal-menu li:last-child:before {
+  content: "";
+  background-color: #fff;
+  width: 1px;
+  display: block;
+  height: 100%;
+  position: absolute;
+  left: -1rem;
+}
+#legal-menu a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+#legal-menu a:hover {
+  text-decoration: underline;
+}
+
 /*--------------------------------------------------------------
 ## Theme Navigation
 --------------------------------------------------------------*/
@@ -2992,6 +3023,25 @@ body.blog .entry-content {
   */
 }
 
+.footer-hours {
+  margin: 0 0 clamp(10px, 2vh, 20px) 0;
+}
+.footer-hours dt {
+  color: #ffffff;
+  font-weight: normal;
+}
+.footer-hours dd {
+  color: #ffffff;
+  margin: 0;
+  padding-inline-start: 1rem;
+  margin: 0 0 clamp(10px, 2vh, 20px) 0;
+}
+
+@media (max-width: 600px) {
+  .footer-hours dd {
+    padding-inline-start: 0;
+  }
+}
 @media (max-width: 600px) {
   .brewery-menu .title-wrap {
     flex-direction: column;

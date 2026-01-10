@@ -18,3 +18,34 @@
     flex: 1 0 50%;
   }
 }
+
+.footer-legal {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+#legal-menu {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  justify-content: center;
+  li:last-child {
+    position: relative;
+    &:before {
+      content: "";
+      background-color: #fff;
+      width: 1px;
+      display: block;
+      height: 100%;
+      position: absolute;
+      left: -1rem;
+    }
+  }
+  a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

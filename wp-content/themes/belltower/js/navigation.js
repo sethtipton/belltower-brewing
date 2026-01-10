@@ -245,6 +245,11 @@ window.addEventListener('load', () => {
 
 var footer = document.getElementById( 'footer' );
 footer.insertAdjacentHTML('beforeend', '<div class="footer-logo-w1"><a href="/" class="footerlogo"><span>Belltower Home</span>'+btbelllogo+'</a></div>');
+var footerLogo = footer.querySelector('.footer-logo-w1');
+var footerLegal = footer.querySelector('.footer-legal');
+if (footerLogo && footerLegal) {
+	footerLogo.insertAdjacentElement('afterend', footerLegal);
+}
 
 
 // Age Modal

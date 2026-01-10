@@ -44,6 +44,7 @@
 			</div>
 
 			<div class="footerc4">
+				<?php dynamic_sidebar( 'footer-hours' ); ?>
 				<?php dynamic_sidebar( 'footer-newsletter' ); ?>
 
 
@@ -84,6 +85,16 @@
 			</div>
 			
 
+		</div>
+		<div class="footer-legal" aria-label="<?php esc_attr_e( 'Legal', 'belltower' ); ?>">
+			<?php
+				wp_nav_menu(
+					array(
+						'theme_location' => 'legal',
+						'menu_id'        => 'legal-menu',
+					)
+				);
+			?>
 		</div>
 	</footer>
 </div><!-- #page -->

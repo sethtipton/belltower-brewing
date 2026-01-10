@@ -77,6 +77,7 @@ if ( ! function_exists( 'belltower_setup' ) ) :
 				'menu-1' => esc_html__( 'Primary', 'belltower' ),
 				'footer-1' => esc_html__( 'Footer', 'belltower' ),
 				'social-1' => esc_html__( 'Social', 'belltower' ),
+				'legal' => esc_html__( 'Legal', 'belltower' ),
 			)
 		);
 
@@ -347,6 +348,17 @@ function belltower_widgets_init() {
 			'id'            => 'footer-newsletter',
 			'description'   => esc_html__( 'Add footer widgets here for contact form column.', 'belltower' ),
 			'before_widget' => '<div id="%1$s" class="widget %2$s">',
+			'after_widget'  => '</div>',
+			'before_title'  => '<h2 class="widget-title">',
+			'after_title'   => '</h2>',
+		)
+	);
+	register_sidebar(
+		array(
+			'name'          => esc_html__( 'Footer Hours', 'belltower' ),
+			'id'            => 'footer-hours',
+			'description'   => esc_html__( 'Add footer widgets here for hours column.', 'belltower' ),
+			'before_widget' => '<div id="%1$s" class="widget %2$s footer-hours-widget">',
 			'after_widget'  => '</div>',
 			'before_title'  => '<h2 class="widget-title">',
 			'after_title'   => '</h2>',

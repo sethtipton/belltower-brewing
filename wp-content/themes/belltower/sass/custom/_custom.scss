@@ -1479,6 +1479,26 @@ body.blog {
   }
 }
 
+.footer-hours {
+  margin: 0 0 clamp(10px, 2vh, 20px) 0;
+  dt {
+    color: $color__btpurewhite;
+    font-weight: normal;
+  }
+  dd {
+    color: $color__btpurewhite;
+    margin: 0;
+    padding-inline-start: 1rem;
+    margin: 0 0 clamp(10px, 2vh, 20px) 0;
+  }
+}
+
+@media (max-width: $mobileBreakpoint) {
+  .footer-hours dd {
+    padding-inline-start: 0;
+  }
+}
+
 @media (max-width: $mobileBreakpoint) {
   .brewery-menu .title-wrap {
     flex-direction: column;
