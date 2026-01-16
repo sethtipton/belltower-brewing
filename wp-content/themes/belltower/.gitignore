@@ -5,4 +5,4 @@ pairing-app/.vite/
 pairing-app/dist/.vite/*
 !pairing-app/dist/.vite/manifest.json
 wp-config.php
-
+.DS_Store
