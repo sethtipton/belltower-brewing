@@ -1,0 +1,54 @@
+name: Codex review on push to main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  codex_review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Build diff for this push
+        shell: bash
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          # If GitHub can't provide a "before" (rare), fall back to the last commit only.
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            git show --no-color "$AFTER" > changes.diff
+          else
+            git diff --no-color "$BEFORE" "$AFTER" > changes.diff
+          fi
+
+          # Optional guardrail: cap diff size to avoid huge reviews/costs
+          head -c 200000 changes.diff > changes.trimmed || true
+          mv changes.trimmed changes.diff
+
+      - name: Run Codex
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex/prompts/review-push.md
+          output-file: codex-output.md
+          safety-strategy: drop-sudo
+          sandbox: read-only
+
+      - name: Add Codex review to the job summary
+        if: steps.run_codex.outputs.final-message != ''
+        env:
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        run: |
+          {
+            echo "## Codex review (push to main)"
+            echo ""
+            printf "%s\n" "$CODEX_FINAL_MESSAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
