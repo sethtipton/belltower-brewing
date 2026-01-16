@@ -1,9 +1,9 @@
-@use "../sass/variables-site/colors" as theme-colors;
+@use "../sass/variables-site/colors" as *;
 
-$muted: #666;
-$accent: #0b79d0;
-$card-border: #ececec;
-$text: #000;
+$text: var(--color__btblack);
+$white: #ffffff;
+$black: #000000;
+$grey: #9a9a9a;
 $beeercardgap: 0.5rem;
 $rightcolumnshift: -7px;
 $cardpadding: 1rem;
@@ -12,8 +12,16 @@ $anim-fast: 180ms;
 $anim-slow: 220ms;
 $anim-ease: ease;
 $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
+$pint-width: 60px;
 
 .pairing-app {
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
   .muted {
     color: var(--muted);
   }
@@ -21,13 +29,20 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     font-size: 0.9rem;
   }
   button {
-    //cursor: pointer;
     &:focus-visible {
-      //outline-offset: 10px;
-      outline: 2px dashed #000;
+      outline: 2px dashed var(--color__btblack);
       border-radius: 2px;
     }
   }
+}
+
+.debug-recommend-btn {
+  border: 1px solid var(--color__btblack);
+  background: transparent;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
 .pairing-form,
@@ -39,7 +54,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
 .pairing-form {
   padding: 1rem;
-  outline: 2px solid #000;
+  outline: 2px solid var(--color__btblack);
   outline-offset: -2px;
 }
 
@@ -55,7 +70,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 .pairing-form-nav {
   display: flex;
   gap: 0.5rem;
-  //margin-top: 1rem;
 }
 
 .beer-list {
@@ -72,60 +86,72 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .beer-card {
-  //padding: $cardpadding;
-  //padding-bottom: calc($cardpadding + $rightcolumnshift);
   border-radius: 2px;
   touch-action: manipulation;
-  display: flex;
-  flex-direction: column;
-  gap: $beeercardgap;
-  opacity: 1;
   outline-offset: -1px;
   transition: transform $anim-fast $anim-ease-curve,
     opacity $anim-fast $anim-ease;
   will-change: transform;
   &.recommended {
-    border-color: $accent;
-    //box-shadow: 0 0 0 2px rgba(11, 121, 208, 0.18);
     border-radius: 2px;
-    border-color: var(--beer-color, #000);
+    border-color: var(--beer-color, var(--color__btblack));
     border-style: solid;
+    border-width: 2px;
   }
   &[data-recommended="true"] {
-    border-color: $accent;
     border-radius: 2px;
-    border-color: var(--beer-color, #000);
+    border-color: var(--beer-color, var(--color__btblack));
     border-style: solid;
+    .beer-card-leftclmn,
+    .beer-card-centerclmn {
+      margin-top: 1rem;
+    }
+    .beer-card-centerclmn {
+      margin-bottom: 1rem;
+    }
   }
   &.selected {
-    //border-color: rgba(11, 121, 208, 0.35);
-    //box-shadow: 0 0 0 2px rgba(11, 121, 208, 0.12);
     outline-width: 4px;
     outline-offset: -3px;
   }
-  //&:focus-within {
-  //box-shadow: 0 0 0 2px rgba(11, 121, 208, 0.2);
-  //}
-  //&[data-dragging="true"] {
-  //box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  //}
   &[data-settle="true"] {
     animation: bt-recommend-settle $anim-fast $anim-ease;
   }
   .beer-card-layout {
     display: grid;
-    grid-template-columns: 60px 1fr;
-    //gap: $beerlistgap;
-    gap: clamp(1vw, 1vw, $beerlistgap);
+    grid-template-columns: $pint-width 1fr;
+    gap: 0 clamp(1vw, 1vw, $beerlistgap);
     align-items: start;
     transition: grid-template-columns $anim-fast $anim-ease;
     &.with-recommendation {
-      grid-template-columns: 60px 1fr 200px;
-      //grid-template-columns: 60px 1fr minmax(120px, 40%);
+      grid-template-columns: $pint-width 1fr 200px;
     }
     &.with-recommendation.match-open {
-      grid-template-columns: 60px 1fr 200px;
-      //grid-template-columns: 60px 1fr minmax(120px, 40%);
+      grid-template-columns: $pint-width 1fr 200px;
+      grid-template-columns: $pint-width 1fr;
+      grid-template-rows: auto 1fr;
+      .beer-card-sidebar {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-auto-flow: column;
+        gap: 0.5rem;
+        padding: 1rem 1rem 0 1rem;
+      }
+      .beer-card-leftclmn {
+        grid-column: 1;
+      }
+      .beer-card-centerclmn {
+        grid-column: 2;
+      }
+      .beer-match {
+        max-height: 200px;
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .badge-interactive {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   }
   .beer-card-centerclmn {
@@ -135,26 +161,20 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     transform: translate(0px, -5px);
   }
 
-  //.beer-card-details {
-  //margin-top: 0.5rem;
-  //}
-
   .beer-card-tabs {
     display: flex;
     gap: 0.5rem;
-    //border-bottom: 1px solid #ddd;
-    //margin-bottom: 0.5rem;
   }
 
   .beer-card-tab {
     border-radius: 2px;
     cursor: pointer;
-    border: 2px solid var(--beer-color, #000);
-    //background-color: var(--beer-color);
+    border: 2px solid var(--beer-color, var(--color__btblack));
+    background-color: $white;
+
     transition: background-color $anim-fast $anim-ease,
       color $anim-fast $anim-ease, border-color $anim-fast $anim-ease;
-    //color: var(--beer-foreground, #000);
-    color: #000;
+    color: var(--color__btblack);
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -163,24 +183,21 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .beer-card-tab[aria-selected="true"] {
-    border-color: var(--beer-color, #000);
+    border-color: var(--beer-color, var(--color__btblack));
     background-color: var(--beer-color);
-    color: var(--beer-foreground, #fff);
+    color: var(--beer-foreground, var(--color__btwhite));
     font-weight: 600;
   }
 
   .beer-details-panel {
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.8);
-    border-left: 2px solid var(--beer-color, #000);
+    background: rgba(var(--color__btwhite), 0.8);
+    border-left: 2px solid var(--beer-color, var(--color__btblack));
     padding-inline-start: 0.5rem;
     padding-top: 0.5rem;
-    //padding: 0.5rem;
   }
 
   .beer-match {
-    margin-top: 0.25rem;
-    grid-column: 3 / 4;
     max-height: 0;
     opacity: 0;
     transform: translateY(4px);
@@ -196,13 +213,11 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   .badge-interactive {
     border-radius: 2px;
-    //cursor: pointer;
-    border: 2px solid var(--beer-color, #000);
+    border: 2px solid var(--beer-color, var(--color__btblack));
     background-color: var(--beer-color, transparent);
     color: var(--beer-foreground, currentColor);
     display: flex;
     flex-direction: column;
-    //gap: 0.35rem;
     padding: 2px 8px;
     font-weight: 700;
     transition: opacity $anim-fast $anim-ease, transform $anim-fast $anim-ease;
@@ -211,37 +226,48 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
       width: 100%;
       text-align: center;
       font-weight: normal;
+      margin-top: auto;
     }
   }
   .beer-match-score {
     font-size: 0.9rem;
     color: var(--beer-foreground, currentColor);
     text-align: center;
-  }
-  .match-open {
-    .beer-match {
-      max-height: 200px;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .badge-interactive {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    margin-bottom: auto;
   }
 }
 
-//.pairings-block {
-//.small.cat {
-//border-bottom: 1px solid var(--beer-color, #000);
-//padding-left: 0.5em;
-//}
-//}
+.pairings-item-desc {
+  padding-left: 1rem;
+}
 
-//.small.why {
-//color: var(--beer-color, #000);
-//border-bottom: 1px solid var(--beer-color, #000);
-//}
+.pairings-item-add {
+  padding-left: 1rem;
+}
+
+.pairing-reason-wrap {
+  display: flex;
+  justify-content: space-between;
+}
+
+.pairing-reason {
+  align-self: flex-start;
+  position: relative;
+  z-index: 1;
+  padding: 0.2rem 0.5rem;
+  margin-inline-start: 0.5rem;
+  &:before {
+    content: "";
+    background-color: var(--beer-color, var(--color__btwhite));
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    left: 0;
+    top: 0;
+    opacity: 0.4;
+  }
+}
 
 .flight-toggle {
   display: block;
@@ -259,6 +285,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bt-pairing-admin-tools {
+  display: none !important;
   --bt-admin-peek: 68px;
   position: fixed;
   inset-block-end: 0;
@@ -270,13 +297,13 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   max-block-size: min(90dvh, 90vh);
   overflow: auto;
   padding: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.82);
+  border: 1px solid rgba(var(--color__btblack), 0.82);
   border-top-left-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18),
-    0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  box-shadow: 0 10px 30px rgba(var(--color__btblack), 0.18),
+    0 1px 0 rgba(var(--color__btwhite), 0.35) inset;
   font-size: 1rem;
   scroll-behavior: smooth;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--color__btwhite), 0.8);
   transition: transform 0.25s ease;
   will-change: transform;
 }
@@ -288,16 +315,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     transform: translate(calc(-1 * var(--bt-admin-peek) + 0.75rem), 0);
   }
 }
-/*
-@supports (
-  (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))
-) {
-  .bt-pairing-admin-tools {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-}
-*/
 
 .bt-pairing-admin-header {
   display: flex;
@@ -313,9 +330,8 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bt-pairing-admin-toggle {
-  border: 1px solid #000;
-  background: #f9f9f9;
-  color: #111;
+  border: 1px solid var(--color__btblack);
+  color: var(--color__btblack);
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
 }
@@ -323,14 +339,12 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 .bt-pairing-admin-tools button {
   font: inherit;
   padding: 3px;
-  border: 1px solid #000;
-  background: #f9f9f9;
-  color: #111;
+  border: 1px solid var(--color__btblack);
+  color: var(--color__btblack);
   border-radius: 2px;
 }
 
 .bt-pairing-admin-tools button:hover:not(:disabled) {
-  background: #efefef;
   cursor: pointer;
 }
 
@@ -340,9 +354,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bt-pairing-admin-tools .bt-pairing-help {
-  //margin-top: -0.25rem;
   font-size: 0.8rem;
-  //border-bottom: 1px solid black;
 }
 
 .pairings-updated {
@@ -356,11 +368,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   white-space: nowrap;
 }
 
-.pairings-item-desc,
-.pairings-item-add {
-  padding-inline-start: 0.5em;
-}
-
 .beer-svg-wrap {
   display: flex;
   position: relative;
@@ -369,7 +376,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   cursor: pointer;
   padding: 0;
   transition: transform $anim-fast $anim-ease, box-shadow 0.18s $anim-ease;
-  //box-shadow: 0 0 0 0 rgba(var(--beer-rgb, 0, 0, 0), 0);
   will-change: transform;
   flex-direction: column;
   gap: 4px;
@@ -377,15 +383,10 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: 0;
   border: none;
   border-radius: 2px;
-
-  //box-shadow: 0 0 0 0 rgba(var(--beer-rgb, 0, 0, 0), 0);
-  //transform: translate(10px, 10px);
   &:hover {
-    //box-shadow: -12px -12px 0 -10px var(--beer-color, #000), 12px 12px 0 -10px var(--beer-color, #000);
     outline-offset: 3px;
   }
   &[aria-pressed="true"] {
-    //box-shadow: -12px -12px 0 -10px var(--beer-color, #000), 12px 12px 0 -10px var(--beer-color, #000);
     .flight-toggle {
       opacity: 1;
     }
@@ -397,7 +398,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   &:focus-visible {
     outline-offset: 3px;
-    outline-color: var(--beer-color, #000);
+    outline-color: var(--beer-color, var(--color__btblack));
     .flight-toggle {
       opacity: 1;
     }
@@ -406,17 +407,10 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
 .beer-svg {
   display: block;
-  //width: 100%;
   flex: none;
-  //height: 100%;
   overflow: visible;
-  //width: 60px;
-  //height: 60px;
   transition: all $anim-fast $anim-ease;
   padding: 2px 0;
-  //path {
-  //vector-effect: non-scaling-stroke;
-  //}
   .cls-2 {
     display: none;
   }
@@ -424,7 +418,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
 .beer-meta {
   font-size: 0.9rem;
-  color: #333;
+  color: var(--color__btblack);
 }
 .beer-score span {
   font-weight: 600;
@@ -435,36 +429,27 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   margin-bottom: 0;
 }
 .badge {
-  //background: $accent;
-  //color: #fff;
   padding: 2px 8px;
-  //border-radius: 999px;
-  //font-size: 1rem;
-  background: var(--beer-color, #fff);
-  color: var(--beer-foreground, #111);
-  //outline: 2px solid var(--beer-color, #fff);
+  background: var(--beer-color, var(--color__btwhite));
+  color: var(--beer-foreground, var(--color__btblack));
 }
 
 .history-toggle {
   border-radius: 2px;
   cursor: pointer;
-  border: 2px solid var(--beer-color, #000);
+  border: 2px solid var(--beer-color, var(--color__btblack));
   background-color: var(--beer-color);
-  color: var(--beer-foreground, #000);
+  color: var(--beer-foreground, var(--color__btblack));
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-
   .history-toggle-icon {
     transition: transform $anim-fast $anim-ease;
     transform: rotate(-90deg);
   }
-
   &[aria-expanded="true"] {
-    //border: 2px solid var(--beer-color, #000);
     .history-toggle-icon {
       transform: rotate(0deg);
-      //outline: none;
     }
   }
 }
@@ -472,18 +457,16 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 .pairings-toggle {
   border-radius: 2px;
   cursor: pointer;
-  border: 2px solid var(--beer-color, #000);
+  border: 2px solid var(--beer-color, var(--color__btblack));
   background-color: var(--beer-color);
-  color: var(--beer-foreground, #000);
+  color: var(--beer-foreground, var(--color__btblack));
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-
   .pairings-toggle-icon {
     transition: transform $anim-fast $anim-ease;
     transform: rotate(-90deg);
   }
-
   &[aria-expanded="true"] {
     .pairings-toggle-icon {
       transform: rotate(0deg);
@@ -493,8 +476,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
 .beer-history-content {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.8);
-  //margin-top: $beeercardgap;
+  background: rgba(var(--color__btwhite), 0.8);
   p {
     margin: 0;
     &:not(:first-of-type) {
@@ -505,8 +487,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 
 .pairings-panel {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.8);
-  //margin-top: $beeercardgap;
+  background: rgba(var(--color__btwhite), 0.8);
 }
 
 .pairings-results {
@@ -517,12 +498,14 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     padding-inline-start: 0.5em;
     li {
       margin: 0.5em 0 0 0;
+      display: flex;
+      flex-direction: column;
     }
   }
   .pairings-updated {
     padding: 0.3em 0;
-    border-bottom: 1px solid var(--beer-color, #000);
-    color: #000;
+    border-bottom: 1px solid var(--beer-color, var(--color__btblack));
+    color: var(--color__btblack);
     display: none;
   }
 }
@@ -534,7 +517,7 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(var(--color__btblack), 0);
   white-space: nowrap;
   border: 0;
 }
@@ -563,11 +546,18 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .beerWrapper {
+  --tray-width: 0px;
+  --tray-gap: 0;
   position: relative;
   display: grid;
   gap: var(--tray-gap, 0.5rem);
   grid-template-columns: 1fr var(--tray-width, 0px);
   transition: grid-template-columns $anim-fast $anim-ease;
+}
+
+.beerWrapper.is-flight-open {
+  --tray-width: 215px;
+  --tray-gap: 2vw;
 }
 
 .flight-toggle-bar {
@@ -577,21 +567,14 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .flight-toggle-btn {
-  //padding: 0.25rem 0.5rem;
-  //border: 1px solid #ccc;
   border-radius: 2px;
-  //background: #f7f7f7;
   cursor: pointer;
 }
 
 .flight-tray {
   margin-top: 1rem;
   padding: 0;
-  //display: grid;
-  //grid-template-rows: auto 1fr;
-  //grid-template-columns: 1fr;
   opacity: 1;
-  //transform: translate(0,0);
   transition: opacity $anim-fast $anim-ease;
   .flight-tray-wrapper {
     display: grid;
@@ -603,12 +586,10 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     position: sticky;
     top: var(--masthead-height, 0px);
     z-index: 5;
-    //padding-top: 3vh;
     padding-bottom: 5dvh;
     max-height: calc(100dvh - var(--masthead-height, 0px));
-    //max-height: 100dvh;
-    //overflow-y: scroll;
     overflow-y: auto;
+    padding-inline-end: 5px;
   }
   .flight-tray-head {
     display: grid;
@@ -628,9 +609,8 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   .flight-tray-clear {
     grid-column: 2;
     grid-row: 1;
-    margin-left: 1rem;
     margin-right: 1px;
-    outline: 1px solid #000;
+    outline: 1px solid var(--color__btblack);
     border: none;
     border-radius: 2px;
     cursor: pointer;
@@ -638,7 +618,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   .flight-tray-slots,
   .flight-tray-overlay-grid {
     display: flex;
-    //row-gap: minMax(5px, 5vh);
     gap: clamp(5px, 2.5vh, 5vh);
     flex-direction: column;
     grid-row: 1;
@@ -653,11 +632,9 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     text-align: center;
     grid-column: 1 / 3;
     font-size: 1rem;
-    //border: 1px solid red;
-    color: white;
-    background-color: #000;
+    color: var(--color__btwhite);
+    background-color: var(--color__btblack);
     padding: 1vh 0;
-    //max-width: 250px;
   }
   .flight-tray-overlay-copy-highlight {
     animation: flight-overlay-pulse 0.5s ease;
@@ -671,7 +648,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-  //transform: translateY(8px);
 }
 
 @keyframes flight-overlay-pulse {
@@ -688,8 +664,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   position: sticky;
   top: 100px;
   z-index: 5;
-  //grid-row: 2;
-  //grid-column: 1;
 }
 
 .flight-tray:has(.flight-tray-overlay-copy) .flight-tray-overlay-grid {
@@ -708,12 +682,6 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   align-items: center;
   padding: 0 0 0 5px;
   outline-offset: 2px;
-  //overflow: hidden;
-  //cursor: none;
-  //justify-content: center;
-  //color comes from JS
-  //outline-width: 1px;
-  //outline: solid;
   .muted {
     opacity: 0;
     transition: transform $anim-fast $anim-ease, opacity $anim-fast $anim-ease;
@@ -722,8 +690,8 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     top: 50%;
     left: 50%;
     transform: translate(-50%, 40%);
-    background-color: #fff;
-    border: 1px solid black;
+    background-color: var(--color__btwhite);
+    border: 1px solid var(--color__btblack);
   }
   &[aria-pressed="true"]:hover {
     cursor: pointer;
@@ -738,17 +706,12 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     flex: none;
     position: relative;
     height: 100%;
-    //gap: 6px;
     &:before {
-      //content: "";
       position: absolute;
       top: -2px;
       left: -5px;
       width: 5px;
       height: 103%;
-      //background-color: var(--beer-color, #000);
-      //border-radius: 4px;
-      //pointer-events: none;
     }
   }
   .flight-slot-index {
@@ -759,26 +722,16 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
     bottom: 0;
     width: 20px;
     display: flex;
-    //align-items:
     justify-content: center;
     font-family: inherit;
     font-weight: 700;
     transition: color $anim-fast $anim-ease-curve $anim-fast;
-    color: var(--beer-color, #9a9a9a);
+    color: var(--beer-color, $grey);
     font-size: 30px;
     line-height: 1;
-    //box-sizing: border-box;
-    //pointer-events: none; /* optional if it's decorative */
   }
   .flight-slot-content {
     display: flex;
-    //max-width: 200px;
-    //flex-direction: column;
-    //align-items: center;
-    //gap: 0;
-    //overflow: hidden;
-    //width: 100%;
-    //justify-content: flex-start;
   }
   .flight-slot-label {
     padding: 0.25rem 0.5rem 0.25em 0;
@@ -807,12 +760,11 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .pairing-form-fetch {
-  outline: 1px solid #000;
-  background: #ffffff;
+  outline: 1px solid var(--color__btblack);
+  background: var(--color__btwhite);
   position: relative;
   z-index: 0;
-  /* base shadow so text remains crisp over glow */
-  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  box-shadow: 0 0 0 0 rgba(var(--color__btblack), 0);
   animation: bt-glow 4s linear infinite;
 }
 
@@ -847,15 +799,15 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: 1px solid red;
 }
 .pairing-form-success {
-  outline: 1px solid black;
+  outline: 1px solid var(--color__btblack);
 }
 
 .flight-toast {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
-  background-color: var(--beer-color, #000);
-  color: var(--beer-foreground, #fff);
+  background-color: var(--beer-color, var(--color__btblack));
+  color: var(--beer-foreground, var(--color__btwhite));
   padding: 0.75rem 1rem;
   border-radius: 2px;
   display: flex;
@@ -873,5 +825,73 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .flight-toast-dismiss {
     cursor: pointer;
+  }
+}
+
+@media (max-width: var(--bt-mobile-breakpoint)) {
+  .beer-card-centerclmn {
+    padding-right: 3px;
+  }
+  .beer-list {
+    font-size: 1rem;
+  }
+  .beer-card {
+    .beer-card-layout {
+      grid-template-columns: 50px 1fr;
+    }
+    .beer-card-tab {
+      font-size: 0.8rem;
+    }
+  }
+  .beer-card-desc {
+    font-size: 1rem;
+  }
+  .beer-history-content {
+    font-size: 1rem;
+  }
+  .beerWrapper {
+    --tray-width: 0px;
+    --tray-gap: 0;
+  }
+  .beerWrapper.is-flight-open {
+    --tray-width: 100px;
+    --tray-gap: 2vw;
+  }
+  .flight-tray {
+    .flight-tray-head {
+      gap: 0.25rem 0;
+      display: flex;
+      flex-direction: column;
+      h3 {
+        font-size: 1rem;
+        white-space: normal;
+        text-align: center;
+      }
+      div.muted.small {
+        text-align: center;
+      }
+    }
+    .flight-tray-clear {
+      margin-left: 0;
+    }
+    .flight-tray-slots {
+      gap: clamp(5px, 1.5vh, 5vh);
+      li {
+        align-self: anchor-center;
+      }
+    }
+    .flight-tray-overlay-copy {
+      font-size: 0.9rem;
+    }
+  }
+  .flight-slot {
+    padding: 0;
+    flex-direction: column;
+    .flight-slot-label {
+      font-size: 1rem;
+      padding: 0;
+      text-align: center;
+      line-height: 1;
+    }
   }
 }

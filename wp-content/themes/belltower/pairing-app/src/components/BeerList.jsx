@@ -43,7 +43,7 @@ const log = createLogger('beerColors');
  *  pairingsState?: {
  *    status: string;
  *    error?: string;
- *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; why?: string }>; side?: { foodKey?: string; why?: string } | null }>;
+ *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; pairingReason?: string }>; side?: { foodKey?: string; pairingReason?: string } | null }>;
  *    foodByKey?: Record<string, { name?: string }>;
  *    ensureLoaded?: (force?: boolean) => void;
  *    available?: boolean;

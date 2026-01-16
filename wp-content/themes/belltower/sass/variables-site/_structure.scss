@@ -3,6 +3,10 @@ $size__site-sidebar: 25%;
 $tabletBreakpoint: 750px;
 $mobileBreakpoint: 600px;
 
+:root {
+  --bt-mobile-breakpoint: #{$mobileBreakpoint};
+}
+
 $basefontsize: 1.1rem;
 
 // Theme layout variables.

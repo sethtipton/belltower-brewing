@@ -7,7 +7,7 @@ const log = createLogger('staticPairings');
 /**
  * @typedef {{ btKey?: string; id?: string | number; slug?: string; name?: string; category?: string; style?: string; pairingProfile?: unknown }} MenuItem
  * @typedef {{ items: MenuItem[]; generatedAt?: string; pairingProfileVersion?: number }} MenuPayload
- * @typedef {{ foodKey?: string; why?: string }} PairingEntry
+ * @typedef {{ foodKey?: string; pairingReason?: string }} PairingEntry
  * @typedef {{ mains?: PairingEntry[]; side?: PairingEntry | null }} BeerPairings
  * @typedef {Record<string, BeerPairings>} PairingsByBeerKey
  * @typedef {{ pairingsByBeerKey?: PairingsByBeerKey; source?: string | null; generatedAt?: string | null }} StaticPairingsResponse
@@ -364,6 +364,43 @@ function hasPairings(map) {
 }
 
 /**
+ * @param {PairingsByBeerKey | null | undefined} map
+ * @returns {PairingsByBeerKey}
+ */
+function normalizePairingsMap(map) {
+  if (!map || typeof map !== 'object') return /** @type {PairingsByBeerKey} */ ({});
+  const next = /** @type {PairingsByBeerKey} */ ({});
+  /** @param {unknown} value */
+  const getPairingReason = (value) => {
+    if (!value || typeof value !== 'object') return undefined;
+    const record = /** @type {Record<string, unknown>} */ (value);
+    const direct = 'pairingReason' in record && typeof record.pairingReason === 'string' ? record.pairingReason : undefined;
+    if (direct) return direct;
+    return 'why' in record && typeof record.why === 'string' ? record.why : undefined;
+  };
+  Object.entries(map).forEach(([beerKey, entry]) => {
+    if (!entry || typeof entry !== 'object') return;
+    const mains = Array.isArray(entry.mains) ? entry.mains : [];
+    const normalizedMains = mains.map((item) => {
+      if (!item || typeof item !== 'object') return item;
+      const pairingReason = getPairingReason(item);
+      return {
+        ...item,
+        pairingReason,
+      };
+    });
+    const side = entry.side && typeof entry.side === 'object'
+      ? {
+          ...entry.side,
+          pairingReason: getPairingReason(entry.side),
+        }
+      : entry.side ?? null;
+    next[beerKey] = { ...entry, mains: normalizedMains, side };
+  });
+  return next;
+}
+
+/**
  * @param {PairingsByBeerKey} map
  * @param {Record<string, MenuItem>} foodIndex
  */
@@ -536,7 +573,7 @@ export function useStaticPairings({ beers = [] } = {}) {
 
   const cacheAvailable = Boolean(cachedSnapshot && hasPairings(cachedSnapshot.pairingsByBeerKey));
 
-  const cachedPairings = cacheAvailable ? cachedSnapshot?.pairingsByBeerKey ?? null : null;
+  const cachedPairings = cacheAvailable ? normalizePairingsMap(cachedSnapshot?.pairingsByBeerKey ?? null) : null;
   const cachedReady = Boolean(cacheAvailable && foodData);
   const effectivePairingsByBeerKey = cachedReady && !hasLoadedRef.current
     ? cachedPairings ?? /** @type {PairingsByBeerKey} */ ({})
@@ -586,7 +623,8 @@ export function useStaticPairings({ beers = [] } = {}) {
         : null;
       const cachedStore = isStaticPairingsResponse(localCached) ? 'local' : isStaticPairingsResponse(sessionCached) ? 'session' : 'none';
       if (cached && hasPairings(cached.pairingsByBeerKey)) {
-        setPairingsByBeerKey(cached.pairingsByBeerKey ?? {});
+        const normalizedCached = normalizePairingsMap(cached.pairingsByBeerKey ?? {});
+        setPairingsByBeerKey(normalizedCached);
         setStatus('ready');
         setAvailable(true);
         hasLoadedRef.current = true;
@@ -595,7 +633,7 @@ export function useStaticPairings({ beers = [] } = {}) {
           setLastUpdated(cached.generatedAt);
         }
         log.info('cache.hit', { phase: 'staticPairings', cacheKey, store: cachedStore, source: `${cachedStore}-cache` });
-        validatePairings(cached.pairingsByBeerKey ?? {}, nextFoodIndex);
+        validatePairings(normalizedCached, nextFoodIndex);
         return;
       }
       setStatus('loading');
@@ -607,7 +645,7 @@ export function useStaticPairings({ beers = [] } = {}) {
           force,
           promptVersion: STATIC_PAIRINGS_PROMPT_VERSION,
         });
-        const map = response?.pairingsByBeerKey ?? /** @type {PairingsByBeerKey} */ ({});
+        const map = normalizePairingsMap(response?.pairingsByBeerKey ?? /** @type {PairingsByBeerKey} */ ({}));
         if (hasPairings(map)) {
           setPairingsByBeerKey(map);
           setStatus('ready');

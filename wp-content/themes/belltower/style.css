@@ -40,6 +40,12 @@ Nicolas Gallagher and Jonathan Neal https://necolas.github.io/normalize.css/
 	## Captions
 	## Galleries
 --------------------------------------------------------------*/
+:root {
+  --color__btblack: #231f20;
+  --color__btwhite: #e5e5e5;
+  --color__btdarkestgreen: #515441;
+}
+
 .has-darkest-green-color {
   color: #515441 !important;
 }
@@ -196,6 +202,10 @@ a.has-dark-green-color:hover {
   font-style: normal;
   font-display: swap;
 }
+:root {
+  --bt-mobile-breakpoint: 600px;
+}
+
 .has-small-font-size {
   font-size: 0.8125rem !important;
 }

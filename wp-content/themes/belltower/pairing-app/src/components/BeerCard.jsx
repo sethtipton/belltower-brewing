@@ -36,7 +36,7 @@ const MotionCard = React.memo(
  *  pairingsState?: {
  *    status: string;
  *    error?: string;
- *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; why?: string }>; side?: { foodKey?: string; why?: string } | null }>;
+ *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; pairingReason?: string }>; side?: { foodKey?: string; pairingReason?: string } | null }>;
  *    foodByKey?: Record<string, { name?: string }>;
  *    ensureLoaded?: (force?: boolean) => void;
  *    lastUpdated?: string | null;
@@ -138,6 +138,27 @@ const MotionCard = React.memo(
         data-pairings-token={pairingsToken ?? ''}
       >
         <div className={`beer-card-layout${isRecommended && beer.recommendationMatchSentence ? ' with-recommendation match-open' : ''}`}>
+
+            {isRecommended && beer.recommendationMatchSentence && (
+              <div className="beer-card-sidebar match-open">
+                <div className="badge badge-interactive" aria-live="polite">
+                  <strong>Recommended</strong>
+                  {scoreText ? (
+                    <div className="beer-match-score">
+                      Score: {scoreText}
+                      {confidence ? ` (${confidence})` : ''}
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  id={`recommendation-match-${beer.id}`}
+                  className="beer-match"
+                  aria-live="polite"
+                >
+                  {beer.recommendationMatchSentence}
+                </div>
+              </div>
+            )}
 
             <div className="beer-card-leftclmn">
 
@@ -274,9 +295,9 @@ const MotionCard = React.memo(
                                       return (
                                         <li key={`${foodKey}-${index}`}>
                                           <strong>{dishLabel}</strong>
-                                          <span className="muted small why">{entry?.why ? ` — ${entry.why}` : ''}</span>
+                                          <span className="pairing-reason">{entry?.pairingReason ? `${entry.pairingReason}` : ''}</span>
                                           {dishDescription ? (
-                                            <div className="muted small pairings-item-desc">{dishDescription}</div>
+                                            <div className="pairings-item-desc">{dishDescription}</div>
                                           ) : null}
                                           {dishAdd ? (
                                             <div className="muted small pairings-item-add">
@@ -313,9 +334,9 @@ const MotionCard = React.memo(
                                           return (
                                             <>
                                               <strong>{sideLabel}</strong>
-                                              <span className="muted small why">{pairings.side?.why ? ` — ${pairings.side.why}` : ''}</span>
+                                              <span className="pairing-reason">{pairings.side?.pairingReason ? `${pairings.side.pairingReason}` : ''}</span>
                                               {sideDescription ? (
-                                                <div className="muted small pairings-item-desc">{sideDescription}</div>
+                                                <div className="pairings-item-desc">{sideDescription}</div>
                                               ) : null}
                                               {sideAdd ? (
                                                 <div className="muted small pairings-item-add">
@@ -345,27 +366,6 @@ const MotionCard = React.memo(
                 </motion.div>
               ) : null}
             </div>
-
-            {isRecommended && beer.recommendationMatchSentence && (
-              <div className="beer-card-sidebar match-open">
-                <div className="badge badge-interactive" aria-live="polite">
-                  <strong>Recommended</strong>
-                  {scoreText ? (
-                    <div className="beer-match-score">
-                      Score: {scoreText}
-                      {confidence ? ` (${confidence})` : ''}
-                    </div>
-                  ) : null}
-                </div>
-            <div
-              id={`recommendation-match-${beer.id}`}
-              className="beer-match muted small"
-              aria-live="polite"
-            >
-                  {beer.recommendationMatchSentence}
-                </div>
-              </div>
-            )}
 
         </div>
       </div>
@@ -400,7 +400,7 @@ const MotionCard = React.memo(
  *  pairingsState?: {
  *    status: string;
  *    error?: string;
- *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; why?: string }>; side?: { foodKey?: string; why?: string } | null }>;
+ *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; pairingReason?: string }>; side?: { foodKey?: string; pairingReason?: string } | null }>;
  *    foodByKey?: Record<string, { name?: string }>;
  *    ensureLoaded?: (force?: boolean) => void;
  *  };

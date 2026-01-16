@@ -18,6 +18,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     manifest: true,
+    sourcemap: true,
     rollupOptions: {
       input: 'index.html'
     }

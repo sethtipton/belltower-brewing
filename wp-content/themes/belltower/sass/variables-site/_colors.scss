@@ -14,6 +14,12 @@ $color__btred: #ba583b;
 $color__btwhite: #e5e5e5;
 $color__btpurewhite: #ffffff;
 
+:root {
+  --color__btblack: #{$color__btblack};
+  --color__btwhite: #{$color__btwhite};
+  --color__btdarkestgreen: #{$color__btdarkestgreen};
+}
+
 $color__background-body: $color__btpurewhite;
 $color__background-screen: #f1f1f1;
 $color__background-hr: #ccc;

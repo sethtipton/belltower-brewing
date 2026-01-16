@@ -59,9 +59,17 @@ interface PairingCacheMeta {
   beerData: { items?: unknown[] } | null;
   foodData: { items?: unknown[] } | null;
 }
+interface RecommendState {
+  key: string;
+  ids: string[];
+  meta: Record<string, { score: number | null; confidence: string | null; matchSentence: string | null }>;
+  show: boolean;
+  savedAt: number;
+}
 
 const PAIRING_MAP_KEY = 'bt_pairing_cache_v1_map';
 const HISTORY_CACHE_KEY = 'bt_history_cache_v1';
+const RECOMMEND_STATE_KEY = 'bt_pairing_recommend_state_v1';
 const EMPTY_PREPARED: PreparedAnswers = { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' };
 const session = typeof globalThis !== 'undefined' ? globalThis.sessionStorage : null;
 const localStore = typeof globalThis !== 'undefined' ? globalThis.localStorage : null;
@@ -91,6 +99,16 @@ const scheduleIdle = (task: () => void, delay = 500): void => {
     return;
   }
   globalThis.setTimeout(task, delay);
+};
+const getMobileMediaQuery = (): MediaQueryList | null => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+  const raw = window.getComputedStyle(document.documentElement).getPropertyValue('--bt-mobile-breakpoint').trim();
+  const breakpoint = raw || '600px';
+  return breakpoint ? window.matchMedia(`(max-width: ${breakpoint})`) : null;
+};
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
 };
 
 const detectDataSources = () => {
@@ -141,6 +159,20 @@ function toPairingCacheEntry(raw: unknown): PairingCacheEntry | null {
   const data = 'data' in raw ? (raw.data as PairingResponse | null) : null;
   return { data, fetchedAt };
 }
+
+function toRecommendState(raw: unknown): RecommendState | null {
+  if (!isRecord(raw)) return null;
+  const key = typeof raw.key === 'string' ? raw.key : '';
+  if (!key) return null;
+  const ids = Array.isArray(raw.ids) ? raw.ids.map((id) => String(id)).filter(Boolean) : [];
+  const meta = isRecord(raw.meta) ? (raw.meta as RecommendState['meta']) : {};
+  const show = typeof raw.show === 'boolean' ? raw.show : true;
+  const savedAt = typeof raw.savedAt === 'number' ? raw.savedAt : 0;
+  return { key, ids, meta, show, savedAt };
+}
+
+const getRecommendStorageKey = (hash: string): string =>
+  hash ? `${RECOMMEND_STATE_KEY}_${hash}` : RECOMMEND_STATE_KEY;
 
 function toPairingCacheMap(raw: unknown): Record<string, PairingCacheEntry> {
   if (!isRecord(raw)) return {};
@@ -311,17 +343,50 @@ export default function App(): React.ReactElement {
   const historyRequestInProgress = useRef(false);
   const historyCooldownUntil = useRef(0);
   const [pairingFetched, setPairingFetched] = useState(false);
-  const [flightOpen, setFlightOpen] = useState(true);
+  const [flightOpen, setFlightOpen] = useState(() => {
+    const mq = getMobileMediaQuery();
+    return mq ? !mq.matches : true;
+  });
   const [colorMapOverride, setColorMapOverride] = useState<Record<string, string>>({});
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [preparedAnswers, setPreparedAnswers] = useState<PreparedAnswers | null>(null);
+  const [debugRecommendAll, setDebugRecommendAll] = useState(false);
   const safeItems = useMemo<BeerItem[]>(() => toBeerArray(items), [items]);
   const [successMessage, setSuccessMessage] = useState('');
   const staticPairings = useStaticPairings({ beers: safeItems });
+  const flightUserOverride = useRef(false);
   const cacheMetaLogged = useRef(false);
   const fallbackHashLogged = useRef(false);
   const staticPairingsTriggered = useRef<string | null>(null);
   const uiPairingsLogged = useRef(false);
+  const recStateRestored = useRef(false);
+
+  useEffect(() => {
+    const mq = getMobileMediaQuery();
+    if (!mq) return undefined;
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (flightUserOverride.current) return;
+      setFlightOpen(!event.matches);
+    };
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', handleChange);
+    } else {
+      const legacyAddListener = (mq as unknown as LegacyMediaQueryList).addListener;
+      if (typeof legacyAddListener === 'function') {
+        legacyAddListener.call(mq, handleChange);
+      }
+    }
+    return () => {
+      if (typeof mq.removeEventListener === 'function') {
+        mq.removeEventListener('change', handleChange);
+      } else {
+        const legacyRemoveListener = (mq as unknown as LegacyMediaQueryList).removeListener;
+        if (typeof legacyRemoveListener === 'function') {
+          legacyRemoveListener.call(mq, handleChange);
+        }
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const sources = detectDataSources();
@@ -468,6 +533,61 @@ export default function App(): React.ReactElement {
     [pairingCacheMapKey]
   );
 
+  const persistRecommendState = useCallback(
+    (
+      answerKey: string,
+      ids: Set<string>,
+      meta: Record<string, { score: number | null; confidence: string | null; matchSentence: string | null }>,
+      show: boolean
+    ) => {
+      if (!session || !stableCacheHash || !answerKey) return;
+      try {
+        const payload: RecommendState = {
+          key: answerKey,
+          ids: Array.from(ids),
+          meta,
+          show,
+          savedAt: Date.now(),
+        };
+        session.setItem(getRecommendStorageKey(stableCacheHash), JSON.stringify(payload));
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [stableCacheHash]
+  );
+
+  const readRecommendState = useCallback((): RecommendState | null => {
+    if (!session || !stableCacheHash) return null;
+    try {
+      const raw = session.getItem(getRecommendStorageKey(stableCacheHash));
+      if (!raw) return null;
+      return toRecommendState(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }, [stableCacheHash]);
+
+  const clearRecommendState = useCallback(() => {
+    if (!session || !stableCacheHash) return;
+    try {
+      session.removeItem(getRecommendStorageKey(stableCacheHash));
+    } catch {
+      // ignore
+    }
+  }, [stableCacheHash]);
+
+  useEffect(() => {
+    if (!stableCacheHash || recStateRestored.current) return;
+    if (!safeItems.length) return;
+    const stored = readRecommendState();
+    if (!stored?.ids?.length) return;
+    recStateRestored.current = true;
+    setRecommendedIds(new Set(stored.ids));
+    setRecMeta(stored.meta || {});
+    setShowRecommendations(Boolean(stored.show));
+  }, [stableCacheHash, safeItems.length, readRecommendState]);
+
   const writePairingCache = useCallback(
     (key: string, data: unknown) => {
       if (!session || !pairingCacheMapKey) return;
@@ -601,8 +721,7 @@ export default function App(): React.ReactElement {
     }
   }, [safeItems, mergeHistories, stableCacheHash]);
 
-  const trayWidth = flightOpen ? '250px' : '0px';
-  const trayGap = flightOpen ? '2vw' : '0';
+  const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
 
   const extractColorMap = useCallback((data: unknown): Record<string, string> => {
     if (!data || typeof data !== 'object') return {};
@@ -652,7 +771,7 @@ export default function App(): React.ReactElement {
     if (!safeItems.length) return safeItems;
     const ranked = safeItems.map((b) => {
       const slug = slugify(b.name ?? '');
-      const isRec = recommendedIds.has(String(b.id)) || recommendedIds.has(slug);
+      const isRec = debugRecommendAll || recommendedIds.has(String(b.id)) || recommendedIds.has(slug);
       const history = historyByName[slug];
       const meta = recMeta[slug];
       const next = isRec || history || meta
@@ -676,7 +795,7 @@ export default function App(): React.ReactElement {
       if (sa === sb) return 0;
       return sb - sa;
     });
-  }, [safeItems, recommendedIds, historyByName, recMeta, showRecommendations]);
+  }, [safeItems, recommendedIds, historyByName, recMeta, showRecommendations, debugRecommendAll]);
 
   const applyRecommendations = useCallback((matches: unknown) => {
     const safeMatches = toMatches(matches);
@@ -697,6 +816,7 @@ export default function App(): React.ReactElement {
     recLog.info('apply', { phase: 'recommendations', count: ids.size });
     setRecommendedIds(ids);
     setRecMeta(metaMap);
+    return { ids, metaMap };
   }, []);
 
   const applyHistoryOnly = useCallback(
@@ -721,7 +841,10 @@ export default function App(): React.ReactElement {
         items={decoratedItems}
         allowColorFetch={allowColors && pairingFetched}
         showHistory={pairingFetched}
-        onFlightOpen={() => setFlightOpen(true)}
+        onFlightOpen={() => {
+          flightUserOverride.current = true;
+          setFlightOpen(true);
+        }}
         colorMapOverride={colorMapOverride}
         flightFull={slots.filter(Boolean).length >= 5}
         pairingsState={staticPairings}
@@ -955,12 +1078,14 @@ export default function App(): React.ReactElement {
       // Pairing response provides recommendations based on answers + beer data.
       const { matches, historyMap } = extractMatchesAndHistory(fetched);
       if (matches.length) {
-        applyRecommendations(matches);
+        const { ids, metaMap } = applyRecommendations(matches);
         applyHistoryOnly(matches, historyMap);
         setShowRecommendations(true);
         setSuccessMessage('5 Beers recommended based on your answers!');
+        persistRecommendState(key, ids, metaMap, true);
       } else {
         setError('No pairing data yet. Click "Fetch Pairings" first.');
+        clearRecommendState();
       }
       const colors = extractColorMap(fetched);
       if (Object.keys(colors).length) {
@@ -975,6 +1100,7 @@ export default function App(): React.ReactElement {
       log.error('submit.error', { phase: 'submit', error, errorType: toErrorType(error), hash: stableCacheHash || null });
       setError('Unable to fetch pairing right now.');
       setSuccessMessage('');
+      clearRecommendState();
     } finally {
       setLoading(false);
     }
@@ -986,6 +1112,16 @@ export default function App(): React.ReactElement {
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
         <header>
           <h2>Beers on tap</h2>
+          {isAdmin ? (
+            <button
+              type="button"
+              className="debug-recommend-btn"
+              aria-pressed={debugRecommendAll}
+              onClick={() => setDebugRecommendAll((prev) => !prev)}
+            >
+              {debugRecommendAll ? 'Clear recommended layout' : 'Preview recommended layout'}
+            </button>
+          ) : null}
         </header>
         <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
           {formOpen ? 'Close - Help me decide' : 'Help me decide'}
@@ -1005,14 +1141,17 @@ export default function App(): React.ReactElement {
           <button
             type="button"
             className="flight-toggle-btn"
-            onClick={() => setFlightOpen((v) => !v)}
+            onClick={() => {
+              flightUserOverride.current = true;
+              setFlightOpen((v) => !v);
+            }}
             aria-expanded={flightOpen}
             aria-controls="flight-tray"
           >
             {flightOpen ? 'Hide flight' : 'Show flight'}
           </button>
         </div>
-        <div className="beerWrapper" style={{ '--tray-width': trayWidth, '--tray-gap': trayGap } as React.CSSProperties}>
+        <div className={trayClassName}>
           {body}
           <FlightTray open={flightOpen} colorMap={colorMapOverride} />
         </div>
