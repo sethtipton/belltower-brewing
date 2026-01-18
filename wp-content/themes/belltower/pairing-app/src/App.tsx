@@ -359,10 +359,7 @@ function AppContent(): React.ReactElement {
   const historyRequestInProgress = useRef(false);
   const historyCooldownUntil = useRef(0);
   const [pairingFetched, setPairingFetched] = useState(false);
-  const [flightOpen, setFlightOpen] = useState(() => {
-    const mq = getMobileMediaQuery();
-    return mq ? !mq.matches : true;
-  });
+  const [flightOpen, setFlightOpen] = useState(false);
   const [colorMapOverride, setColorMapOverride] = useState<Record<string, string>>({});
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [preparedAnswers, setPreparedAnswers] = useState<PreparedAnswers | null>(null);
@@ -764,6 +761,12 @@ function AppContent(): React.ReactElement {
   const showFlightTray = listReady;
   const appVisible = beerError ? true : listReady;
   const [isVisible, setIsVisible] = useState(false);
+  const flightCount = slots.filter(Boolean).length;
+  const flightToggleLabel = (() => {
+    if (!flightOpen && flightCount === 0) return 'Create a flight';
+    if (flightCount > 0) return flightOpen ? 'Hide my flight' : 'Show my flight';
+    return flightOpen ? 'Hide flight' : 'Show flight';
+  })();
 
   const extractColorMap = useCallback((data: unknown): Record<string, string> => {
     if (!data || typeof data !== 'object') return {};
@@ -1146,7 +1149,6 @@ function AppContent(): React.ReactElement {
       <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
         <header>
-          <h2>Beers on tap</h2>
           {isAdmin ? (
             <button
               type="button"
@@ -1187,7 +1189,7 @@ function AppContent(): React.ReactElement {
             aria-expanded={flightOpen}
             aria-controls="flight-tray"
           >
-            {flightOpen ? 'Hide flight' : 'Show flight'}
+            {flightToggleLabel}
           </button>
         </div>
         <div className={trayClassName}>
