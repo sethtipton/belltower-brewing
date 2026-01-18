@@ -66,6 +66,11 @@ interface RecommendState {
   show: boolean;
   savedAt: number;
 }
+interface PairingFeatureFlags {
+  helpForm?: boolean;
+  history?: boolean;
+  foodPairings?: boolean;
+}
 
 const PAIRING_MAP_KEY = 'bt_pairing_cache_v1_map';
 const HISTORY_CACHE_KEY = 'bt_history_cache_v1';
@@ -79,11 +84,19 @@ const staticLog = createLogger('staticPairings');
 const recLog = createLogger('recommendations');
 const pairingGlobals = typeof globalThis !== 'undefined'
   ? (globalThis as {
-      PAIRING_APP?: { isAdmin?: boolean; cacheHash?: string };
-      PAIRINGAPP?: { isAdmin?: boolean; cacheHash?: string };
+      PAIRING_APP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags };
+      PAIRINGAPP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags };
     })
   : null;
 const isAdmin = Boolean(pairingGlobals?.PAIRING_APP?.isAdmin ?? pairingGlobals?.PAIRINGAPP?.isAdmin);
+const getFeatureFlags = (): { helpForm: boolean; history: boolean; foodPairings: boolean } => {
+  const raw = pairingGlobals?.PAIRING_APP?.features ?? pairingGlobals?.PAIRINGAPP?.features ?? {};
+  return {
+    helpForm: raw?.helpForm !== false,
+    history: raw?.history !== false,
+    foodPairings: raw?.foodPairings !== false,
+  };
+};
 const getServerCacheHash = (): string => {
   const hash = pairingGlobals?.PAIRING_APP?.cacheHash ?? pairingGlobals?.PAIRINGAPP?.cacheHash;
   return typeof hash === 'string' ? hash : '';
@@ -304,6 +317,7 @@ interface BeerDataHook {
 
 export default function App(): React.ReactElement {
   const { items, ready, refreshColors, fetchPairing } = useBeerData() as BeerDataHook;
+  const featureFlags = useMemo(() => getFeatureFlags(), []);
   const { slots } = useFlight();
   const [pairingCacheMeta, setPairingCacheMeta] = useState<PairingCacheMeta | null>(
     () => toPairingCacheMeta(getPairingCacheMeta())
@@ -353,7 +367,8 @@ export default function App(): React.ReactElement {
   const [debugRecommendAll, setDebugRecommendAll] = useState(false);
   const safeItems = useMemo<BeerItem[]>(() => toBeerArray(items), [items]);
   const [successMessage, setSuccessMessage] = useState('');
-  const staticPairings = useStaticPairings({ beers: safeItems });
+  const staticPairings = useStaticPairings({ beers: safeItems, enabled: featureFlags.foodPairings });
+  const hasColorOverrides = useMemo(() => Object.keys(colorMapOverride).length > 0, [colorMapOverride]);
   const flightUserOverride = useRef(false);
   const cacheMetaLogged = useRef(false);
   const fallbackHashLogged = useRef(false);
@@ -464,16 +479,18 @@ export default function App(): React.ReactElement {
 
   const triggerStaticPairings = useCallback(
     (source: 'cached' | 'preload') => {
+      if (!featureFlags.foodPairings) return;
       if (!stableCacheHash) return;
       if (staticPairingsTriggered.current === stableCacheHash) return;
       staticPairingsTriggered.current = stableCacheHash;
       staticLog.info('trigger', { phase: 'staticPairings', source, hash: stableCacheHash });
       void staticPairings.ensureLoaded();
     },
-    [stableCacheHash, staticPairings]
+    [stableCacheHash, staticPairings, featureFlags.foodPairings]
   );
 
   useEffect(() => {
+    if (!featureFlags.foodPairings) return;
     if (uiPairingsLogged.current) return;
     if (staticPairings.available && staticPairings.status === 'ready') {
       uiPairingsLogged.current = true;
@@ -484,16 +501,18 @@ export default function App(): React.ReactElement {
         hash: stableCacheHash || null,
       });
     }
-  }, [staticPairings.available, staticPairings.status]);
+  }, [staticPairings.available, staticPairings.status, featureFlags.foodPairings]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
+    const pairingsEnabled = featureFlags.foodPairings;
+    const pairingsAvailable = pairingsEnabled && staticPairings.available;
     const detail = {
       lastFetched,
-      pairingsReady: staticPairings.available && pairingFetched,
+      pairingsReady: pairingsAvailable,
       cacheHash: stableCacheHash || null,
-      staticLastUpdated: staticPairings.lastUpdated ?? null,
-      staticStore: staticPairings.cacheStore ?? null,
+      staticLastUpdated: pairingsAvailable ? staticPairings.lastUpdated ?? null : null,
+      staticStore: pairingsAvailable ? staticPairings.cacheStore ?? null : null,
       status: fetchStatus,
       error: fetchError || null,
     };
@@ -507,6 +526,7 @@ export default function App(): React.ReactElement {
     stableCacheHash,
     fetchStatus,
     fetchError,
+    featureFlags.foodPairings,
   ]);
 
   const makeAnswerKey = useCallback((a: PreparedAnswers | null | undefined) => {
@@ -651,6 +671,7 @@ export default function App(): React.ReactElement {
   }, [pairingCacheMapKey]);
 
   const fetchAndMergeHistories = useCallback(async () => {
+    if (!featureFlags.history) return;
     if (historyRequestInProgress.current) return;
     if (!safeItems.length) return;
     if (Date.now() < historyCooldownUntil.current) return;
@@ -719,7 +740,22 @@ export default function App(): React.ReactElement {
       historyLog.debug('resolved', { phase: 'history', count: historyResolved.current.size });
       historyRequestInProgress.current = false;
     }
-  }, [safeItems, mergeHistories, stableCacheHash]);
+  }, [safeItems, mergeHistories, stableCacheHash, featureFlags.history]);
+
+  useEffect(() => {
+    if (!featureFlags.history) return;
+    if (!safeItems.length) return;
+    scheduleIdle(() => {
+      void fetchAndMergeHistories();
+    }, 800);
+  }, [featureFlags.history, safeItems.length, fetchAndMergeHistories]);
+
+  useEffect(() => {
+    if (!featureFlags.foodPairings) return;
+    scheduleIdle(() => {
+      void staticPairings.ensureLoaded();
+    }, 800);
+  }, [featureFlags.foodPairings, staticPairings]);
 
   const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
 
@@ -821,6 +857,7 @@ export default function App(): React.ReactElement {
 
   const applyHistoryOnly = useCallback(
     (matches: unknown, historyMapFromResult?: unknown) => {
+      if (!featureFlags.history) return;
       const safeHistory = toHistoryMap(historyMapFromResult ?? (isRecord(pairingData) ? pairingData.history_map : null));
       if (Object.keys(safeHistory).length) {
         mergeHistories(safeHistory);
@@ -830,7 +867,7 @@ export default function App(): React.ReactElement {
         scheduleIdle(() => void fetchAndMergeHistories(), 800);
       }
     },
-    [fetchAndMergeHistories, mergeHistories, pairingData]
+    [fetchAndMergeHistories, mergeHistories, pairingData, featureFlags.history]
   );
 
   const body = (() => {
@@ -839,20 +876,21 @@ export default function App(): React.ReactElement {
     return (
       <BeerList
         items={decoratedItems}
-        allowColorFetch={allowColors && pairingFetched}
-        showHistory={pairingFetched}
+        allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
+        showHistory={featureFlags.history}
         onFlightOpen={() => {
           flightUserOverride.current = true;
           setFlightOpen(true);
         }}
         colorMapOverride={colorMapOverride}
         flightFull={slots.filter(Boolean).length >= 5}
-        pairingsState={staticPairings}
+        pairingsState={featureFlags.foodPairings ? staticPairings : null}
       />
     );
   })();
 
   useEffect(() => {
+    if (!featureFlags.helpForm) return;
     if (!stableCacheHash) return;
     const cached = readAnyCachedPairing();
     const hydrate = (data: PairingResponse, fetchedAt?: number | null) => {
@@ -894,6 +932,7 @@ export default function App(): React.ReactElement {
       cancelled = true;
     };
   }, [
+    featureFlags.helpForm,
     stableCacheHash,
     readAnyCachedPairing,
     applyHistoryOnly,
@@ -908,6 +947,7 @@ export default function App(): React.ReactElement {
   const colorApplied = useRef(false);
 
   const handleFetchPairing = useCallback(async (preparedOverride?: PreparedAnswers | null): Promise<PairingResponse | null> => {
+    if (!featureFlags.helpForm) return null;
     setFetchStatus('loading');
     setFetchError('');
     const prepared = toPreparedAnswers(preparedOverride ?? preparedAnswers ?? EMPTY_PREPARED);
@@ -1029,12 +1069,13 @@ export default function App(): React.ReactElement {
     pairingCacheBeerData,
     pairingCacheFoodData,
     fetchAndMergeHistories,
+    featureFlags.helpForm,
   ]);
 
   const statusCheckedRef = useRef<string>('');
 
   useEffect(() => {
-    if (!isAdmin || !stableCacheHash || !localStore) return;
+    if (!featureFlags.helpForm || !isAdmin || !stableCacheHash || !localStore) return;
     if (!pairingCacheMeta?.hash) return;
     if (statusCheckedRef.current === stableCacheHash) return;
     statusCheckedRef.current = stableCacheHash;
@@ -1058,9 +1099,10 @@ export default function App(): React.ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [stableCacheHash, isAdmin, localStore, handleFetchPairing]);
+  }, [stableCacheHash, isAdmin, localStore, handleFetchPairing, featureFlags.helpForm, pairingCacheMeta?.hash]);
 
   const handleSubmit = async (preparedOverride?: PreparedAnswers | null): Promise<void> => {
+    if (!featureFlags.helpForm) return;
     setError('');
     setSuccessMessage('');
     setLoading(true);
@@ -1123,20 +1165,24 @@ export default function App(): React.ReactElement {
             </button>
           ) : null}
         </header>
-        <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
-          {formOpen ? 'Close - Help me decide' : 'Help me decide'}
-        </button>
-        <PairingForm
-          open={formOpen}
-          loading={loading}
-          error={error}
-          success={successMessage}
-          onSubmit={(vals) => {
-            void handleSubmit(vals);
-          }}
-          onPreparedChange={(vals) => setPreparedAnswers(vals)}
-          onInteraction={() => setShowRecommendations(false)}
-        />
+        {featureFlags.helpForm ? (
+          <>
+            <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
+              {formOpen ? 'Close - Help me decide' : 'Help me decide'}
+            </button>
+            <PairingForm
+              open={formOpen}
+              loading={loading}
+              error={error}
+              success={successMessage}
+              onSubmit={(vals) => {
+                void handleSubmit(vals);
+              }}
+              onPreparedChange={(vals) => setPreparedAnswers(vals)}
+              onInteraction={() => setShowRecommendations(false)}
+            />
+          </>
+        ) : null}
         <div className="flight-toggle-bar">
           <button
             type="button"

@@ -481,9 +481,9 @@ export function loadStaticPairings({ beerData, foodData, force = false, promptVe
 }
 
 /**
- * @param {{ beers?: Array<MenuItem & { btKey?: string; style?: string; pairingProfile?: unknown }> }} [input]
+ * @param {{ beers?: Array<MenuItem & { btKey?: string; style?: string; pairingProfile?: unknown }>; enabled?: boolean }} [input]
  */
-export function useStaticPairings({ beers = [] } = {}) {
+export function useStaticPairings({ beers = [], enabled = true } = {}) {
   const [status, setStatus] = useState('idle');
   const [pairingsByBeerKey, setPairingsByBeerKey] = useState(/** @type {PairingsByBeerKey} */ ({}));
   const [foodByKey, setFoodByKey] = useState(/** @type {Record<string, MenuItem>} */ ({}));
@@ -575,15 +575,21 @@ export function useStaticPairings({ beers = [] } = {}) {
 
   const cachedPairings = cacheAvailable ? normalizePairingsMap(cachedSnapshot?.pairingsByBeerKey ?? null) : null;
   const cachedReady = Boolean(cacheAvailable && foodData);
-  const effectivePairingsByBeerKey = cachedReady && !hasLoadedRef.current
-    ? cachedPairings ?? /** @type {PairingsByBeerKey} */ ({})
-    : pairingsByBeerKey;
-  const effectiveFoodByKey = cachedReady && !hasLoadedRef.current ? foodIndex : foodByKey;
-  const effectiveStatus = cachedReady && !hasLoadedRef.current ? 'ready' : status;
-  const effectiveAvailable = cachedReady && !hasLoadedRef.current ? true : available;
+  const canUseCache = enabled && cachedReady && !hasLoadedRef.current;
+  const effectivePairingsByBeerKey = enabled
+    ? (canUseCache ? cachedPairings ?? /** @type {PairingsByBeerKey} */ ({}) : pairingsByBeerKey)
+    : /** @type {PairingsByBeerKey} */ ({});
+  const effectiveFoodByKey = enabled ? (canUseCache ? foodIndex : foodByKey) : /** @type {Record<string, MenuItem>} */ ({});
+  const effectiveStatus = enabled ? (canUseCache ? 'ready' : status) : 'disabled';
+  const effectiveAvailable = enabled ? (canUseCache ? true : available) : false;
 
   const ensureLoaded = useCallback(
     async (force = false) => {
+      if (!enabled) {
+        setStatus('disabled');
+        setAvailable(false);
+        return;
+      }
       if (hasLoadedRef.current && !force) return;
       if (resetGuardRef.current && !force) {
         log.info('blocked.afterReset', { phase: 'staticPairings' });
@@ -679,7 +685,7 @@ export function useStaticPairings({ beers = [] } = {}) {
         log.error('fetch.error', { phase: 'staticPairings', error: message, errorType: toErrorType(message) });
       }
     },
-    [beerData, foodData, foodIndex]
+    [beerData, foodData, foodIndex, enabled]
   );
 
   return {

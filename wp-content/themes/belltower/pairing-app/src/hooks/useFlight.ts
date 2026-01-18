@@ -21,9 +21,9 @@ let state: FlightState = {
 const listeners = new Set<(next: FlightState) => void>();
 
 function getStorage(): Storage | null {
-  if (typeof globalThis === 'undefined') return null;
-  const candidate = globalThis.localStorage;
-  return candidate ?? null;
+	if (typeof globalThis === 'undefined') return null;
+	const candidate = globalThis.sessionStorage;
+	return candidate ?? null;
 }
 
 function subscribe(listener: (value: FlightState) => void) {

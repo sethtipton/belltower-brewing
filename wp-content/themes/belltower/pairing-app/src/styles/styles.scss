@@ -285,7 +285,9 @@ $pint-width: 60px;
 }
 
 .bt-pairing-admin-tools {
-  display: none !important;
+  //display: none !important;
+  //background-color: red !important;
+  //background-color: rgba(var(--color__btwhite), 0.9);
   --bt-admin-peek: 68px;
   position: fixed;
   inset-block-end: 0;

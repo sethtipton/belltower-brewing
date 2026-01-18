@@ -30,12 +30,6 @@
 - Manually verify key templates (home, beer, food, events) on `https://belltower.local` in both desktop and mobile breakpoints; confirm menus, sliders, and shortcodes render without console errors.
 - After `npm run bundle`, spot-check the generated zip in a fresh theme install to ensure required assets are present and no dev files leak.
 
-## Commit & Pull Request Guidelines
-
-- Use short, present-tense messages (e.g., `tighten footer buttons`, `wrap partner location span`), matching the existing history style.
-- Each PR should include: what changed, why, and how to test locally; link related issues; add screenshots/GIFs for visual changes and note any dependencies (plugins, settings).
-- Keep commits scoped; avoid committing `.zip` builds or `node_modules`. Update docs or comments when behavior changes.
-
 ## Theme Notes
 
 - Templates: dedicated files for home (`belltower-home.php`), beer/food/events pages, plus standard loops (`archive.php`, `single.php`, `page.php`, `search.php`, `404.php`).

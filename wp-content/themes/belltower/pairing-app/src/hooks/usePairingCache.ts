@@ -37,6 +37,15 @@ export function usePairingCache(hash?: string | null) {
 
   useEffect(() => () => { isMounted.current = false; }, []);
 
+  useEffect(() => {
+    const nextRecord = readSession(storageKey);
+    setPairingState(nextRecord?.data ?? null);
+    setLastFetched(nextRecord?.fetchedAt ?? null);
+    setAvailable(Boolean(nextRecord));
+    setStatus(nextRecord ? 'success' : 'idle');
+    setError(null);
+  }, [storageKey, hash]);
+
   const setPairing = useCallback((data: PairingResponse | null) => {
     setPairingState(data);
     const fetchedAt = Date.now();
@@ -78,7 +87,7 @@ export function usePairingCache(hash?: string | null) {
         throw err;
       }
     },
-    []
+    [storageKey]
   );
 
   const clear = useCallback(() => {
@@ -91,12 +100,12 @@ export function usePairingCache(hash?: string | null) {
 
   // Initialize from sessionStorage, then try server if missing.
   useEffect(() => {
-    if (initialRecord) return;
     if (!hash) {
       setAvailable(false);
       setStatus('idle');
       return;
     }
+    if (readSession(storageKey)) return;
     void (async () => {
       setStatus('loading');
       try {

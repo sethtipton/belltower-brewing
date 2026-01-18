@@ -640,7 +640,7 @@ function bt_beer_colors_handler( WP_REST_Request $request ) {
 		$body['items']
 	);
 
-	$cache_key = 'bt_beer_colors_' . md5( wp_json_encode( $items ) );
+	$cache_key = 'bt_beer_colors_v2_' . md5( wp_json_encode( $items ) );
 	$cached    = get_transient( $cache_key );
 	if ( $cached ) {
 		return rest_ensure_response( $cached );
@@ -737,7 +737,7 @@ function bt_beer_colors_handler( WP_REST_Request $request ) {
 	$results = array();
 	foreach ( $json_array as $obj ) {
 		$id       = isset( $obj['id'] ) ? (string) $obj['id'] : uniqid( 'beer_' );
-		$computed = bt_compute_color_from_attributes( $obj );
+		$computed = bt_compute_color_from_attributes( $obj, $id );
 		$results[] = array_merge( array( 'id' => $id ), $computed );
 	}
 
@@ -813,7 +813,74 @@ function bt_extract_json_object( $text ) {
 	return is_array( $decoded ) ? $decoded : null;
 }
 
-function bt_compute_color_from_attributes( $attrs ) {
+
+function bt_hex_to_rgb( $hex ) {
+	$clean = ltrim( (string) $hex, '#' );
+	if ( strlen( $clean ) != 6 ) {
+		return array( 0, 0, 0 );
+	}
+	return array(
+		hexdec( substr( $clean, 0, 2 ) ),
+		hexdec( substr( $clean, 2, 2 ) ),
+		hexdec( substr( $clean, 4, 2 ) ),
+	);
+}
+
+function bt_rgb_to_hex( $rgb ) {
+	$r = max( 0, min( 255, (int) round( $rgb[0] ) ) );
+	$g = max( 0, min( 255, (int) round( $rgb[1] ) ) );
+	$b = max( 0, min( 255, (int) round( $rgb[2] ) ) );
+	return sprintf( '#%02X%02X%02X', $r, $g, $b );
+}
+
+function bt_interpolate_hex( $hex_a, $hex_b, $t ) {
+	$t = max( 0, min( 1, (float) $t ) );
+	$a = bt_hex_to_rgb( $hex_a );
+	$b = bt_hex_to_rgb( $hex_b );
+	return bt_rgb_to_hex(
+		array(
+			$a[0] + ( $b[0] - $a[0] ) * $t,
+			$a[1] + ( $b[1] - $a[1] ) * $t,
+			$a[2] + ( $b[2] - $a[2] ) * $t,
+		)
+	);
+}
+
+function bt_srm_to_hex( $srm ) {
+	$stops = array(
+		array( 'srm' => 1,  'hex' => '#F8F5D7' ),
+		array( 'srm' => 3,  'hex' => '#F4E9B9' ),
+		array( 'srm' => 6,  'hex' => '#E9D792' ),
+		array( 'srm' => 8,  'hex' => '#E2C06A' ),
+		array( 'srm' => 10, 'hex' => '#D8B055' ),
+		array( 'srm' => 12, 'hex' => '#C99745' ),
+		array( 'srm' => 14, 'hex' => '#C07A2E' ),
+		array( 'srm' => 16, 'hex' => '#A96630' ),
+		array( 'srm' => 18, 'hex' => '#8F4B2D' ),
+		array( 'srm' => 22, 'hex' => '#7A4330' ),
+		array( 'srm' => 26, 'hex' => '#624032' ),
+		array( 'srm' => 30, 'hex' => '#4C332E' ),
+		array( 'srm' => 36, 'hex' => '#2F2320' ),
+		array( 'srm' => 40, 'hex' => '#0B0B0B' ),
+	);
+	$srm = max( 1, min( 40, (float) $srm ) );
+	$lower = $stops[0];
+	$upper = end( $stops );
+	foreach ( $stops as $stop ) {
+		if ( $srm <= $stop['srm'] ) {
+			$upper = $stop;
+			break;
+		}
+		$lower = $stop;
+	}
+	if ( $upper['srm'] === $lower['srm'] ) {
+		return $upper['hex'];
+	}
+	$t = ( $srm - $lower['srm'] ) / ( $upper['srm'] - $lower['srm'] );
+	return bt_interpolate_hex( $lower['hex'], $upper['hex'], $t );
+}
+
+function bt_compute_color_from_attributes( $attrs, $seed = '' ) {
 	$style = strtolower( sanitize_text_field( $attrs['style'] ?? '' ) );
 	$words = array_map( 'strtolower', (array) ( $attrs['explicit_color_words'] ?? array() ) );
 	$abv   = isset( $attrs['abv'] ) ? floatval( $attrs['abv'] ) : null;
@@ -836,8 +903,18 @@ function bt_compute_color_from_attributes( $attrs ) {
 		'pale ale'           => array( 4, 8 ),
 	);
 
-	if ( isset( $style_map[ $style ] ) ) {
-		list( $min, $max ) = $style_map[ $style ];
+	$style_key = $style;
+	if ( ! isset( $style_map[ $style_key ] ) && $style_key ) {
+		foreach ( array_keys( $style_map ) as $candidate ) {
+			if ( strpos( $style_key, $candidate ) !== false ) {
+				$style_key = $candidate;
+				break;
+			}
+		}
+	}
+
+	if ( isset( $style_map[ $style_key ] ) ) {
+		list( $min, $max ) = $style_map[ $style_key ];
 	} else {
 		$min = 6;
 		$max = 12;
@@ -865,29 +942,17 @@ function bt_compute_color_from_attributes( $attrs ) {
 		$max += 2;
 	}
 
-	$srm = round( ( $min + $max ) / 2 );
-
-	if ( $srm <= 3 ) {
-		$hex = '#F4E9B9';
-	} elseif ( $srm <= 6 ) {
-		$hex = '#E9D792';
-	} elseif ( $srm <= 9 ) {
-		$hex = '#D8B055';
-	} elseif ( $srm <= 14 ) {
-		$hex = '#C07A2E';
-	} elseif ( $srm <= 18 ) {
-		$hex = '#8F4B2D';
-	} elseif ( $srm <= 25 ) {
-		$hex = '#624032';
-	} elseif ( $srm <= 35 ) {
-		$hex = '#442E2A';
-	} else {
-		$hex = '#0B0B0B';
+	$range = max( 0.1, $max - $min );
+	$ratio = 0.5;
+	if ( is_string( $seed ) && $seed != '' ) {
+		$ratio = ( abs( crc32( $seed ) ) % 1000 ) / 1000;
 	}
+	$srm = $min + ( $range * $ratio );
+	$hex = bt_srm_to_hex( $srm );
 
 	return array(
 		'style'           => $attrs['style'] ?? null,
-		'srm'             => $srm,
+		'srm'             => round( $srm, 1 ),
 		'srm_range'       => array( $min, $max ),
 		'hex'             => $hex,
 		'confidence'      => 0.8,
@@ -914,7 +979,7 @@ function bt_compute_color_map_from_beers( $beer_catalog ) {
 			'fruit_tint'           => '',
 			'abv'                  => isset( $beer_item['abv'] ) ? floatval( $beer_item['abv'] ) : null,
 		);
-		$computed = bt_compute_color_from_attributes( $attrs );
+		$computed = bt_compute_color_from_attributes( $attrs, $id );
 		$map[ $id ] = array(
 			'hex' => $computed['hex'],
 			'srm' => $computed['srm'],
@@ -1094,6 +1159,65 @@ function bt_pairings_static_index_clear() {
 }
 
 /**
+ * Pairing App feature flags.
+ */
+function bt_pairing_feature_defaults() {
+	return array(
+		'help_form'     => true,
+		'history'       => true,
+		'food_pairings' => true,
+	);
+}
+
+function bt_pairing_normalize_feature_flag( $value, $default = true ) {
+	if ( is_bool( $value ) ) {
+		return $value;
+	}
+	if ( is_string( $value ) ) {
+		$filtered = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		if ( null !== $filtered ) {
+			return $filtered;
+		}
+	}
+	if ( is_int( $value ) ) {
+		return (bool) $value;
+	}
+	return $default;
+}
+
+function bt_pairing_get_feature_flags() {
+	$defaults = bt_pairing_feature_defaults();
+	$stored   = get_option( 'bt_pairing_feature_flags', array() );
+	if ( ! is_array( $stored ) ) {
+		$stored = array();
+	}
+	$flags = array();
+	foreach ( $defaults as $key => $default ) {
+		if ( array_key_exists( $key, $stored ) ) {
+			$flags[ $key ] = bt_pairing_normalize_feature_flag( $stored[ $key ], $default );
+		} else {
+			$flags[ $key ] = $default;
+		}
+	}
+	return $flags;
+}
+
+function bt_pairing_set_feature_flags( $incoming ) {
+	$defaults = bt_pairing_feature_defaults();
+	$next     = array();
+	$source   = is_array( $incoming ) ? $incoming : array();
+	foreach ( $defaults as $key => $default ) {
+		if ( array_key_exists( $key, $source ) ) {
+			$next[ $key ] = bt_pairing_normalize_feature_flag( $source[ $key ], $default );
+		} else {
+			$next[ $key ] = $default;
+		}
+	}
+	update_option( 'bt_pairing_feature_flags', $next, false );
+	return $next;
+}
+
+/**
  * Fetch a batch of histories from the external Responses API.
  *
  * @param array $items Array of beer items (slug, name, description).
@@ -1208,6 +1332,40 @@ add_action(
 				'methods'             => 'POST',
 				'callback'            => 'bt_pairing_history',
 				'permission_callback' => '__return_true',
+			)
+		);
+	}
+);
+
+/**
+ * REST: pairing feature flags.
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/pairing/features',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => function() {
+					return rest_ensure_response( bt_pairing_get_feature_flags() );
+				},
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'bt/v1',
+			'/pairing/features',
+			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => function( WP_REST_Request $request ) {
+					$body = $request->get_json_params();
+					return rest_ensure_response( bt_pairing_set_feature_flags( $body ) );
+				},
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}
@@ -1956,6 +2114,8 @@ function bt_pairing_admin_buttons() {
 	$status_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/status' ) );
 	$pairing_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing' ) );
 	$static_endpoint = esc_url_raw( rest_url( 'bt/v1/pairings/static' ) );
+	$features_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/features' ) );
+	$feature_flags = bt_pairing_get_feature_flags();
 	?>
 	<div class="bt-pairing-admin-tools" id="bt-pairing-admin-tools" role="region" aria-labelledby="bt-pairing-admin-title">
 		<div class="bt-pairing-admin-header">
@@ -1963,6 +2123,23 @@ function bt_pairing_admin_buttons() {
 				Close
 			</button>
 			<div class="bt-pairing-admin-title" id="bt-pairing-admin-title">Pairing Admin</div>
+		</div>
+		<div class="bt-pairing-feature-flags">
+			<div class="muted small">Site-wide feature toggles</div>
+			<label class="bt-pairing-feature-row">
+				<input type="checkbox" class="bt-pairing-feature" data-feature="help_form" <?php checked( ! empty( $feature_flags['help_form'] ) ); ?> />
+				Help me decide form
+			</label>
+			<label class="bt-pairing-feature-row">
+				<input type="checkbox" class="bt-pairing-feature" data-feature="history" <?php checked( ! empty( $feature_flags['history'] ) ); ?> />
+				History &amp; fun facts
+			</label>
+			<label class="bt-pairing-feature-row">
+				<input type="checkbox" class="bt-pairing-feature" data-feature="food_pairings" <?php checked( ! empty( $feature_flags['food_pairings'] ) ); ?> />
+				Food pairings
+			</label>
+			<button type="button" class="bt-pairing-feature-save">Save feature toggles</button>
+			<div class="muted small" id="bt-pairing-feature-status" role="status" aria-live="polite"></div>
 		</div>
 		<div class="muted small bt-pairing-help" id="bt-pairing-help-reset-beer">Regenerates histories and pairings when beer menu is updated.</div>
 		<button type="button" class="bt-pairing-action" data-action="reset-beer" aria-describedby="bt-pairing-help-reset-beer">Reset Beer Menu Data</button>
@@ -1989,7 +2166,10 @@ function bt_pairing_admin_buttons() {
 		const refreshMeta = document.getElementById('bt-pairing-refresh-meta');
 		const staticMeta = document.getElementById('bt-pairing-static-meta');
 		const readyMeta = document.getElementById('bt-pairing-ready');
-		if (!buttons.length) return;
+		const featureInputs = document.querySelectorAll('.bt-pairing-feature');
+		const featureSaveBtn = document.querySelector('.bt-pairing-feature-save');
+		const featureStatus = document.getElementById('bt-pairing-feature-status');
+		if (!buttons.length && !refreshBtn && !featureSaveBtn) return;
 		const setAdminCollapsed = (collapsed) => {
 			if (!adminTools || !adminToggle) return;
 			adminTools.classList.toggle('bt-pairing-admin-tools--collapsed', collapsed);
@@ -2002,6 +2182,19 @@ function bt_pairing_admin_buttons() {
 				setAdminCollapsed(!isCollapsed);
 			});
 		}
+		const readFeaturePayload = () => {
+			const payload = {};
+			featureInputs.forEach((input) => {
+				const key = input.getAttribute('data-feature');
+				if (!key) return;
+				payload[key] = !!input.checked;
+			});
+			return payload;
+		};
+		const setFeatureStatus = (message) => {
+			if (!featureStatus) return;
+			featureStatus.textContent = message || '';
+		};
 		const formatTime = (value) => {
 			if (!value) return '—';
 			const date = new Date(value);
@@ -2263,6 +2456,33 @@ function bt_pairing_admin_buttons() {
 		});
 		if (refreshBtn) {
 			refreshBtn.addEventListener('click', refreshPairingCache);
+		}
+		if (featureSaveBtn) {
+			featureSaveBtn.addEventListener('click', async () => {
+				if (!featureInputs.length) return;
+				featureSaveBtn.disabled = true;
+				setFeatureStatus('Saving…');
+				try {
+					const res = await fetch('<?php echo esc_js( $features_endpoint ); ?>', {
+						method: 'POST',
+						credentials: 'same-origin',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+						},
+						body: JSON.stringify(readFeaturePayload()),
+					});
+					if (!res.ok) {
+						throw new Error(`Save failed: ${res.status}`);
+					}
+					setFeatureStatus('Saved. Refresh the page to apply changes.');
+				} catch (err) {
+					console.error('Feature save error', err);
+					setFeatureStatus('Unable to save toggles. Try again.');
+				} finally {
+					featureSaveBtn.disabled = false;
+				}
+			});
 		}
 		document.addEventListener('btPairingStatus', (event) => {
 			const detail = event && event.detail ? event.detail : {};

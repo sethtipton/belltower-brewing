@@ -89,34 +89,38 @@ const MotionCard = React.memo(
     const beerKey = beer?.btKey ?? '';
     const pairings = beerKey ? pairingsState?.pairingsByBeerKey?.[beerKey] : null;
     const foodByKey = pairingsState?.foodByKey ?? {};
-    const panelId = `beer-panel-${beer.id}`;
     /** @type {{ history: string; pairings: string }} */
     const tabIds = {
       history: `beer-tab-history-${beer.id}`,
       pairings: `beer-tab-pairings-${beer.id}`,
     };
+    const panelIds = {
+      history: `beer-panel-history-${beer.id}`,
+      pairings: `beer-panel-pairings-${beer.id}`,
+    };
 
-    const showTabs = hasHistory && hasPairings;
+    const showTabs = hasHistory || hasPairings;
     /** @type {{ key: 'history' | 'pairings'; label: string }[]} */
     const tabs = showTabs
       ? [
-        { key: 'history', label: 'History & fun facts' },
-        { key: 'pairings', label: 'Food pairings we suggest' },
+        ...(hasHistory ? [{ key: 'history', label: 'History & fun facts' }] : []),
+        ...(hasPairings ? [{ key: 'pairings', label: 'Food pairings we suggest' }] : []),
       ]
       : [];
 
     const resolvedActiveTab = tabs.find((tab) => tab.key === activeTab)
       ? activeTab
       : 'none';
+    const focusTabKey = resolvedActiveTab === 'none' ? tabs[0]?.key : resolvedActiveTab;
 
     /** @param {React.KeyboardEvent<HTMLDivElement>} event */
     const handleTabKeyDown = (event) => {
       if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
       event.preventDefault();
       if (!tabs.length) return;
-      const idx = resolvedActiveTab === 'none'
+      const idx = focusTabKey === 'none'
         ? 0
-        : tabs.findIndex((tab) => tab.key === resolvedActiveTab);
+        : tabs.findIndex((tab) => tab.key === focusTabKey);
       const delta = event.key === 'ArrowRight' ? 1 : -1;
       const nextIndex = (idx + delta + tabs.length) % tabs.length;
       const nextTab = tabs[nextIndex];
@@ -216,8 +220,8 @@ const MotionCard = React.memo(
                         className="beer-card-tab"
                         id={tabIds[tab.key]}
                         aria-selected={resolvedActiveTab === tab.key}
-                        aria-controls={panelId}
-                        tabIndex={0}
+                        aria-controls={panelIds[tab.key]}
+                        tabIndex={tab.key === focusTabKey ? 0 : -1}
                         onClick={() => setActiveTab(resolvedActiveTab === tab.key ? 'none' : tab.key)}
                       >
                         {tab.label}
@@ -226,7 +230,7 @@ const MotionCard = React.memo(
                   </div>
                   {resolvedActiveTab !== 'none' ? (
                     <motion.div
-                      id={panelId}
+                      id={panelIds[resolvedActiveTab]}
                       role="tabpanel"
                       aria-labelledby={tabIds[resolvedActiveTab]}
                       className="beer-details-panel"

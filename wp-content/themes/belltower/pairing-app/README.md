@@ -52,6 +52,14 @@ A React/Vite micro-frontend embedded in a WordPress theme. It renders the curren
 - `npm run dev`
 - Add `[pairing_app]` to a WP page (HMR enabled)
 
+### Theme-linked dev (no Vite dev server)
+
+If you are not using the Vite dev server in WordPress, run a build watcher so `dist/` updates on save:
+
+```bash
+npm run build -- --watch
+```
+
 ### Production
 
 - `npm run build`

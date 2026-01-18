@@ -195,8 +195,8 @@ export function BeerDataProvider({ children }) {
 
   const refreshColors = useCallback(
     async (force = false) => {
-      if (!items.length || colorLoaded || colorFetchInFlight.current) return;
-      if (!force) return; // only run when explicitly triggered
+      if (!items.length || colorFetchInFlight.current) return;
+      if (!force && colorLoaded) return; // only run when explicitly triggered
       colorFetchInFlight.current = true;
       try {
         const nextMap = await getBeerColors(items);

@@ -74,6 +74,7 @@ export default function BeerList({
   const [colorFetchFailed, setColorFetchFailed] = useState(false);
   const colorFetchInFlight = useRef(false);
   const colorFetchAttempted = useRef(false);
+  const colorFetchLogged = useRef(false);
   const [colorMap, setColorMap] = useState(() => {
     const cached = getCachedColors(CACHE_KEY);
     if (
@@ -107,12 +108,28 @@ export default function BeerList({
     return itemList
       .filter((b) => {
         const id = String(b.id);
-        return !b.hexColor && !mergedColorMap[id] && b.description;
+        const nameKey = b.name ? mergedColorMap[b.name] : null;
+        return !b.hexColor && !mergedColorMap[id] && !nameKey && b.description;
       })
       .map((b) => String(b.id));
   }, [itemList, mergedColorMap]);
 
   useEffect(() => {
+    colorFetchInFlight.current = false;
+    colorFetchAttempted.current = false;
+    setColorFetchFailed(false);
+    colorFetchLogged.current = false;
+  }, [orderedIds]);
+
+  useEffect(() => {
+    if (!allowColorFetch && missingIds.length && !colorFetchLogged.current) {
+      colorFetchLogged.current = true;
+      log.debug('batch.skipped', {
+        phase: 'beerColors',
+        reason: 'allowColorFetch=false',
+        missing: missingIds.length,
+      });
+    }
     if (!allowColorFetch || !missingIds.length || colorFetchFailed || colorFetchInFlight.current) return;
     if (colorFetchAttempted.current) return;
     let cancelled = false;
@@ -148,10 +165,20 @@ export default function BeerList({
         const map = await fetchBeerColorsBatch(payload);
         if (cancelled) return;
         if (!map || (typeof map === 'object' && !Object.keys(map).length)) {
+          log.warn('batch.empty', {
+            phase: 'beerColors',
+            ids: ids.slice(0, 5),
+            count: ids.length,
+          });
           fetchFailed = true;
           setColorFetchFailed(true);
           return;
         }
+        log.debug('batch.result', {
+          phase: 'beerColors',
+          ids: ids.slice(0, 5),
+          count: Object.keys(map).length,
+        });
         mergeAndCache(map);
       } catch (err) {
         log.warn('batch.failed', { phase: 'beerColors', error: err instanceof Error ? err.message : String(err) });
@@ -198,7 +225,7 @@ export default function BeerList({
       .map((id) => itemsById[id])
       .filter(Boolean)
       .map((b) => {
-        const hex = b.hexColor ?? mergedColorMap[String(b.id)] ?? null;
+        const hex = b.hexColor ?? mergedColorMap[String(b.id)] ?? (b.name ? mergedColorMap[b.name] : null) ?? null;
         return hex ? { ...b, hexColor: hex } : b;
       });
   }, [orderedIds, itemsById, mergedColorMap]);

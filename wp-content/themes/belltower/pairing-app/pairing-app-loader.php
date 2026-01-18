@@ -103,6 +103,14 @@ function bt_pairing_app_enqueue_assets() {
 			'bt-pairing-app',
 			'PAIRING_APP',
 			array(
+				'features' => ( function() {
+					$flags = bt_pairing_get_feature_flags();
+					return array(
+						'helpForm'     => ! empty( $flags['help_form'] ),
+						'history'      => ! empty( $flags['history'] ),
+						'foodPairings' => ! empty( $flags['food_pairings'] ),
+					);
+				} )(),
 				'siteUrl' => get_site_url(),
 				'restUrl' => get_rest_url(),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
