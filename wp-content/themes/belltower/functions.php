@@ -736,8 +736,9 @@ function bt_beer_colors_handler( WP_REST_Request $request ) {
 
 	$results = array();
 	foreach ( $json_array as $obj ) {
-		$id       = isset( $obj['id'] ) ? (string) $obj['id'] : uniqid( 'beer_' );
-		$computed = bt_compute_color_from_attributes( $obj, $id );
+		$id   = isset( $obj['id'] ) ? (string) $obj['id'] : uniqid( 'beer_' );
+		$seed = isset( $obj['id'] ) ? $id : '';
+		$computed = bt_compute_color_from_attributes( $obj, $seed );
 		$results[] = array_merge( array( 'id' => $id ), $computed );
 	}
 
@@ -1204,8 +1205,15 @@ function bt_pairing_get_feature_flags() {
 
 function bt_pairing_set_feature_flags( $incoming ) {
 	$defaults = bt_pairing_feature_defaults();
+	if ( ! is_array( $incoming ) || empty( $incoming ) ) {
+		return new WP_Error(
+			'bt_pairing_invalid_flags',
+			'Invalid feature flags payload.',
+			array( 'status' => 400 )
+		);
+	}
 	$next     = array();
-	$source   = is_array( $incoming ) ? $incoming : array();
+	$source   = $incoming;
 	foreach ( $defaults as $key => $default ) {
 		if ( array_key_exists( $key, $source ) ) {
 			$next[ $key ] = bt_pairing_normalize_feature_flag( $source[ $key ], $default );

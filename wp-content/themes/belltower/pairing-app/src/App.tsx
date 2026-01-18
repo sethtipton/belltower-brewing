@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import type { PairingMatch as ApiPairingMatch, PairingResponse as ApiPairingResponse } from './api/pairing';
 import { useBeerData } from './hooks/useBeerData';
+import { BeerDataProvider } from './providers/BeerDataProvider';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
 import { preloadPairing, getHistories, getPairingCache, getPairingCacheStatus } from './api';
@@ -311,12 +312,13 @@ function toBeerArray(raw: unknown): BeerItem[] {
 interface BeerDataHook {
   items: unknown;
   ready: boolean;
+  error?: string | null;
   refreshColors?: (force?: boolean) => void;
   fetchPairing: (prepared: PreparedAnswers) => Promise<unknown>;
 }
 
-export default function App(): React.ReactElement {
-  const { items, ready, refreshColors, fetchPairing } = useBeerData() as BeerDataHook;
+function AppContent(): React.ReactElement {
+  const { items, ready, error: beerError, refreshColors, fetchPairing } = useBeerData() as BeerDataHook;
   const featureFlags = useMemo(() => getFeatureFlags(), []);
   const { slots } = useFlight();
   const [pairingCacheMeta, setPairingCacheMeta] = useState<PairingCacheMeta | null>(
@@ -758,6 +760,10 @@ export default function App(): React.ReactElement {
   }, [featureFlags.foodPairings, staticPairings]);
 
   const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
+  const listReady = ready && safeItems.length > 0;
+  const showFlightTray = listReady;
+  const appVisible = beerError ? true : listReady;
+  const [isVisible, setIsVisible] = useState(false);
 
   const extractColorMap = useCallback((data: unknown): Record<string, string> => {
     if (!data || typeof data !== 'object') return {};
@@ -870,24 +876,11 @@ export default function App(): React.ReactElement {
     [fetchAndMergeHistories, mergeHistories, pairingData, featureFlags.history]
   );
 
-  const body = (() => {
-    if (!ready) return <p>Loading…</p>;
-    if (!safeItems.length) return <p>No beers found. Ensure the Untappd snapshot is available.</p>;
-    return (
-      <BeerList
-        items={decoratedItems}
-        allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
-        showHistory={featureFlags.history}
-        onFlightOpen={() => {
-          flightUserOverride.current = true;
-          setFlightOpen(true);
-        }}
-        colorMapOverride={colorMapOverride}
-        flightFull={slots.filter(Boolean).length >= 5}
-        pairingsState={featureFlags.foodPairings ? staticPairings : null}
-      />
-    );
-  })();
+  useEffect(() => {
+    if (!appVisible) return;
+    const raf = globalThis?.requestAnimationFrame ?? ((cb: () => void) => setTimeout(cb, 0));
+    raf(() => setIsVisible(true));
+  }, [appVisible]);
 
   useEffect(() => {
     if (!featureFlags.helpForm) return;
@@ -1150,7 +1143,7 @@ export default function App(): React.ReactElement {
 
   return (
     <LiveAnnouncerProvider>
-      <div className="pairing-app">
+      <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
         <header>
           <h2>Beers on tap</h2>
@@ -1198,12 +1191,67 @@ export default function App(): React.ReactElement {
           </button>
         </div>
         <div className={trayClassName}>
-          {body}
-          <FlightTray open={flightOpen} colorMap={colorMapOverride} />
+          <div style={!listReady ? { visibility: 'hidden' } : undefined}>
+            {safeItems.length ? (
+              <BeerList
+                items={decoratedItems}
+                allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
+                showHistory={featureFlags.history}
+                onFlightOpen={() => {
+                  flightUserOverride.current = true;
+                  setFlightOpen(true);
+                }}
+                colorMapOverride={colorMapOverride}
+                flightFull={slots.filter(Boolean).length >= 5}
+                pairingsState={featureFlags.foodPairings ? staticPairings : undefined}
+              />
+            ) : null}
+          </div>
+          {showFlightTray ? <FlightTray open={flightOpen} colorMap={colorMapOverride} /> : null}
         </div>
-        
+        {beerError ? <p>{beerError}</p> : null}
       </div>
     </LiveAnnouncerProvider>
+  );
+}
+
+export default function App(): React.ReactElement {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (inView) return;
+    const node = rootRef.current;
+    if (!node) {
+      setInView(true);
+      return;
+    }
+    if (!('IntersectionObserver' in window)) {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [inView]);
+
+  return (
+    <div ref={rootRef} style={{ minHeight: '1px' }}>
+      {inView ? (
+        <BeerDataProvider>
+          <AppContent />
+        </BeerDataProvider>
+      ) : null}
+    </div>
   );
 }
 

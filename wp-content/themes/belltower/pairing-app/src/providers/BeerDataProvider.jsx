@@ -12,29 +12,30 @@ const log = createLogger('beerData');
 
 const BeerDataContext = createContext(null);
 
-/** @returns {unknown[]} */
+/** @returns {{ items: unknown[]; error?: string }} */
 function readSnapshot() {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return { items: [] };
   const win = /** @type {Window & { __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
   const inline = win.__BT_BEER_DATA ?? win.__BT_DATA?.beer ?? null;
-  if (Array.isArray(inline)) return /** @type {unknown[]} */ (inline);
+  if (Array.isArray(inline)) return { items: /** @type {unknown[]} */ (inline) };
   const script = typeof document !== 'undefined' ? document.getElementById('bt-beer-data') : null;
   const scriptText = script?.textContent ?? '';
-  if (!scriptText) return [];
+  if (!scriptText) return { items: [] };
   try {
     const parsed = /** @type {unknown} */ (JSON.parse(scriptText));
     if (parsed && typeof parsed === 'object') {
       if ('items' in parsed && Array.isArray(parsed.items)) {
-        return /** @type {unknown[]} */ (parsed.items);
+        return { items: /** @type {unknown[]} */ (parsed.items) };
       }
       if (Array.isArray(parsed)) {
-        return /** @type {unknown[]} */ (parsed);
+        return { items: /** @type {unknown[]} */ (parsed) };
       }
     }
   } catch (err) {
     log.warn('parseScript', { phase: 'beerData', error: err instanceof Error ? err.message : String(err) });
+    return { items: [], error: 'Unable to read beer data.' };
   }
-  return [];
+  return { items: [] };
 }
 
 export function BeerDataProvider({ children }) {
@@ -91,7 +92,7 @@ export function BeerDataProvider({ children }) {
 
   const initialLoad = useMemo(() => {
     const initialRaw = readSnapshot();
-    let normalized = normalizeRaw(initialRaw);
+    let normalized = normalizeRaw(initialRaw.items);
     if (!normalized.length) {
       /** @type {{ env?: { DEV?: boolean } } | undefined} */
       const meta = typeof import.meta !== 'undefined' ? import.meta : undefined;
@@ -117,13 +118,19 @@ export function BeerDataProvider({ children }) {
     } catch {
       // ignore cache errors
     }
-    return { items: normalized, ready: true, colorLoaded: colorLoadedInit };
+    return {
+      items: normalized,
+      ready: true,
+      colorLoaded: colorLoadedInit,
+      error: initialRaw.error ?? '',
+    };
   }, [applyColorMapToArray, normalizeRaw, colorCacheKey]);
 
   /** @type {[Beer[], React.Dispatch<React.SetStateAction<Beer[]>>]} */
   const [items, setItems] = useState(/** @type {Beer[]} */(initialLoad.items));
   const [ready, setReady] = useState(initialLoad.ready);
   const [colorLoaded, setColorLoaded] = useState(initialLoad.colorLoaded);
+  const [error, setError] = useState(initialLoad.error);
   const colorFetchInFlight = React.useRef(false);
 
   /** @type {(map: Record<string, BeerColorEntry> | null | undefined) => void} */
@@ -147,10 +154,26 @@ export function BeerDataProvider({ children }) {
      */
     const handler = (event) => {
       const detail = 'detail' in event ? event.detail : undefined;
-      const payload = detail && typeof detail === 'object' && 'items' in detail ? detail.items : readSnapshot();
-      const normalized = normalizeRaw(payload);
+      /** @type {{ items: unknown[]; error?: string }} */
+      const snapshot = detail && typeof detail === 'object' && 'items' in detail
+        ? { items: detail.items }
+        : readSnapshot();
+      let snapshotError = '';
+      if (snapshot && typeof snapshot === 'object' && 'error' in snapshot) {
+        const maybeError = snapshot.error;
+        if (typeof maybeError === 'string') {
+          snapshotError = maybeError;
+        }
+      }
+      if (snapshotError) {
+        setError(snapshotError);
+      }
+      const normalized = normalizeRaw(snapshot.items);
       if (normalized.length) {
         setItems(normalized);
+        if (snapshotError) {
+          setError('');
+        }
         try {
           const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(colorCacheKey) : null;
           if (cached) {
@@ -229,10 +252,11 @@ export function BeerDataProvider({ children }) {
       items,
       byId,
       ready,
+      error,
       refreshColors,
       fetchPairing,
     }),
-    [items, byId, ready, refreshColors, fetchPairing]
+    [items, byId, ready, error, refreshColors, fetchPairing]
   );
 
   return <BeerDataContext.Provider value={value}>{children}</BeerDataContext.Provider>;

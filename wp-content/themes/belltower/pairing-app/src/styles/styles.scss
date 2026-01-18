@@ -7,7 +7,7 @@ $grey: #9a9a9a;
 $beeercardgap: 0.5rem;
 $rightcolumnshift: -7px;
 $cardpadding: 1rem;
-$beerlistgap: 1rem;
+$beerlistgap: 2rem;
 $anim-fast: 180ms;
 $anim-slow: 220ms;
 $anim-ease: ease;
@@ -15,6 +15,8 @@ $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 $pint-width: 60px;
 
 .pairing-app {
+  opacity: 0;
+  transition: opacity 0.25s ease;
   header {
     display: flex;
     align-items: center;
@@ -34,6 +36,10 @@ $pint-width: 60px;
       border-radius: 2px;
     }
   }
+}
+
+.pairing-app--visible {
+  opacity: 1;
 }
 
 .debug-recommend-btn {
@@ -191,7 +197,7 @@ $pint-width: 60px;
 
   .beer-details-panel {
     overflow: hidden;
-    background: rgba(var(--color__btwhite), 0.8);
+    background: rgba(var(--color__btwhite-rgb), 0.8);
     border-left: 2px solid var(--beer-color, var(--color__btblack));
     padding-inline-start: 0.5rem;
     padding-top: 0.5rem;
@@ -287,7 +293,7 @@ $pint-width: 60px;
 .bt-pairing-admin-tools {
   //display: none !important;
   //background-color: red !important;
-  //background-color: rgba(var(--color__btwhite), 0.9);
+  //background-color: rgba(var(--color__btwhite-rgb), 0.9);
   --bt-admin-peek: 68px;
   position: fixed;
   inset-block-end: 0;
@@ -299,13 +305,13 @@ $pint-width: 60px;
   max-block-size: min(90dvh, 90vh);
   overflow: auto;
   padding: 0.75rem;
-  border: 1px solid rgba(var(--color__btblack), 0.82);
+  border: 1px solid rgba(var(--color__btblack-rgb), 0.82);
   border-top-left-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgba(var(--color__btblack), 0.18),
-    0 1px 0 rgba(var(--color__btwhite), 0.35) inset;
+  box-shadow: 0 10px 30px rgba(var(--color__btblack-rgb), 0.18),
+    0 1px 0 rgba(var(--color__btwhite-rgb), 0.35) inset;
   font-size: 1rem;
   scroll-behavior: smooth;
-  background: rgba(var(--color__btwhite), 0.8);
+  background: rgba(var(--color__btwhite-rgb), 0.8);
   transition: transform 0.25s ease;
   will-change: transform;
 }
@@ -316,6 +322,11 @@ $pint-width: 60px;
   .bt-pairing-admin-header {
     transform: translate(calc(-1 * var(--bt-admin-peek) + 0.75rem), 0);
   }
+}
+
+.bt-pairing-feature-flags {
+  display: flex;
+  flex-direction: column;
 }
 
 .bt-pairing-admin-header {
@@ -478,7 +489,7 @@ $pint-width: 60px;
 
 .beer-history-content {
   overflow: hidden;
-  background: rgba(var(--color__btwhite), 0.8);
+  background: rgba(var(--color__btwhite-rgb), 0.8);
   p {
     margin: 0;
     &:not(:first-of-type) {
@@ -489,7 +500,7 @@ $pint-width: 60px;
 
 .pairings-panel {
   overflow: hidden;
-  background: rgba(var(--color__btwhite), 0.8);
+  background: rgba(var(--color__btwhite-rgb), 0.8);
 }
 
 .pairings-results {
@@ -766,7 +777,7 @@ $pint-width: 60px;
   background: var(--color__btwhite);
   position: relative;
   z-index: 0;
-  box-shadow: 0 0 0 0 rgba(var(--color__btblack), 0);
+  box-shadow: 0 0 0 0 rgba(var(--color__btblack-rgb), 0);
   animation: bt-glow 4s linear infinite;
 }
 

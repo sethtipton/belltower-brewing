@@ -1,7 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { BeerDataProvider } from './providers/BeerDataProvider';
 import { createLogger } from './logger';
 
 const log = createLogger('app');
@@ -16,10 +15,6 @@ if (typeof window !== 'undefined') {
   });
   if (rootEl) {
     const root = createRoot(rootEl);
-    root.render(
-      <BeerDataProvider>
-        <App />
-      </BeerDataProvider>
-    );
+    root.render(<App />);
   }
 }
