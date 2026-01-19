@@ -709,11 +709,11 @@ $pint-width: 60px;
   //accounts for scrollbars on flight
   margin-inline-end: 5px;
   margin-bottom: 0;
-  transition: min-width 0.18s ease;
+  //transition: width 0.18s ease;
   //min-width: var(--tray-width);
   //transform: translate(0, calc(-100% - 1rem));
   &[aria-expanded="true"] {
-    min-width: calc(var(--tray-width) - 5px - 5px);
+    width: calc(var(--tray-width) - 5px - 5px);
   }
 }
 
