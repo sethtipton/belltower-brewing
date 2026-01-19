@@ -82,7 +82,7 @@ $pint-width: 60px;
 
 .beer-list {
   list-style: none;
-  padding: 0;
+  padding: 1rem 0 0 0;
   margin: 0;
   display: grid;
   gap: $beerlistgap;
@@ -590,6 +590,7 @@ $pint-width: 60px;
   border-style: solid;
   background-color: $white;
   border-color: $black;
+  margin-top: 1rem;
 }
 
 .flight-tray {
@@ -621,6 +622,7 @@ $pint-width: 60px;
     z-index: 5;
     overflow: visible;
     align-self: start;
+    padding-top: 1rem;
   }
   .flight-tray-head {
     display: grid;
