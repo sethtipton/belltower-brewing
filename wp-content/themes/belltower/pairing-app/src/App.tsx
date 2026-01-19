@@ -764,7 +764,7 @@ function AppContent(): React.ReactElement {
   const flightCount = slots.filter(Boolean).length;
   const flightToggleLabel = (() => {
     if (!flightOpen && flightCount === 0) return 'Create a flight';
-    if (flightCount > 0) return flightOpen ? 'Hide my flight' : 'Show my flight';
+    //if (flightCount > 0) return flightOpen ? 'Hide my flight' : 'Show my flight';
     return flightOpen ? 'Hide flight' : 'Show flight';
   })();
 
@@ -1178,20 +1178,6 @@ function AppContent(): React.ReactElement {
             />
           </>
         ) : null}
-        <div className="flight-toggle-bar">
-          <button
-            type="button"
-            className="flight-toggle-btn"
-            onClick={() => {
-              flightUserOverride.current = true;
-              setFlightOpen((v) => !v);
-            }}
-            aria-expanded={flightOpen}
-            aria-controls="flight-tray"
-          >
-            {flightToggleLabel}
-          </button>
-        </div>
         <div className={trayClassName}>
           <div style={!listReady ? { visibility: 'hidden' } : undefined}>
             {safeItems.length ? (
@@ -1209,7 +1195,17 @@ function AppContent(): React.ReactElement {
               />
             ) : null}
           </div>
-          {showFlightTray ? <FlightTray open={flightOpen} colorMap={colorMapOverride} /> : null}
+          {showFlightTray ? (
+            <FlightTray
+              open={flightOpen}
+              colorMap={colorMapOverride}
+              toggleLabel={flightToggleLabel}
+              onToggle={() => {
+                flightUserOverride.current = true;
+                setFlightOpen((v) => !v);
+              }}
+            />
+          ) : null}
         </div>
         {beerError ? <p>{beerError}</p> : null}
       </div>

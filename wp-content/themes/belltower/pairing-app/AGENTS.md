@@ -5,6 +5,7 @@
 - This AGENTS.md applies to the Pairing App React project in this folder and its subfolders.
 - If this file conflicts with a root-level AGENTS.md, this file takes precedence for this subtree.
 - Primary scope: `src/**` (React app code) and related app config needed to run/build this project.
+- Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 
 ## Setup commands
 

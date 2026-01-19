@@ -238,8 +238,7 @@ export default function BeerList({
   if (!decorated.length) return null;
   return (
     <>
-      <div className="sr-only" aria-live="polite" ref={announcerRef} />
-      <div className="beer-list" ref={listRef}>
+      <ul className="beer-list" ref={listRef}>
         {decorated.map((beer) => {
           const id = String(beer.id);
           const beerKey = beer.btKey ?? '';
@@ -248,21 +247,23 @@ export default function BeerList({
             : null;
           const pairingsToken = `${pairingsState?.status ?? 'idle'}:${pairingsState?.available ? '1' : '0'}:${beerKey}:${entry?.mains?.length ?? 0}:${entry?.side?.foodKey ?? ''}`;
           return (
-            <BeerCard
-              key={id}
-              beer={beer}
-              showSettle={false}
-              prefersReduced={prefersReduced}
-              showHistory={showHistory}
-              selected={flightIds.has(id)}
-              flightFull={flightFull}
-              onFlightOpen={onFlightOpen}
-              pairingsState={pairingsState}
-              pairingsToken={pairingsToken}
-            />
+            <li key={id}>
+              <BeerCard
+                beer={beer}
+                showSettle={false}
+                prefersReduced={prefersReduced}
+                showHistory={showHistory}
+                selected={flightIds.has(id)}
+                flightFull={flightFull}
+                onFlightOpen={onFlightOpen}
+                pairingsState={pairingsState}
+                pairingsToken={pairingsToken}
+              />
+            </li>
           );
         })}
-      </div>
+      </ul>
+      <div className="sr-only" aria-live="polite" ref={announcerRef} />
     </>
   );
 }

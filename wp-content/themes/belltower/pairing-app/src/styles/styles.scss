@@ -83,10 +83,13 @@ $pint-width: 60px;
 .beer-list {
   list-style: none;
   padding: 0;
-  margin: 1.5rem 0 0 0;
+  margin: 0;
   display: grid;
   gap: $beerlistgap;
   width: 100%;
+  & > li {
+    margin: 0;
+  }
 }
 
 .beer-name {
@@ -568,6 +571,7 @@ $pint-width: 60px;
   gap: var(--tray-gap, 0.5rem);
   grid-template-columns: 1fr var(--tray-width, 0px);
   transition: grid-template-columns $anim-fast $anim-ease;
+  //align-items: start;
 }
 
 .beerWrapper.is-flight-open {
@@ -578,22 +582,34 @@ $pint-width: 60px;
 .flight-toggle-bar {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.5rem;
 }
 
 .flight-toggle-btn {
   cursor: pointer;
   border-width: 1px;
-  border-style: outset;
+  border-style: solid;
   background-color: $white;
   border-radius: 0;
+  margin-bottom: 0.5rem;
 }
 
 .flight-tray {
-  margin-top: 1rem;
+  margin: 0;
   padding: 0;
   opacity: 1;
   transition: opacity $anim-fast $anim-ease;
+  position: relative;
+  overflow: visible;
+  .flight-tray-content {
+    //padding-top: 2.5rem;
+    transition: opacity $anim-fast $anim-ease;
+    max-height: calc(100dvh - var(--masthead-height, 0px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-inline-end: 5px;
+    //padding-bottom: 5dvh;
+    scrollbar-gutter: stable;
+  }
   .flight-tray-wrapper {
     display: grid;
     grid-template-rows: 1fr;
@@ -604,35 +620,50 @@ $pint-width: 60px;
     position: sticky;
     top: var(--masthead-height, 0px);
     z-index: 5;
-    padding-bottom: 5dvh;
-    max-height: calc(100dvh - var(--masthead-height, 0px));
-    overflow-y: auto;
-    padding-inline-end: 5px;
+    overflow: visible;
+    align-self: start;
   }
   .flight-tray-head {
     display: grid;
-    grid-template-columns: 1fr auto;
-    grid-auto-rows: auto;
-    gap: 0.25rem 1rem;
+    //grid-template-columns: 1fr auto;
+    //grid-auto-rows: auto;
+    //gap: 0.25rem 1rem;
+    //grid-template-columns: max-content;
     margin: 0 1px 1rem 0;
     align-items: center;
-    h3 {
+    min-width: var(--tray-width);
+    padding-top: 2rem;
+    text-align: center;
+    padding-inline-end: 5px;
+    padding-inline-start: 5px;
+    //justify-content: end;
+    h2 {
       margin: 0;
       white-space: nowrap;
+      font-size: 1.4rem !important;
+      text-align: left;
+      line-height: 1;
+    }
+    & > p {
+      margin-bottom: 0;
+      font-size: 1rem;
+      line-height: 1;
+      margin-top: 0.5rem;
     }
     div.muted.small {
       grid-column: 1;
     }
   }
   .flight-tray-clear {
-    grid-column: 2;
-    grid-row: 1;
-    margin-right: 1px;
+    //grid-column: 2;
+    //grid-row: 1;
+    //margin-right: 1px;
     outline: 1px solid var(--color__btblack);
     border: none;
     border-radius: 0;
     cursor: pointer;
     background-color: $white;
+    //margin-inline-end: 5px;
   }
   .flight-tray-slots,
   .flight-tray-overlay-grid {
@@ -645,6 +676,7 @@ $pint-width: 60px;
     list-style: none;
     padding: 0;
     margin: 0;
+    min-width: var(--tray-width);
   }
   .flight-tray-overlay-copy {
     margin: 0;
@@ -663,10 +695,27 @@ $pint-width: 60px;
   }
 }
 
-.flight-tray-closed {
+.flight-tray-content--closed {
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
+}
+
+.flight-tray-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 6;
+  min-width: max-content;
+  //accounts for scrollbars on flight
+  margin-inline-end: 5px;
+  margin-bottom: 0;
+  transition: min-width 0.18s ease;
+  //min-width: var(--tray-width);
+  //transform: translate(0, calc(-100% - 1rem));
+  &[aria-expanded="true"] {
+    min-width: calc(var(--tray-width) - 5px - 5px);
+  }
 }
 
 @keyframes flight-overlay-pulse {
@@ -881,13 +930,19 @@ $pint-width: 60px;
   }
   .flight-tray {
     .flight-tray-head {
-      gap: 0;
+      gap: 0.5vh;
       display: flex;
       flex-direction: column;
-      h3 {
-        font-size: 1rem;
+      margin-bottom: 2vh;
+      h2 {
+        font-size: 1rem !important;
         white-space: normal;
         text-align: center;
+        padding-top: 2.2rem;
+      }
+      & > p {
+        text-align: left;
+        margin: 0;
       }
       div.muted.small {
         text-align: center;
@@ -895,6 +950,7 @@ $pint-width: 60px;
     }
     .flight-tray-clear {
       margin-left: 0;
+      margin-top: 0;
     }
     .flight-tray-slots {
       gap: clamp(5px, 1.5vh, 5vh);

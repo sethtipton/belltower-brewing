@@ -1379,7 +1379,7 @@ body.scrolled.page-template-belltower-home .main-navigation ul li a:after {
     padding: 0 0.5em;
     left: 0;
     width: 100%;
-    margin: 0 0 0.5em 0.5em;
+    margin: 0 0 0.5em 0;
     opacity: 1;
     float: none;
     z-index: 12;
@@ -1413,6 +1413,7 @@ body.scrolled.page-template-belltower-home .main-navigation ul li a:after {
     opacity: 0.1;
     right: 24px;
     left: 0px;
+    display: none;
   }
   .menu-toggled .main-navigation.toggled .menu-main-nav-container > ul {
     pointer-events: all;

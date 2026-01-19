@@ -2,6 +2,8 @@
 
 This policy governs **styling work only** within the styles folder scope. Agents must keep changes safe, minimal, and consistent with existing conventions while maintaining accessibility, performance, and long-term maintainability.
 
+Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+
 ---
 
 ## Scope root (hard boundary)
