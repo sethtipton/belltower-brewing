@@ -400,6 +400,17 @@ function belltower_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'belltower_scripts' );
 
+// Remove jquery-migrate on the front-end to reduce render-blocking JS.
+add_filter( 'wp_default_scripts', function( $scripts ) {
+	if ( is_admin() ) {
+		return;
+	}
+	if ( isset( $scripts->registered['jquery'] ) ) {
+		$deps = $scripts->registered['jquery']->deps;
+		$scripts->registered['jquery']->deps = array_diff( $deps, array( 'jquery-migrate' ) );
+	}
+} );
+
 function belltower_menu_shortcode( $atts ) {
 	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'brewery_menu' );
 	$cat  = esc_attr( $atts['category'] );
@@ -516,6 +527,36 @@ add_filter(
 				esc_attr( $handle ),
 				esc_url( $src )
 			);
+		}
+
+		$defer_handles = array(
+			'belltower-navigation',
+			'belltower-pairing-profiles',
+			'belltower-menu',
+			'belltower-untappd-menu',
+		);
+		$defer_src_fragments = array(
+			'complianz',
+			'simple-banner',
+			'cookieblocker',
+			'banner-1-optout',
+		);
+
+		$should_defer = in_array( $handle, $defer_handles, true );
+		if ( ! $should_defer && is_string( $src ) && $src ) {
+			foreach ( $defer_src_fragments as $fragment ) {
+				if ( false !== strpos( $src, $fragment ) ) {
+					$should_defer = true;
+					break;
+				}
+			}
+		}
+
+		if ( $should_defer ) {
+			if ( false !== strpos( $tag, ' defer' ) || false !== strpos( $tag, ' type="module"' ) ) {
+				return $tag;
+			}
+			return str_replace( '<script ', '<script defer ', $tag );
 		}
 		return $tag;
 	},

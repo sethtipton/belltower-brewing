@@ -330,7 +330,19 @@ if (footerLogo && footerLegal) {
 			});
 		},
 		setOptions: function(options, defaults) {
-			this.options = Object.assign(defaults, options, { defaults: defaults });
+			var merged = {};
+			for (var key in defaults) {
+				if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+					merged[key] = defaults[key];
+				}
+			}
+			for (var optKey in options) {
+				if (Object.prototype.hasOwnProperty.call(options, optKey)) {
+					merged[optKey] = options[optKey];
+				}
+			}
+			merged.defaults = defaults;
+			this.options = merged;
 		},
 		checkCookie: function(cookie) {
 			return Cookies.get(cookie);
@@ -370,33 +382,6 @@ if (footerLogo && footerLegal) {
 
 	}
 
-	/*!
-	 * Object.assign Polyfill
-	 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill
-	 */
-	if (typeof Object.assign != 'function') {
-		Object.defineProperty(Object, 'assign', {
-			value: function assign(target, varArgs) {
-				'use strict';
-				if (target == null) {
-					throw new TypeError('Cannot convert undefined or null to object');
-				}
-				var to = Object(target);
-				for (var index = 1; index < arguments.length; index++) {
-					var nextSource = arguments[index];
-
-					if (nextSource != null) {
-						for (var nextKey in nextSource) {
-							if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) to[nextKey] = nextSource[nextKey];
-						}
-					}
-				}
-				return to;
-			},
-			writable: true,
-			configurable: true
-		});
-	}
 
 	/*!
 	 * JavaScript Cookie v2.1.4

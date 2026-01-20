@@ -591,6 +591,17 @@ $pint-width: 60px;
   background-color: $white;
   border-color: $black;
   margin-top: 1rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 6;
+  min-width: max-content;
+  //accounts for scrollbars on flight
+  margin-inline-end: 5px;
+  margin-bottom: 0;
+  &[aria-expanded="true"] {
+    width: calc(var(--tray-width) - 5px - 5px);
+  }
 }
 
 .flight-tray {
@@ -702,23 +713,6 @@ $pint-width: 60px;
   pointer-events: none;
 }
 
-.flight-tray-toggle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 6;
-  min-width: max-content;
-  //accounts for scrollbars on flight
-  margin-inline-end: 5px;
-  margin-bottom: 0;
-  //transition: width 0.18s ease;
-  //min-width: var(--tray-width);
-  //transform: translate(0, calc(-100% - 1rem));
-  &[aria-expanded="true"] {
-    width: calc(var(--tray-width) - 5px - 5px);
-  }
-}
-
 @keyframes flight-overlay-pulse {
   0% {
     background-color: rgba(11, 121, 208, 0.12);
@@ -749,7 +743,9 @@ $pint-width: 60px;
   border: none;
   background: transparent;
   align-items: center;
-  padding: 0 0 0 5px;
+  padding-inline-start: 5px;
+  margin-inline-start: 5px;
+  margin-inline-end: 5px;
   outline-offset: 2px;
   .muted {
     opacity: 0;
