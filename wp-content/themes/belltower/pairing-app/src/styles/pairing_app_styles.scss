@@ -16,6 +16,57 @@ $anim-ease: ease;
 $anim-ease-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
 $pint-width: 60px;
 
+@keyframes flight-overlay-pulse {
+  0% {
+    background-color: rgba(11, 121, 208, 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes bt-glow {
+  0% {
+    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
+      0 8px 30px 6px rgba(255, 70, 120, 0.12);
+  }
+  33% {
+    box-shadow: 0 0 0 2px rgba(0, 190, 255, 0.7),
+      0 8px 30px 6px rgba(0, 190, 255, 0.12);
+  }
+  66% {
+    box-shadow: 0 0 0 2px rgba(120, 255, 170, 0.7),
+      0 8px 30px 6px rgba(120, 255, 170, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
+      0 8px 30px 6px rgba(255, 70, 120, 0.12);
+  }
+}
+
+@keyframes bt-recommend-settle {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(11, 121, 208, 0.12);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(11, 121, 208, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(11, 121, 208, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    transform: none !important;
+  }
+}
+
 .pairing-app {
   opacity: 0;
   transition: opacity 0.25s ease;
@@ -38,10 +89,9 @@ $pint-width: 60px;
       border-radius: 2px;
     }
   }
-}
-
-.pairing-app--visible {
-  opacity: 1;
+  &.pairing-app--visible {
+    opacity: 1;
+  }
 }
 
 .debug-recommend-btn {
@@ -80,6 +130,10 @@ $pint-width: 60px;
   gap: 0.5rem;
 }
 
+.loading-pairings {
+  margin-bottom: 0;
+}
+
 .beer-list {
   list-style: none;
   padding: 1rem 0 0 0;
@@ -104,12 +158,7 @@ $pint-width: 60px;
     opacity $anim-fast $anim-ease;
   will-change: transform;
   &.recommended {
-    border-radius: 2px;
-    border-color: var(--beer-color, var(--color__btblack));
-    border-style: solid;
     border-width: 2px;
-  }
-  &[data-recommended="true"] {
     border-radius: 2px;
     border-color: var(--beer-color, var(--color__btblack));
     border-style: solid;
@@ -128,124 +177,124 @@ $pint-width: 60px;
   &[data-settle="true"] {
     animation: bt-recommend-settle $anim-fast $anim-ease;
   }
-  .beer-card-layout {
-    display: grid;
+}
+
+.beer-card-layout {
+  display: grid;
+  grid-template-columns: $pint-width 1fr;
+  gap: 0 clamp(1vw, 1vw, $beerlistgap);
+  align-items: start;
+  transition: grid-template-columns $anim-fast $anim-ease;
+  &.with-recommendation {
+    grid-template-columns: $pint-width 1fr 200px;
+  }
+  &.with-recommendation.match-open {
+    grid-template-columns: $pint-width 1fr 200px;
     grid-template-columns: $pint-width 1fr;
-    gap: 0 clamp(1vw, 1vw, $beerlistgap);
-    align-items: start;
-    transition: grid-template-columns $anim-fast $anim-ease;
-    &.with-recommendation {
-      grid-template-columns: $pint-width 1fr 200px;
+    grid-template-rows: auto 1fr;
+    .beer-card-sidebar {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-auto-flow: column;
+      gap: 0.5rem;
+      padding: 1rem 1rem 0 1rem;
     }
-    &.with-recommendation.match-open {
-      grid-template-columns: $pint-width 1fr 200px;
-      grid-template-columns: $pint-width 1fr;
-      grid-template-rows: auto 1fr;
-      .beer-card-sidebar {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-auto-flow: column;
-        gap: 0.5rem;
-        padding: 1rem 1rem 0 1rem;
-      }
-      .beer-card-leftclmn {
-        grid-column: 1;
-      }
-      .beer-card-centerclmn {
-        grid-column: 2;
-      }
-      .beer-match {
-        max-height: 200px;
-        opacity: 1;
-        transform: translateY(0);
-      }
-      .badge-interactive {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .beer-card-leftclmn {
+      grid-column: 1;
+    }
+    .beer-card-centerclmn {
+      grid-column: 2;
+    }
+    .beer-match {
+      max-height: 200px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .badge-interactive {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
-  .beer-card-centerclmn {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    transform: translate(0px, -5px);
-  }
+}
 
-  .beer-card-tabs {
-    display: flex;
-    gap: 0.5rem;
-  }
+.beer-card-centerclmn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transform: translate(0px, -5px);
+}
+.beer-card-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
 
-  .beer-card-tab {
-    border-radius: 2px;
-    cursor: pointer;
-    border: 2px solid var(--beer-color, var(--color__btblack));
-    background-color: $white;
-
-    transition: background-color $anim-fast $anim-ease,
-      color $anim-fast $anim-ease, border-color $anim-fast $anim-ease;
-    color: var(--color__btblack);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.6rem;
-    font-size: 1rem;
-  }
-
-  .beer-card-tab[aria-selected="true"] {
+.beer-card-tab {
+  border-radius: 2px;
+  cursor: pointer;
+  border: 2px solid var(--beer-color, var(--color__btblack));
+  background-color: $white;
+  transition: background-color $anim-fast $anim-ease,
+    color $anim-fast $anim-ease, border-color $anim-fast $anim-ease;
+  color: var(--color__btblack);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 1rem;
+  &[aria-selected="true"] {
     border-color: var(--beer-color, var(--color__btblack));
     background-color: var(--beer-color);
     color: var(--beer-foreground, var(--color__btwhite));
     font-weight: 600;
   }
+}
 
-  .beer-details-panel {
-    overflow: hidden;
-    background: rgba(var(--color__btwhite-rgb), 0.8);
-    border-left: 2px solid var(--beer-color, var(--color__btblack));
-    padding-inline-start: 0.5rem;
-    padding-top: 0.5rem;
-  }
+.beer-details-panel {
+  overflow: hidden;
+  background: rgba(var(--color__btwhite-rgb), 0.8);
+  border-left: 2px solid var(--beer-color, var(--color__btblack));
+  padding-inline-start: 0.5rem;
+  padding-top: 0.5rem;
+}
 
-  .beer-match {
-    max-height: 0;
-    opacity: 0;
-    transform: translateY(4px);
-    transition: max-height $anim-fast $anim-ease, opacity $anim-fast $anim-ease,
-      transform $anim-fast $anim-ease;
-    overflow: hidden;
-  }
+.beer-match {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: max-height $anim-fast $anim-ease, opacity $anim-fast $anim-ease,
+    transform $anim-fast $anim-ease;
+  overflow: hidden;
+}
 
-  .beer-card-title {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
+.beer-card-title {
+  display: grid;
+  grid-template-columns: 1fr;
+}
 
-  .badge-interactive {
-    border-radius: 2px;
-    border: 2px solid var(--beer-color, var(--color__btblack));
-    background-color: var(--beer-color, transparent);
-    color: var(--beer-foreground, currentColor);
-    display: flex;
-    flex-direction: column;
-    padding: 2px 8px;
-    font-weight: 700;
-    transition: opacity $anim-fast $anim-ease, transform $anim-fast $anim-ease;
+.badge-interactive {
+  border-radius: 2px;
+  border: 2px solid var(--beer-color, var(--color__btblack));
+  background-color: var(--beer-color, transparent);
+  color: var(--beer-foreground, currentColor);
+  display: flex;
+  flex-direction: column;
+  padding: 2px 8px;
+  font-weight: 700;
+  transition: opacity $anim-fast $anim-ease, transform $anim-fast $anim-ease;
+  width: 100%;
+  strong {
     width: 100%;
-    strong {
-      width: 100%;
-      text-align: center;
-      font-weight: normal;
-      margin-top: auto;
-    }
-  }
-  .beer-match-score {
-    font-size: 0.9rem;
-    color: var(--beer-foreground, currentColor);
     text-align: center;
-    margin-bottom: auto;
+    font-weight: normal;
+    margin-top: auto;
   }
+}
+
+.beer-match-score {
+  font-size: 0.9rem;
+  color: var(--beer-foreground, currentColor);
+  text-align: center;
+  margin-bottom: auto;
 }
 
 .pairings-item-desc {
@@ -296,9 +345,6 @@ $pint-width: 60px;
 }
 
 .bt-pairing-admin-tools {
-  //display: none !important;
-  //background-color: red !important;
-  //background-color: rgba(var(--color__btwhite-rgb), 0.9);
   --bt-admin-peek: 68px;
   position: fixed;
   inset-block-end: 0;
@@ -319,6 +365,23 @@ $pint-width: 60px;
   background: rgba(var(--color__btwhite-rgb), 0.8);
   transition: transform 0.25s ease;
   will-change: transform;
+  button {
+    font: inherit;
+    padding: 3px;
+    border: 1px solid var(--color__btblack);
+    color: var(--color__btblack);
+    border-radius: 2px;
+  }
+  button:hover:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .bt-pairing-help {
+    font-size: 0.8rem;
+  }
 }
 
 .bt-pairing-admin-tools--collapsed {
@@ -352,27 +415,6 @@ $pint-width: 60px;
   color: var(--color__btblack);
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
-}
-
-.bt-pairing-admin-tools button {
-  font: inherit;
-  padding: 3px;
-  border: 1px solid var(--color__btblack);
-  color: var(--color__btblack);
-  border-radius: 2px;
-}
-
-.bt-pairing-admin-tools button:hover:not(:disabled) {
-  cursor: pointer;
-}
-
-.bt-pairing-admin-tools button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.bt-pairing-admin-tools .bt-pairing-help {
-  font-size: 0.8rem;
 }
 
 .pairings-updated {
@@ -438,14 +480,17 @@ $pint-width: 60px;
   font-size: 0.9rem;
   color: var(--color__btblack);
 }
+
 .beer-score span {
   font-weight: 600;
 }
+
 .beer-card-desc {
   color: $text;
   line-height: 1.4;
   margin-bottom: 0;
 }
+
 .badge {
   padding: 2px 8px;
   background: var(--beer-color, var(--color__btwhite));
@@ -540,29 +585,6 @@ $pint-width: 60px;
   border: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
-    transform: none !important;
-  }
-}
-
-@keyframes bt-recommend-settle {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(11, 121, 208, 0.12);
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 8px 20px rgba(11, 121, 208, 0.12);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(11, 121, 208, 0);
-  }
-}
-
 .beerWrapper {
   --tray-width: 0px;
   --tray-gap: 0;
@@ -571,7 +593,6 @@ $pint-width: 60px;
   gap: var(--tray-gap, 0.5rem);
   grid-template-columns: 1fr var(--tray-width, 0px);
   transition: grid-template-columns $anim-fast $anim-ease;
-  //align-items: start;
 }
 
 .beerWrapper.is-flight-open {
@@ -612,7 +633,6 @@ $pint-width: 60px;
   position: relative;
   overflow: visible;
   .flight-tray-content {
-    //padding-top: 2.5rem;
     transition: opacity $anim-fast $anim-ease;
     max-height: calc(100dvh - var(--masthead-height, 0px));
     overflow-y: auto;
@@ -637,10 +657,6 @@ $pint-width: 60px;
   }
   .flight-tray-head {
     display: grid;
-    //grid-template-columns: 1fr auto;
-    //grid-auto-rows: auto;
-    //gap: 0.25rem 1rem;
-    //grid-template-columns: max-content;
     margin: 0 1px 1rem 0;
     align-items: center;
     min-width: var(--tray-width);
@@ -648,7 +664,6 @@ $pint-width: 60px;
     text-align: center;
     padding-inline-end: 5px;
     padding-inline-start: 5px;
-    //justify-content: end;
     h2 {
       margin: 0;
       white-space: nowrap;
@@ -667,15 +682,11 @@ $pint-width: 60px;
     }
   }
   .flight-tray-clear {
-    //grid-column: 2;
-    //grid-row: 1;
-    //margin-right: 1px;
     outline: 1px solid var(--color__btblack);
     border: none;
     border-radius: 0;
     cursor: pointer;
     background-color: $white;
-    //margin-inline-end: 5px;
   }
   .flight-tray-slots,
   .flight-tray-overlay-grid {
@@ -711,15 +722,6 @@ $pint-width: 60px;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-}
-
-@keyframes flight-overlay-pulse {
-  0% {
-    background-color: rgba(11, 121, 208, 0.12);
-  }
-  100% {
-    background-color: transparent;
-  }
 }
 
 .flight-tray-wrapper-sticky,
@@ -833,33 +835,6 @@ $pint-width: 60px;
   animation: bt-glow 4s linear infinite;
 }
 
-/* cycle glow colors & intensity */
-@keyframes bt-glow {
-  0% {
-    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
-      0 8px 30px 6px rgba(255, 70, 120, 0.12);
-  }
-  33% {
-    box-shadow: 0 0 0 2px rgba(0, 190, 255, 0.7),
-      0 8px 30px 6px rgba(0, 190, 255, 0.12);
-  }
-  66% {
-    box-shadow: 0 0 0 2px rgba(120, 255, 170, 0.7),
-      0 8px 30px 6px rgba(120, 255, 170, 0.12);
-  }
-  100% {
-    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
-      0 8px 30px 6px rgba(255, 70, 120, 0.12);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pairing-form-fetch {
-    animation: none;
-    box-shadow: none;
-  }
-}
-
 .pairing-form-error {
   outline: 1px solid red;
 }
@@ -876,7 +851,6 @@ $pint-width: 60px;
   padding: 0.75rem 1rem;
   border-radius: 2px;
   display: flex;
-
   gap: 0.5rem;
   align-items: center;
   z-index: 30;

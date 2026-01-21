@@ -783,7 +783,7 @@ function bt_beer_colors_handler( WP_REST_Request $request ) {
 		$results[] = array_merge( array( 'id' => $id ), $computed );
 	}
 
-	set_transient( $cache_key, $results, 12 * HOUR_IN_SECONDS );
+	set_transient( $cache_key, $results, 60 * DAY_IN_SECONDS );
 
 	return rest_ensure_response( $results );
 }

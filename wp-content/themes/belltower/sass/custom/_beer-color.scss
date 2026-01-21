@@ -1,7 +1,6 @@
 .beer-item,
 .bt-beer-card {
   color: $color__btdarkestgreen;
-
   .beer-title {
     mix-blend-mode: difference;
   }
@@ -18,15 +17,7 @@
 
 $bt-beer-svg-width: auto;
 
-//.bt-beer-svg-wrap {
-//position: absolute;
-//height: 100%;
-//}
-
 .bt-beer-left {
-  //display: flex;
-  //justify-content: center;
-  //align-items: center;
   position: relative;
 }
 
@@ -36,14 +27,9 @@ $bt-beer-svg-width: auto;
   padding: 1em;
   display: grid;
   gap: 1em;
-  /* two columns: svg column + content column */
   grid-template-columns: 50px 1fr;
-  align-items: stretch; /* ensure children stretch to the card's height */
-  /* left column: SVG wrapper */
+  align-items: stretch;
   .bt-beer-svg {
-    //display: block;
-    //align-self: stretch; /* stretch vertically */
-    //width: 100%;
     height: 100%;
     overflow: visible;
     max-height: 100px;
@@ -71,14 +57,11 @@ $bt-beer-svg-width: auto;
     }
   }
 
-  /* right column: main content */
-  /* wrap content in a container for easier layout */
   .bt-beer-content {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
     justify-content: flex-start;
-    /* allow this column to be any height (content-driven) */
   }
 
   .bt-beer-right {
@@ -87,10 +70,6 @@ $bt-beer-svg-width: auto;
     grid-column-gap: 1em;
     grid-row-gap: 0;
   }
-
-  //.bt-beer-right-info {
-  //background-color: purple;
-  //}
 
   .bt-beer-name {
     font-weight: bold;
@@ -104,13 +83,11 @@ $bt-beer-svg-width: auto;
   }
   .bt-beer-meta {
     font-size: 0.8em;
-    //grid-column: 1 / 2;
     text-align: center;
     align-content: end;
   }
   .bt-beer-abv {
     font-size: 0.8em;
-    //grid-column: 1 / 2;
     text-align: center;
   }
   .bt-beer-desc {
@@ -122,8 +99,6 @@ $bt-beer-svg-width: auto;
     outline: 1px solid $color__btdarkestgreen;
     margin-top: 1em;
   }
-  //.bt-beer-history {
-  //}
   .bt-beer-history-btn {
     display: block;
     padding: 6px 10px;

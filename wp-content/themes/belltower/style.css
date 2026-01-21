@@ -3560,12 +3560,8 @@ body.blog .entry-content {
   padding: 1em;
   display: grid;
   gap: 1em;
-  /* two columns: svg column + content column */
   grid-template-columns: 50px 1fr;
-  align-items: stretch; /* ensure children stretch to the card's height */
-  /* left column: SVG wrapper */
-  /* right column: main content */
-  /* wrap content in a container for easier layout */
+  align-items: stretch;
 }
 .bt-beer-card .bt-beer-svg {
   height: 100%;
@@ -3599,7 +3595,6 @@ body.blog .entry-content {
   flex-direction: column;
   gap: 0.4rem;
   justify-content: flex-start;
-  /* allow this column to be any height (content-driven) */
 }
 .bt-beer-card .bt-beer-right {
   display: grid;

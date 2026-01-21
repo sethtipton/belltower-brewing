@@ -62,7 +62,7 @@ const MotionCard = React.memo(
     const rgb = useMemo(() => hexToRgb(tint), [tint]);
     const isRecommended = Boolean(beer?.recommended);
     const historyText = enableHistory
-      ? beer?.history_fun ?? `History & fun facts coming soon for ${beer?.name ?? 'this beer'}.`
+      ? beer?.history_fun ?? `Loading History & fun facts for ${beer?.name ?? 'this beer'}.`
       : '';
     const historyParagraphs = useMemo(() => {
       if (!historyText) return [];
@@ -138,7 +138,6 @@ const MotionCard = React.memo(
         className={`beer-card${isRecommended ? ' recommended' : ''}${selected ? ' selected' : ''}`}
         style={{ '--beer-color': tint, '--beer-foreground': fg, '--beer-rgb': rgb }}
         data-settle={showSettle ? 'true' : 'false'}
-        data-recommended={isRecommended ? 'true' : 'false'}
         data-pairings-token={pairingsToken ?? ''}
       >
         <div className={`beer-card-layout${isRecommended && beer.recommendationMatchSentence ? ' with-recommendation match-open' : ''}`}>
@@ -258,14 +257,14 @@ const MotionCard = React.memo(
                           transition={{ duration: 0.2, ease: 'easeOut', delay: 0.12 }}
                         >
                           {pairingsStatus === 'loading' ? (
-                            <p className="muted small">Loading pairings…</p>
+                            <p className='loading-pairings'>Loading pairings…</p>
                           ) : pairingsStatus === 'error' ? (
-                            <div className="muted small">
+                            <div>
                               <p>Couldn’t load pairings. Try again.</p>
                               <button type="button" onClick={() => pairingsState?.ensureLoaded?.(true)}>
                                 Retry
                               </button>
-                              {pairingsError ? <div className="muted small">{pairingsError}</div> : null}
+                              {pairingsError ? <div>{pairingsError}</div> : null}
                             </div>
                           ) : pairingsStatus === 'ready' ? (
                             beerKey && pairings ? (

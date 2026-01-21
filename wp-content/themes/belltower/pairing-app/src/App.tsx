@@ -13,7 +13,7 @@ import {
   getCanonicalBeerDataFallback,
   getCanonicalFoodData,
 } from './staticPairings';
-import './styles/styles.scss';
+import './styles/pairing_app_styles.scss';
 import useFlight from './hooks/useFlight';
 import { createLogger } from './logger';
 
