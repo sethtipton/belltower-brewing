@@ -176,8 +176,8 @@
 					<td>${item.sku || ''}</td>
 					<th scope="row">${item.name}</th>
 					<td>${item.style || ''}</td>
-					<td>${item.price16 || ''}</td>
-					<td>${item.price12 || ''}</td>
+					<td>${item.price16 ? `$${item.price16}` : ''}</td>
+					<td>${item.price12 ? `$${item.price12}` : ''}</td>
 					<td>${item.abv || ''}</td>
 					<td>${item.ibu || ''}</td>
 					<td>${tags}</td>
