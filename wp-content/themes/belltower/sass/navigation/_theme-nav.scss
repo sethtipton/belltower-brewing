@@ -116,7 +116,9 @@
       visibility: hidden;
       transform: translateY(6px);
       pointer-events: none;
-      transition: opacity 160ms ease, transform 160ms ease,
+      transition:
+        opacity 160ms ease,
+        transform 160ms ease,
         visibility 0s linear 160ms;
       ul {
         left: 100%;
@@ -234,14 +236,18 @@
         min-inline-size: 48px;
         min-block-size: 48px;
         @extend .has-normal-font-size;
-        transition: opacity 300ms ease, color 300ms ease;
+        transition:
+          opacity 300ms ease,
+          color 300ms ease;
         &:after {
           background-color: $color__btpurewhite;
           @extend .bt-after;
           //transform: translate(0, calc(-1 * (#{$u30navPadding} - 8px)));
           transform: translate(0, -4px);
           opacity: 0;
-          transition: opacity 300ms ease, transform 300ms ease,
+          transition:
+            opacity 300ms ease,
+            transform 300ms ease,
             background-color 300ms ease;
         }
         &:hover {
@@ -366,16 +372,23 @@
     &.p1,
     &.p2,
     &.p3 {
-      transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
-      -webkit-transition: opacity 100ms ease-in 100ms,
+      transition:
+        opacity 100ms ease-in 100ms,
+        transform 100ms ease-in 100ms;
+      -webkit-transition:
+        opacity 100ms ease-in 100ms,
         -webkit-transform 100ms ease-in 100ms;
     }
     &.p4,
     &.p5 {
       opacity: 0;
       transform-origin: center;
-      transition: opacity 100ms ease-in, transform 100ms ease-in;
-      -webkit-transition: opacity 100ms ease-in, -webkit-transform 100ms ease-in;
+      transition:
+        opacity 100ms ease-in,
+        transform 100ms ease-in;
+      -webkit-transition:
+        opacity 100ms ease-in,
+        -webkit-transform 100ms ease-in;
     }
   }
   &:hover {
@@ -385,14 +398,21 @@
     .p1,
     .p2,
     .p3 {
-      transition: opacity 100ms ease-in, transform 100ms ease-in;
-      -webkit-transition: opacity 100ms ease-in, -webkit-transform 100ms ease-in;
+      transition:
+        opacity 100ms ease-in,
+        transform 100ms ease-in;
+      -webkit-transition:
+        opacity 100ms ease-in,
+        -webkit-transform 100ms ease-in;
       opacity: 0;
     }
     .p4,
     .p5 {
-      transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
-      -webkit-transition: opacity 100ms ease-in 100ms,
+      transition:
+        opacity 100ms ease-in 100ms,
+        transform 100ms ease-in 100ms;
+      -webkit-transition:
+        opacity 100ms ease-in 100ms,
         -webkit-transform 100ms ease-in 100ms;
       opacity: 1;
       stroke: $color__btdarkgreen;
@@ -428,6 +448,27 @@ body {
         background: $color__btpurewhite;
       }
     }
+  }
+}
+
+.footerlogo {
+  svg .cls-1 {
+    fill-opacity: 0;
+    transition-property: fill-opacity;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in;
+  }
+  svg .cls-1:nth-last-of-type(1) {
+    transition-delay: 300ms;
+  }
+  svg .cls-1:nth-last-of-type(2) {
+    transition-delay: 250ms;
+  }
+  svg .cls-1:nth-last-of-type(3) {
+    transition-delay: 200ms;
+  }
+  svg .cls-1:nth-last-of-type(4) {
+    transition-delay: 150ms;
   }
 }
 

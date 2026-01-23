@@ -30,7 +30,10 @@ body.pause * {
   text-decoration: none;
   border-radius: $btsiteBorderRadius;
   outline-offset: 0px;
-  transition: transform 0.12s ease, outline-color 0.12s ease, color 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    outline-color 0.12s ease,
+    color 0.12s ease;
   &:focus-visible,
   &:focus {
     transform: translateY(-1px);
@@ -63,7 +66,9 @@ ul.indentlist {
   transform: translate(0, -2px);
   opacity: 0;
   background-color: $color__btpurewhite;
-  transition: opacity 100ms ease-in 100ms, transform 100ms ease-in 100ms;
+  transition:
+    opacity 100ms ease-in 100ms,
+    transform 100ms ease-in 100ms;
 }
 
 h2 span,
@@ -347,7 +352,9 @@ body.page-id-1168 .fullheightimg {
       opacity: 0;
       //transform: translateY(calc(-1 * (#{$u30navPadding} - 8px)));
       transform: translate(0, 6px);
-      transition: opacity 300ms ease, transform 300ms ease,
+      transition:
+        opacity 300ms ease,
+        transform 300ms ease,
         background-color 300ms ease;
     }
     &:not(.femail, .cta):hover::after {
@@ -930,7 +937,9 @@ body.blog {
     svg {
       fill: $color__btdarkgreen;
       transform-origin: 50% 50%;
-      transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+      transition:
+        transform 0.5s ease-out,
+        opacity 0.5s ease-out;
     }
   }
 }
@@ -1167,8 +1176,13 @@ body.blog {
   max-height: 0;
   padding: 0;
   margin: 0;
-  transition: opacity 180ms ease, transform 220ms ease, max-height 260ms ease,
-    padding 220ms ease, margin-top 220ms ease, border-width 220ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease,
+    max-height 260ms ease,
+    padding 220ms ease,
+    margin-top 220ms ease,
+    border-width 220ms ease;
   &.is-visible {
     max-height: 120px;
     opacity: 1;
@@ -1202,7 +1216,9 @@ body.blog {
       height: 1.25rem; // or whatever fits
       width: auto;
       display: block;
-      transition: transform 0.12s ease, scale 0.12s ease;
+      transition:
+        transform 0.12s ease,
+        scale 0.12s ease;
       scale: 0.8;
     }
     &:focus-visible,
@@ -1242,7 +1258,10 @@ body.blog {
     border-radius: $btsiteBorderRadius;
     color: $color__btdarkestgreen;
     cursor: pointer;
-    transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    transition:
+      transform 0.12s ease,
+      color 0.12s ease,
+      border-color 0.12s ease;
     &:hover,
     &:focus-visible {
       transform: translateY(-1px);
@@ -1293,8 +1312,11 @@ body.blog {
   .category-comment,
   .menu-item {
     overflow: hidden;
-    transition: opacity 400ms ease-in-out, max-height 500ms ease-in-out,
-      margin 400ms ease-in-out, padding 400ms ease-in-out;
+    transition:
+      opacity 400ms ease-in-out,
+      max-height 500ms ease-in-out,
+      margin 400ms ease-in-out,
+      padding 400ms ease-in-out;
     max-height: 1000px;
   }
   .section-title,
@@ -1573,7 +1595,9 @@ body.blog {
         height: 1.25rem; // or whatever fits
         width: auto;
         display: block;
-        transition: transform 0.12s ease, scale 0.12s ease;
+        transition:
+          transform 0.12s ease,
+          scale 0.12s ease;
         scale: 0.8;
       }
       &:focus-visible,

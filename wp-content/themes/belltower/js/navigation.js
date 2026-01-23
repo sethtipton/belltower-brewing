@@ -234,12 +234,16 @@ var shw1 = document.getElementsByClassName('site-header-w1');
 shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo"><span>Belltower Home</span>'+btlogo+'</a>');
 
 window.addEventListener('load', () => {
-	document.querySelectorAll('.bell-1, .bell-2, .bell-3, .bell-4, .cls-1').forEach(path => {
-		const svg = path.closest('svg');
-		if (svg) {
-			path.style.fillOpacity = 1;
+	const revealBell = (svg) => {
+		if (!svg) {
+			return;
 		}
-	});
+		svg.querySelectorAll('.bell-1, .bell-2, .bell-3, .bell-4, .cls-1').forEach(path => {
+			path.style.fillOpacity = 1;
+		});
+	};
+
+	document.querySelectorAll('.main-navigation svg, .mlogo svg').forEach(revealBell);
 	document.getElementById('masthead').classList.add('bg-transitions-on');
 });
 
@@ -249,6 +253,34 @@ var footerLogo = footer.querySelector('.footer-logo-w1');
 var footerLegal = footer.querySelector('.footer-legal');
 if (footerLogo && footerLegal) {
 	footerLogo.insertAdjacentElement('afterend', footerLegal);
+}
+
+var footerLogoLink = footer.querySelector('.footerlogo');
+if (footerLogoLink) {
+	var footerSvg = footerLogoLink.querySelector('svg');
+	if (footerSvg) {
+		console.log('[belltower] footer logo observer ready');
+		if ('IntersectionObserver' in window) {
+			var footerObserver = new IntersectionObserver((entries, observer) => {
+				entries.forEach(entry => {
+					if (entry.isIntersecting) {
+						console.log('[belltower] footer logo intersecting, revealing paths');
+						entry.target.querySelectorAll('.cls-1').forEach(path => {
+							path.style.fillOpacity = 1;
+						});
+						observer.unobserve(entry.target);
+					}
+				});
+			}, { threshold: 0.2 });
+			console.log('[belltower] footer logo observer attached');
+			footerObserver.observe(footerSvg);
+		} else {
+			console.log('[belltower] footer logo observer unsupported, revealing paths');
+			footerSvg.querySelectorAll('.cls-1').forEach(path => {
+				path.style.fillOpacity = 1;
+			});
+		}
+	}
 }
 
 

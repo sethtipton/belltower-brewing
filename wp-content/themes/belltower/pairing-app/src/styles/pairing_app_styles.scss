@@ -251,7 +251,7 @@ $pint-width: 60px;
 
 .beer-details-panel {
   overflow: hidden;
-  background: rgba(var(--color__btwhite-rgb), 0.8);
+  //background: rgba(var(--color__btwhite-rgb), 0.8);
   border-left: 2px solid var(--beer-color, var(--color__btblack));
   padding-inline-start: 0.5rem;
   padding-top: 0.5rem;
@@ -539,7 +539,7 @@ $pint-width: 60px;
 
 .beer-history-content {
   overflow: hidden;
-  background: rgba(var(--color__btwhite-rgb), 0.8);
+  //background: rgba(var(--color__btwhite-rgb), 0.8);
   p {
     margin: 0;
     &:not(:first-of-type) {
@@ -550,7 +550,7 @@ $pint-width: 60px;
 
 .pairings-panel {
   overflow: hidden;
-  background: rgba(var(--color__btwhite-rgb), 0.8);
+  //background: rgba(var(--color__btwhite-rgb), 0.8);
 }
 
 .pairings-results {
