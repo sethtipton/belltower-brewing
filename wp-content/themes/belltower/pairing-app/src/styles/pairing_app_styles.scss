@@ -105,6 +105,8 @@ $pint-width: 60px;
   flex-direction: column;
   button {
     background-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
     &:hover {
       cursor: pointer;
     }
