@@ -107,6 +107,7 @@ $pint-width: 60px;
     background-color: transparent;
     -webkit-appearance: none;
     appearance: none;
+    border-color: $black;
     &:hover {
       cursor: pointer;
     }
