@@ -15,8 +15,6 @@
   gap: 1em;
 }
 
-$bt-beer-svg-width: auto;
-
 .bt-beer-left {
   position: relative;
 }
@@ -56,21 +54,18 @@ $bt-beer-svg-width: auto;
       fill: #17292d;
     }
   }
-
   .bt-beer-content {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
     justify-content: flex-start;
   }
-
   .bt-beer-right {
     display: grid;
     grid-template-columns: 100px auto;
     grid-column-gap: 1em;
     grid-row-gap: 0;
   }
-
   .bt-beer-name {
     font-weight: bold;
     font-size: 1.1em;

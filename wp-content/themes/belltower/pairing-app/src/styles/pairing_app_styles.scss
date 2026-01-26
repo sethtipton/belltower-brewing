@@ -27,19 +27,23 @@ $pint-width: 60px;
 
 @keyframes bt-glow {
   0% {
-    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
+    box-shadow:
+      0 0 0 2px rgba(255, 70, 120, 0.7),
       0 8px 30px 6px rgba(255, 70, 120, 0.12);
   }
   33% {
-    box-shadow: 0 0 0 2px rgba(0, 190, 255, 0.7),
+    box-shadow:
+      0 0 0 2px rgba(0, 190, 255, 0.7),
       0 8px 30px 6px rgba(0, 190, 255, 0.12);
   }
   66% {
-    box-shadow: 0 0 0 2px rgba(120, 255, 170, 0.7),
+    box-shadow:
+      0 0 0 2px rgba(120, 255, 170, 0.7),
       0 8px 30px 6px rgba(120, 255, 170, 0.12);
   }
   100% {
-    box-shadow: 0 0 0 2px rgba(255, 70, 120, 0.7),
+    box-shadow:
+      0 0 0 2px rgba(255, 70, 120, 0.7),
       0 8px 30px 6px rgba(255, 70, 120, 0.12);
   }
 }
@@ -84,6 +88,7 @@ $pint-width: 60px;
     font-size: 0.9rem;
   }
   button {
+    border-radius: 2px;
     &:focus-visible {
       outline: 2px dashed var(--color__btblack);
       border-radius: 2px;
@@ -94,13 +99,35 @@ $pint-width: 60px;
   }
 }
 
-.debug-recommend-btn {
-  border: 1px solid var(--color__btblack);
-  background: transparent;
-  padding: 0.35rem 0.6rem;
-  font-size: 0.9rem;
-  border-radius: 2px;
-  cursor: pointer;
+.pairing-form-wrapper {
+  display: flex;
+  //justify-content: end;
+  flex-direction: column;
+  button {
+    background-color: transparent;
+    &:hover {
+      cursor: pointer;
+    }
+    &.suggestbtn {
+      border: none;
+      background-color: $color__btdarkgreen;
+      color: $white;
+      &[aria-disabled="true"] {
+        background-color: $grey;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+.pairing-form-intro {
+  margin-bottom: 0;
+}
+
+.help-btn {
+  border-width: 1px;
+  align-self: start;
+  margin-bottom: 2vh;
 }
 
 .pairing-form,
@@ -116,6 +143,32 @@ $pint-width: 60px;
   outline-offset: -2px;
 }
 
+.pairing-loading {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+.pairing-form-pint {
+}
+.pairing-selection {
+}
+
+.pairing-form-status {
+  //margin-top: 1rem;
+  font-weight: 600;
+  background-color: $color__btdarkestgreen;
+  color: var(--color__btwhite);
+  .bt-loading-message {
+    color: var(--color__btwhite);
+  }
+  .bt-error-message {
+    color: red;
+  }
+  .bt-success-message {
+    //color: green;
+  }
+}
+
 .pairing-step {
   .bt-q-label {
     font-size: 1.4rem;
@@ -128,6 +181,9 @@ $pint-width: 60px;
 .pairing-form-nav {
   display: flex;
   gap: 0.5rem;
+  button {
+    border-width: 1px;
+  }
 }
 
 .loading-pairings {
@@ -154,7 +210,8 @@ $pint-width: 60px;
   border-radius: 2px;
   touch-action: manipulation;
   outline-offset: -1px;
-  transition: transform $anim-fast $anim-ease-curve,
+  transition:
+    transform $anim-fast $anim-ease-curve,
     opacity $anim-fast $anim-ease;
   will-change: transform;
   &.recommended {
@@ -197,7 +254,7 @@ $pint-width: 60px;
       display: grid;
       grid-auto-flow: column;
       gap: 0.5rem;
-      padding: 1rem 1rem 0 1rem;
+      padding: 0.7rem 0.7rem 0 0.7rem;
     }
     .beer-card-leftclmn {
       grid-column: 1;
@@ -233,8 +290,10 @@ $pint-width: 60px;
   cursor: pointer;
   border: 2px solid var(--beer-color, var(--color__btblack));
   background-color: $white;
-  transition: background-color $anim-fast $anim-ease,
-    color $anim-fast $anim-ease, border-color $anim-fast $anim-ease;
+  transition:
+    background-color $anim-fast $anim-ease,
+    color $anim-fast $anim-ease,
+    border-color $anim-fast $anim-ease;
   color: var(--color__btblack);
   display: inline-flex;
   align-items: center;
@@ -261,7 +320,9 @@ $pint-width: 60px;
   max-height: 0;
   opacity: 0;
   transform: translateY(4px);
-  transition: max-height $anim-fast $anim-ease, opacity $anim-fast $anim-ease,
+  transition:
+    max-height $anim-fast $anim-ease,
+    opacity $anim-fast $anim-ease,
     transform $anim-fast $anim-ease;
   overflow: hidden;
 }
@@ -280,7 +341,9 @@ $pint-width: 60px;
   flex-direction: column;
   padding: 2px 8px;
   font-weight: 700;
-  transition: opacity $anim-fast $anim-ease, transform $anim-fast $anim-ease;
+  transition:
+    opacity $anim-fast $anim-ease,
+    transform $anim-fast $anim-ease;
   width: 100%;
   strong {
     width: 100%;
@@ -358,7 +421,8 @@ $pint-width: 60px;
   padding: 0.75rem;
   border: 1px solid rgba(var(--color__btblack-rgb), 0.82);
   border-top-left-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgba(var(--color__btblack-rgb), 0.18),
+  box-shadow:
+    0 10px 30px rgba(var(--color__btblack-rgb), 0.18),
     0 1px 0 rgba(var(--color__btwhite-rgb), 0.35) inset;
   font-size: 1rem;
   scroll-behavior: smooth;
@@ -435,7 +499,9 @@ $pint-width: 60px;
   background-color: transparent;
   cursor: pointer;
   padding: 0;
-  transition: transform $anim-fast $anim-ease, box-shadow 0.18s $anim-ease;
+  transition:
+    transform $anim-fast $anim-ease,
+    box-shadow 0.18s $anim-ease;
   will-change: transform;
   flex-direction: column;
   gap: 4px;
@@ -618,10 +684,12 @@ $pint-width: 60px;
   z-index: 6;
   min-width: max-content;
   //accounts for scrollbars on flight
-  margin-inline-end: 5px;
+  //margin-inline-end: 5px;
   margin-bottom: 0;
   &[aria-expanded="true"] {
-    width: calc(var(--tray-width) - 5px - 5px);
+    //accounts for scrollbars on flight
+    //width: calc(var(--tray-width) - 5px - 5px);
+    width: calc(var(--tray-width) - 5px);
   }
 }
 
@@ -654,6 +722,14 @@ $pint-width: 60px;
     overflow: visible;
     align-self: start;
     padding-top: 1rem;
+  }
+  body:has(#wpadminbar) & {
+    .flight-tray-sticky {
+      top: calc(var(--masthead-height, 0px) + 32px);
+    }
+    .flight-tray-content {
+      max-height: calc(100dvh - var(--masthead-height, 0px) - 32px);
+    }
   }
   .flight-tray-head {
     display: grid;
@@ -751,7 +827,9 @@ $pint-width: 60px;
   outline-offset: 2px;
   .muted {
     opacity: 0;
-    transition: transform $anim-fast $anim-ease, opacity $anim-fast $anim-ease;
+    transition:
+      transform $anim-fast $anim-ease,
+      opacity $anim-fast $anim-ease;
     will-change: transform, opacity;
     position: absolute;
     top: 50%;
@@ -818,28 +896,39 @@ $pint-width: 60px;
   }
 }
 
-.pairing-form-fetch,
+.pairing-form-fetch-message,
 .pairing-form-error,
 .pairing-form-success {
-  padding: 1rem;
   margin: 0;
   border-radius: 2px;
 }
 
-.pairing-form-fetch {
-  outline: 1px solid var(--color__btblack);
-  background: var(--color__btwhite);
+.pairing-form-pint {
   position: relative;
+  align-self: anchor-center;
+}
+
+.pairing-form-fetch {
+  //outline: 1px solid var(--color__btblack);
+  //background: var(--color__btwhite);
+  position: absolute;
   z-index: 0;
-  box-shadow: 0 0 0 0 rgba(var(--color__btblack-rgb), 0);
-  animation: bt-glow 4s linear infinite;
+  top: 100%;
+  left: 0;
+  line-height: 1;
+  padding: 0;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: center;
+  //box-shadow: 0 0 0 0 rgba(var(--color__btblack-rgb), 0);
+  //animation: bt-glow 4s linear infinite;
 }
 
 .pairing-form-error {
   outline: 1px solid red;
 }
 .pairing-form-success {
-  outline: 1px solid var(--color__btblack);
+  //outline: 1px solid var(--color__btblack);
 }
 
 .flight-toast {
@@ -881,6 +970,9 @@ $pint-width: 60px;
     .beer-card-tab {
       font-size: 0.8rem;
     }
+  }
+  .beer-card-layout.with-recommendation.match-open .beer-card-sidebar {
+    grid-auto-flow: row;
   }
   .beer-card-desc {
     font-size: 1rem;

@@ -186,6 +186,7 @@ const MotionCard = React.memo(
                     animateFill
                     animateFromEmpty
                     fillLevel={selected ? 0.4 : 1}
+                    size={56}
                   />
 
                   <span className={`flight-toggle${selected ? ' flight-toggle-active' : ''}`}>

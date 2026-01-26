@@ -928,6 +928,10 @@ a:hover, a:active {
   background-color: #515441;
 }
 
+body:has(#wpadminbar) #masthead {
+  top: 32px;
+}
+
 .bg-transitions-on#masthead {
   transition: background-color 300ms ease-in-out;
 }

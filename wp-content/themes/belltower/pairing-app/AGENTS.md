@@ -5,7 +5,55 @@
 - This AGENTS.md applies to the Pairing App React project in this folder and its subfolders.
 - If this file conflicts with a root-level AGENTS.md, this file takes precedence for this subtree.
 - Primary scope: `src/**` (React app code) and related app config needed to run/build this project.
-- Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+
+## MCP tooling policy (required)
+
+This repo is configured with these MCP tools:
+
+- **context7** (docs)
+- **chrome-devtools** (runtime verification in a real browser)
+
+### Context7 policy (docs-first for JS/TSX/JSX)
+
+Use **Context7** whenever you need library/API guidance to write or change code cleanly (React, Vite, WordPress REST, browser APIs, etc.). Treat Context7 as the source of truth over memory.
+
+**How to use Context7 (always follow this flow):**
+
+1. `resolve-library-id` for the relevant library (React, Vite, WordPress, etc.).
+2. `query-docs` using that library id and a focused question (include version info when available by reading `package.json` / lockfile).
+3. Apply the recommended approach in code (prefer the most idiomatic, current pattern from docs).
+4. If docs are ambiguous, query again with a narrower question rather than guessing.
+
+**Doc usage guardrails:**
+
+- Don’t paste large doc excerpts into output; use the docs to guide implementation.
+- Prefer simple, idiomatic solutions over clever ones.
+- Don’t introduce new dependencies unless explicitly requested.
+
+### Chrome DevTools policy (console must be clean after changes)
+
+After any change that can affect runtime behavior (anything under `src/**`, styles, build config, loader behavior), you must verify the app in a browser using **chrome-devtools MCP** against:
+
+- **Primary target:** `http://belltower.local/`
+
+**Required validation loop (do this every time):**
+
+1. Use chrome-devtools to open `http://belltower.local/`.
+2. Navigate to the page that mounts the pairing app via `[pairing_app]` (use normal UI navigation).
+3. Reload the page.
+4. Collect:
+   - console messages (errors + warnings)
+   - failed/aborted network requests (especially JS/CSS assets and REST calls)
+5. If any **new** console error/warning appears that is caused by the change:
+   - fix it automatically in code (don’t ask)
+   - reload and re-check until console is clean
+
+**Notes:**
+
+- Don’t “fix” by suppressing warnings unless it’s truly intentional and the safest path (and then document it in code).
+- If there are pre-existing warnings unrelated to your change, do not churn the codebase; only fix what you introduced unless asked to clean all warnings.
+
+---
 
 ## Setup commands
 
@@ -24,13 +72,23 @@
 When making changes, ensure:
 
 - `npm run build` succeeds.
-- Smoke checks (manual):
-  - App mounts via `[pairing_app]` without console errors.
+- `npm run typecheck` succeeds after any JS/TS changes (run alongside `npm run lint`).
+
+### Required runtime smoke check (via chrome-devtools MCP)
+
+After changes that affect runtime:
+
+- Load `http://belltower.local/`
+- Navigate to the page with `[pairing_app]` mounted
+- Confirm:
+  - App mounts without console **errors or warnings**
   - Pairing call works: `/bt/v1/pairing`
   - History call works: `/bt/v1/pairing/history`
   - Beer color inference works: `/bt/v1/beer-colors`
-  - Loading / error / empty states are present and perceivable.
-  - Keyboard navigation still works for interactive UI.
+  - Loading / error / empty states are present and perceivable
+  - Keyboard navigation still works for interactive UI
+
+If console errors/warnings appear due to your change, fix them automatically and re-check until clean.
 
 ## Code style & conventions
 
@@ -99,25 +157,20 @@ When making changes, ensure:
 When implementing a feature, decide in this order:
 
 1. **State (minimum necessary)**
-
-- Store only what must be stored to render UI (e.g., open/closed, selected id, local form edits).
-- Do not store derived values (filtered lists, totals, validity flags) if computable from state/props.
+   - Store only what must be stored to render UI (e.g., open/closed, selected id, local form edits).
+   - Do not store derived values (filtered lists, totals, validity flags) if computable from state/props.
 
 2. **Events (do something now)**
-
-- Prefer event handlers (`onClick`, `onSubmit`, `onChange`) for “do something now” logic.
+   - Prefer event handlers (`onClick`, `onSubmit`, `onChange`) for “do something now” logic.
 
 3. **Derived values in render (pure)**
-
-- Compute derived values from state/props during render. Keep derivations pure.
+   - Compute derived values from state/props during render. Keep derivations pure.
 
 4. **Refs (mutable, non-visual)**
-
-- Use `useRef` for values that must persist but should not trigger renders (timer IDs, “latest value/callback”, imperative handles, DOM access).
+   - Use `useRef` for values that must persist but should not trigger renders (timer IDs, “latest value/callback”, imperative handles, DOM access).
 
 5. **Effects (last resort)**
-
-- Use effects only for syncing with external systems.
+   - Use effects only for syncing with external systems.
 
 ### useEffect policy (escape hatch)
 

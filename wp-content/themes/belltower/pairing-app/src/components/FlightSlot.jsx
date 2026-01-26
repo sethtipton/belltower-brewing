@@ -90,7 +90,7 @@ export default function FlightSlot({
         <span className="flight-slot-index" aria-hidden="true">
           {index + 1}
         </span>
-        <Pint tint={pintTint} beer={beer} animateFill fillLevel={pintFill} />
+        <Pint tint={pintTint} beer={beer} animateFill fillLevel={pintFill} size={45} />
         {!replaceMode && (
           <div className="muted small" aria-hidden="true">
               Remove

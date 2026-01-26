@@ -7,6 +7,7 @@ import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
 import { preloadPairing, getHistories, getPairingCache, getPairingCacheStatus } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
+import { getCachedColors, isCacheStale } from './utils/beerColor';
 import {
   useStaticPairings,
   getPairingCacheMeta,
@@ -16,6 +17,7 @@ import {
 import './styles/pairing_app_styles.scss';
 import useFlight from './hooks/useFlight';
 import { createLogger } from './logger';
+import { startPredictiveFill } from './utils/predictiveFill';
 
 interface PreparedAnswers { mood: string; body: string; bitterness: string; flavorFocus: string[]; alcoholPreference: string }
 interface PairingMatch extends ApiPairingMatch {
@@ -309,6 +311,54 @@ function toBeerArray(raw: unknown): BeerItem[] {
   return arr;
 }
 
+function normalizeHexColor(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  if (/^#([0-9a-f]{3}){1,2}$/.test(trimmed)) return trimmed;
+  return null;
+}
+
+function getBeerTint(
+  beer: { id?: string | number; name?: string; hex?: string | null; hexColor?: string | null } | null,
+  colors: Record<string, string>,
+  items: BeerItem[]
+): string | null {
+  if (!beer) return null;
+  const beerId = beer.id != null ? String(beer.id) : '';
+  const fromMap = beerId && colors[beerId] ? colors[beerId] : null;
+  const normalizedMap = normalizeHexColor(fromMap);
+  if (normalizedMap) return normalizedMap;
+  const normalizedDirect = normalizeHexColor(beer.hexColor ?? beer.hex ?? null);
+  if (normalizedDirect) return normalizedDirect;
+  if (beer.name) {
+    const target = slugify(beer.name);
+    const match = items.find((item) => slugify(item.name) === target);
+    if (match) {
+      const matchId = String(match.id);
+      const matchFromMap = matchId && colors[matchId] ? colors[matchId] : null;
+      const normalizedMatchMap = normalizeHexColor(matchFromMap);
+      if (normalizedMatchMap) return normalizedMatchMap;
+      return normalizeHexColor(match.hexColor ?? null);
+    }
+  }
+  return null;
+}
+
+function getTopMatchTint(matches: PairingMatch[], colors: Record<string, string>, items: BeerItem[]): string | null {
+  if (!matches.length) return null;
+  const sorted = matches.slice().sort((a, b) => {
+    const sa = typeof a.score === 'number' ? a.score : -1;
+    const sb = typeof b.score === 'number' ? b.score : -1;
+    return sb - sa;
+  });
+  for (const match of sorted) {
+    const tint = getBeerTint(match.beer ?? null, colors, items);
+    if (tint) return tint;
+  }
+  return null;
+}
+
 interface BeerDataHook {
   items: unknown;
   ready: boolean;
@@ -332,6 +382,23 @@ function AppContent(): React.ReactElement {
   const pairingCacheMapKey = stableCacheHash ? `${PAIRING_MAP_KEY}_${stableCacheHash}` : '';
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pintFillLevel, setPintFillLevel] = useState(0);
+  const [pintError, setPintError] = useState(false);
+  const [pintRequestId, setPintRequestId] = useState(0);
+  const [loadingTint, setLoadingTint] = useState<string | null>(null);
+  const [finalTint, setFinalTint] = useState<string | null>(null);
+  const cachedBeerColors = useMemo(() => {
+    const rawProvider = typeof sessionStorage !== 'undefined'
+      ? sessionStorage.getItem('bt_beer_color_map')
+      : null;
+    if (!rawProvider) return null;
+    try {
+      const parsed = JSON.parse(rawProvider) as unknown;
+      return isRecord(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }, []);
   const [allowColors, setAllowColors] = useState(() => {
     if (!session) return false;
     return !!session.getItem('bt_beer_colors_v1');
@@ -363,8 +430,56 @@ function AppContent(): React.ReactElement {
   const [colorMapOverride, setColorMapOverride] = useState<Record<string, string>>({});
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [preparedAnswers, setPreparedAnswers] = useState<PreparedAnswers | null>(null);
-  const [debugRecommendAll, setDebugRecommendAll] = useState(false);
   const safeItems = useMemo<BeerItem[]>(() => toBeerArray(items), [items]);
+  const loadingPalette = useMemo(() => {
+    const seen = new Set<string>();
+    const palette: string[] = [];
+    if (cachedBeerColors) {
+      Object.values(cachedBeerColors).forEach((entry) => {
+        const rec = isRecord(entry) ? entry : null;
+        const normalized = normalizeHexColor(rec?.hex ?? rec?.hexColor ?? null);
+        if (!normalized || seen.has(normalized)) return;
+        seen.add(normalized);
+        palette.push(normalized);
+      });
+    }
+    const cached = getCachedColors('bt_beer_colors_v1');
+    if (
+      cached &&
+      typeof cached === 'object' &&
+      !Array.isArray(cached) &&
+      !isCacheStale(cached) &&
+      'colors' in cached &&
+      cached.colors &&
+      typeof cached.colors === 'object'
+    ) {
+      Object.values(cached.colors).forEach((val) => {
+        const normalized = normalizeHexColor(val);
+        if (!normalized || seen.has(normalized)) return;
+        seen.add(normalized);
+        palette.push(normalized);
+      });
+    }
+    Object.values(colorMapOverride).forEach((val) => {
+      const normalized = normalizeHexColor(val);
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      palette.push(normalized);
+    });
+    safeItems.forEach((beer) => {
+      const id = String(beer.id);
+      const candidate = colorMapOverride[id] ?? beer.hexColor ?? null;
+      const normalized = normalizeHexColor(candidate);
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      palette.push(normalized);
+    });
+    return palette;
+  }, [safeItems, colorMapOverride, cachedBeerColors]);
+  const pintTint = pintError
+    ? '#B00020'
+    : (loading ? loadingTint : finalTint);
+  const loadingPaletteKey = useMemo(() => loadingPalette.join('|'), [loadingPalette]);
   const [successMessage, setSuccessMessage] = useState('');
   const staticPairings = useStaticPairings({ beers: safeItems, enabled: featureFlags.foodPairings });
   const hasColorOverrides = useMemo(() => Object.keys(colorMapOverride).length > 0, [colorMapOverride]);
@@ -374,6 +489,36 @@ function AppContent(): React.ReactElement {
   const staticPairingsTriggered = useRef<string | null>(null);
   const uiPairingsLogged = useRef(false);
   const recStateRestored = useRef(false);
+  const predictiveFillRef = useRef<ReturnType<typeof startPredictiveFill> | null>(null);
+  const loadingTintTimerRef = useRef<number | null>(null);
+  const loadingPaletteKeyRef = useRef<string>('');
+
+  const stopLoadingTintCycle = useCallback(() => {
+    if (loadingTintTimerRef.current) {
+      window.clearInterval(loadingTintTimerRef.current);
+      loadingTintTimerRef.current = null;
+    }
+    setLoadingTint(null);
+  }, []);
+
+  const startLoadingTintCycle = useCallback(() => {
+    stopLoadingTintCycle();
+    if (!loadingPalette.length) return;
+    let idx = 0;
+    setLoadingTint(loadingPalette[0]);
+    loadingTintTimerRef.current = window.setInterval(() => {
+      idx = (idx + 1) % loadingPalette.length;
+      setLoadingTint(loadingPalette[idx]);
+    }, 600);
+  }, [loadingPalette, stopLoadingTintCycle]);
+
+  useEffect(() => {
+    if (!loading || !loadingPalette.length) return;
+    const key = loadingPaletteKey;
+    if (loadingPaletteKeyRef.current === key && loadingTintTimerRef.current) return;
+    loadingPaletteKeyRef.current = key;
+    startLoadingTintCycle();
+  }, [loading, loadingPalette, loadingPaletteKey, startLoadingTintCycle]);
 
   useEffect(() => {
     const mq = getMobileMediaQuery();
@@ -816,7 +961,7 @@ function AppContent(): React.ReactElement {
     if (!safeItems.length) return safeItems;
     const ranked = safeItems.map((b) => {
       const slug = slugify(b.name ?? '');
-      const isRec = debugRecommendAll || recommendedIds.has(String(b.id)) || recommendedIds.has(slug);
+      const isRec = recommendedIds.has(String(b.id)) || recommendedIds.has(slug);
       const history = historyByName[slug];
       const meta = recMeta[slug];
       const next = isRec || history || meta
@@ -840,7 +985,7 @@ function AppContent(): React.ReactElement {
       if (sa === sb) return 0;
       return sb - sa;
     });
-  }, [safeItems, recommendedIds, historyByName, recMeta, showRecommendations, debugRecommendAll]);
+  }, [safeItems, recommendedIds, historyByName, recMeta, showRecommendations]);
 
   const applyRecommendations = useCallback((matches: unknown) => {
     const safeMatches = toMatches(matches);
@@ -1102,6 +1247,19 @@ function AppContent(): React.ReactElement {
     setError('');
     setSuccessMessage('');
     setLoading(true);
+    setPintError(false);
+    setPintFillLevel(0);
+    setPintRequestId((prev) => prev + 1);
+    setFinalTint(null);
+    startLoadingTintCycle();
+    if (predictiveFillRef.current) {
+      predictiveFillRef.current.stop();
+      predictiveFillRef.current = null;
+    }
+    const predictive = startPredictiveFill((fillLevel) => {
+      setPintFillLevel(fillLevel);
+    });
+    predictiveFillRef.current = predictive;
     const prepared = toPreparedAnswers(preparedOverride ?? preparedAnswers ?? EMPTY_PREPARED);
     const key = makeAnswerKey(prepared);
 
@@ -1109,6 +1267,13 @@ function AppContent(): React.ReactElement {
       const fetchedRaw = /** @type {unknown} */ (await fetchPairing(prepared));
       const fetched = toPairingResponse(fetchedRaw);
       log.info('submit.success', { phase: 'submit', hasResult: !!fetched, hash: stableCacheHash || null });
+      if (predictive) {
+        const elapsed = performance.now() - predictive.startedAt;
+        predictive.stop(elapsed);
+        predictiveFillRef.current = null;
+      }
+      stopLoadingTintCycle();
+      setPintFillLevel(1);
       if (fetched && session) {
         writePairingCache(key, fetched);
       }
@@ -1119,13 +1284,17 @@ function AppContent(): React.ReactElement {
         const { ids, metaMap } = applyRecommendations(matches);
         applyHistoryOnly(matches, historyMap);
         setShowRecommendations(true);
-        setSuccessMessage('5 Beers recommended based on your answers!');
+        setSuccessMessage(`We ranked the beers below by how well they match your answers and highlighted ${matches.length} recommendations.`);
         persistRecommendState(key, ids, metaMap, true);
       } else {
         setError('No pairing data yet. Click "Fetch Pairings" first.');
         clearRecommendState();
       }
       const colors = extractColorMap(fetched);
+      const topTint = getTopMatchTint(matches, colors, safeItems) ?? getTopMatchTint(matches, colorMapOverride, safeItems);
+      if (topTint) {
+        setFinalTint(topTint);
+      }
       if (Object.keys(colors).length) {
         setColorMapOverride(colors);
         const hasAllColors = safeItems.length > 0 && Object.keys(colors).length >= safeItems.length;
@@ -1136,6 +1305,14 @@ function AppContent(): React.ReactElement {
     } catch (err) {
       const error = formatError(err);
       log.error('submit.error', { phase: 'submit', error, errorType: toErrorType(error), hash: stableCacheHash || null });
+      if (predictive) {
+        const elapsed = performance.now() - predictive.startedAt;
+        predictive.stop(elapsed);
+        predictiveFillRef.current = null;
+      }
+      stopLoadingTintCycle();
+      setPintError(true);
+      setPintFillLevel(0.2);
       setError('Unable to fetch pairing right now.');
       setSuccessMessage('');
       clearRecommendState();
@@ -1148,35 +1325,20 @@ function AppContent(): React.ReactElement {
     <LiveAnnouncerProvider>
       <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
         <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
-        <header>
-          {isAdmin ? (
-            <button
-              type="button"
-              className="debug-recommend-btn"
-              aria-pressed={debugRecommendAll}
-              onClick={() => setDebugRecommendAll((prev) => !prev)}
-            >
-              {debugRecommendAll ? 'Clear recommended layout' : 'Preview recommended layout'}
-            </button>
-          ) : null}
-        </header>
         {featureFlags.helpForm ? (
-          <>
-            <button type="button" className="help-btn" onClick={() => setFormOpen((v) => !v)}>
-              {formOpen ? 'Close - Help me decide' : 'Help me decide'}
-            </button>
-            <PairingForm
-              open={formOpen}
-              loading={loading}
-              error={error}
-              success={successMessage}
-              onSubmit={(vals) => {
-                void handleSubmit(vals);
-              }}
-              onPreparedChange={(vals) => setPreparedAnswers(vals)}
-              onInteraction={() => setShowRecommendations(false)}
-            />
-          </>
+          <PairingForm
+            open={formOpen}
+            onToggle={() => setFormOpen(v => !v)}
+            loading={loading}
+            error={error}
+            success={successMessage}
+            pintFillLevel={pintFillLevel}
+            pintRequestId={pintRequestId}
+            pintTint={pintTint}
+            onSubmit={(vals) => void handleSubmit(vals)}
+            onPreparedChange={(vals) => setPreparedAnswers(vals)}
+            onInteraction={() => setShowRecommendations(false)}
+          />
         ) : null}
         <div className={trayClassName}>
           <div style={!listReady ? { visibility: 'hidden' } : undefined}>
@@ -1216,7 +1378,6 @@ function AppContent(): React.ReactElement {
 export default function App(): React.ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (inView) return;
@@ -1241,7 +1402,6 @@ export default function App(): React.ReactElement {
     observer.observe(node);
     return () => observer.disconnect();
   }, [inView]);
-
   return (
     <div ref={rootRef} style={{ minHeight: '1px' }}>
       {inView ? (

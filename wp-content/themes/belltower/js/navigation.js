@@ -259,12 +259,10 @@ var footerLogoLink = footer.querySelector('.footerlogo');
 if (footerLogoLink) {
 	var footerSvg = footerLogoLink.querySelector('svg');
 	if (footerSvg) {
-		console.log('[belltower] footer logo observer ready');
 		if ('IntersectionObserver' in window) {
 			var footerObserver = new IntersectionObserver((entries, observer) => {
 				entries.forEach(entry => {
 					if (entry.isIntersecting) {
-						console.log('[belltower] footer logo intersecting, revealing paths');
 						entry.target.querySelectorAll('.cls-1').forEach(path => {
 							path.style.fillOpacity = 1;
 						});
@@ -272,10 +270,8 @@ if (footerLogoLink) {
 					}
 				});
 			}, { threshold: 0.2 });
-			console.log('[belltower] footer logo observer attached');
 			footerObserver.observe(footerSvg);
 		} else {
-			console.log('[belltower] footer logo observer unsupported, revealing paths');
 			footerSvg.querySelectorAll('.cls-1').forEach(path => {
 				path.style.fillOpacity = 1;
 			});

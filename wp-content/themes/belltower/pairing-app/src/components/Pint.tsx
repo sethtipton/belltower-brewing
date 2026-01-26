@@ -1,5 +1,5 @@
 // Pint.tsx
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 interface PintBeer { id?: string | number; name?: string }
@@ -10,6 +10,7 @@ interface PintProps {
   fillLevel?: number;
   animateFill?: boolean;
   animateFromEmpty?: boolean;
+  size?: number;
 }
 
 interface Bubble { id: number; cx: number; startY: number; rise: number; r: number; delay: number; dur: number }
@@ -36,22 +37,47 @@ export default function Pint({
   fillLevel = 1,
   animateFill = false,
   animateFromEmpty = false,
+  size = 56,
 }: PintProps = {}): React.ReactElement {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const isVisible = true;
+  const [isVisible, setIsVisible] = useState(true);
   const osReduce = useReducedMotion();
   const reduced = Boolean(prefersReduced || osReduce);
   const safeBeer: PintBeer = beer && typeof beer === 'object' ? beer : {};
-  const maskId = useMemo(() => `beer-mask-${Math.random().toString(36).slice(2, 9)}`, []);
-  const titleId = useMemo(() => `beer-pint-title-${Math.random().toString(36).slice(2, 9)}`, []);
+  const maskId = useId();
+  const titleId = useId();
+  const maskIdValue = useMemo(() => `beer-mask-${maskId}`, [maskId]);
+  const titleIdValue = useMemo(() => `beer-pint-title-${titleId}`, [titleId]);
   const VB_H = 512;
   const FILL_PCT = 0.98;
   const clampedFill = Math.max(0, Math.min(1, fillLevel));
   const rectTargetY = Math.round(VB_H * (1 - FILL_PCT * clampedFill));
   const targetY = rectTargetY;
   const shouldAnimateFill = animateFill && !reduced;
+  const shouldAnimateBubbles = !reduced && clampedFill > 0 && isVisible;
   const initialY = animateFromEmpty ? VB_H : targetY;
-  const animatedY = isVisible ? targetY : initialY;
+  const animatedY = targetY;
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-initialize-state */
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+    const node = svgRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target !== node) return;
+        setIsVisible(entry.isIntersecting || entry.intersectionRatio > 0);
+      });
+    }, { root: null, threshold: 0.05 });
+    observer.observe(node);
+    return () => {
+      observer.unobserve(node);
+      observer.disconnect();
+    };
+  }, []);
+  /* eslint-enable react-you-might-not-need-an-effect/no-initialize-state */
 
   const bubbles = useMemo<Bubble[]>(() => {
     let t = 1;
@@ -79,15 +105,15 @@ export default function Pint({
     <svg
       ref={svgRef}
       className="beer-svg"
-      width="56"
-      height="56"
+      width={size}
+      height={size}
       viewBox="0 0 512 512"
       role="img"
       aria-hidden={false}
-      aria-labelledby={titleId}
+      aria-labelledby={titleIdValue}
       aria-label={safeBeer.name ? `${safeBeer.name} pint illustration` : 'Beer pint illustration'}
     >
-      <title id={titleId}>{safeBeer.name ? `${safeBeer.name} pint illustration` : 'Beer pint illustration'}</title>
+      <title id={titleIdValue}>{safeBeer.name ? `${safeBeer.name} pint illustration` : 'Beer pint illustration'}</title>
       <defs>
         <style>{`
           .beer-svg .cls-3 { fill: rgba(255,255,255,0.12); stroke: #000; stroke-width: 10px; }
@@ -96,7 +122,7 @@ export default function Pint({
           .beer-svg .cls-4 { opacity: 0.14; }
           .beer-svg .cls-5 { fill: #17292d; }
         `}</style>
-        <mask id={maskId}>
+        <mask id={maskIdValue}>
           <rect x="0" y="0" width="512" height="512" fill="black" />
           <path
             d="M172.11,499.2a19.15,19.15,0,0,1-18.79-23.07c10.07-47.81,15.45-121.21-16.09-199.32-19-47-25.82-107.07-20-174.41H394.71c5.86,67.34-1,127.44-20,174.41-31.54,78.12-26.16,151.51-16.09,199.32a19.15,19.15,0,0,1-18.79,23.07Z"
@@ -112,7 +138,7 @@ export default function Pint({
         className="cls-2"
         d="M117.31,102.4A624.69,624.69,0,0,1,128.4,28,19.24,19.24,0,0,1,147.17,12.8H364.82A19.24,19.24,0,0,1,383.59,28a625,625,0,0,1,11.09,74.44Z"
       />
-      <g mask={`url(#${maskId})`} aria-hidden={reduced ? 'true' : 'false'}>
+      <g mask={`url(#${maskIdValue})`} aria-hidden={reduced ? 'true' : 'false'}>
         <motion.rect
           x="0"
           width="512"
@@ -134,7 +160,7 @@ export default function Pint({
           d="M396.12,25.31A32,32,0,0,0,364.82,0h-64a32,32,0,0,1,31.3,25.31c12,56.59,27,166-9.49,256.29-30.44,75.4-25,146.33-15.43,191.89A32,32,0,0,1,275.87,512h64a32,32,0,0,0,31.32-38.51c-9.59-45.57-15-116.49,15.43-191.89C423.08,191.28,408.1,81.9,396.12,25.31Z"
         />
       </g>
-      {!reduced && clampedFill > 0 &&
+      {shouldAnimateBubbles &&
         bubbles.map((b) => (
           <motion.circle
             key={b.id}
