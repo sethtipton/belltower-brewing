@@ -155,7 +155,7 @@ const MotionCard = React.memo(
                 </div>
                 <div
                   id={`recommendation-match-${beer.id}`}
-                  className="beer-match"
+                  className="beer-match ai-text"
                   aria-live="polite"
                 >
                   {beer.recommendationMatchSentence}
@@ -240,7 +240,7 @@ const MotionCard = React.memo(
                       {resolvedActiveTab === 'history' ? (
                         <motion.div
                           key="history"
-                          className="beer-history-content"
+                          className="beer-history-content ai-text"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.2, ease: 'easeOut', delay: 0.12 }}
@@ -299,7 +299,7 @@ const MotionCard = React.memo(
                                       return (
                                         <li key={`${foodKey}-${index}`}>
                                           <strong>{dishLabel}</strong>
-                                          <span className="pairing-reason">{entry?.pairingReason ? `${entry.pairingReason}` : ''}</span>
+                                          <span className="pairing-reason ai-text">{entry?.pairingReason ? `${entry.pairingReason}` : ''}</span>
                                           {dishDescription ? (
                                             <div className="pairings-item-desc">{dishDescription}</div>
                                           ) : null}
@@ -338,7 +338,7 @@ const MotionCard = React.memo(
                                           return (
                                             <>
                                               <strong>{sideLabel}</strong>
-                                              <span className="pairing-reason">{pairings.side?.pairingReason ? `${pairings.side.pairingReason}` : ''}</span>
+                                              <span className="pairing-reason ai-text">{pairings.side?.pairingReason ? `${pairings.side.pairingReason}` : ''}</span>
                                               {sideDescription ? (
                                                 <div className="pairings-item-desc">{sideDescription}</div>
                                               ) : null}

@@ -11,6 +11,8 @@ interface PairingFormProps {
   loading: boolean;
   error?: string | null;
   success?: string | null;
+  successIsAi?: boolean;
+  topRecommendationName?: string | null;
   pintFillLevel?: number;
   pintRequestId?: number;
   pintTint?: string | null;
@@ -53,6 +55,8 @@ export function PairingForm({
   loading,
   error,
   success,
+  successIsAi,
+  topRecommendationName,
   pintFillLevel = 0,
   pintRequestId = 0,
   pintTint = null,
@@ -81,8 +85,22 @@ export function PairingForm({
     answers.alcoholPreference ||
     answers.flavorFocus?.length
   );
+  const pendingMessage = useMemo(() => {
+    if (!hasSelection) return '';
+    const mood = answers.mood ? answers.mood.toLowerCase() : '';
+    const bitterness = answers.bitterness ? answers.bitterness.toLowerCase() : '';
+    if (!mood && !bitterness) return '';
+    if (mood && bitterness) {
+      return `Based on your ${mood} mood and a ${bitterness} bitterness profile, we’re scouting the taps…`;
+    }
+    if (mood) return `Based on your ${mood} mood, we’re scouting the taps…`;
+    return `Based on your ${bitterness} bitterness profile, we’re scouting the taps…`;
+  }, [answers.bitterness, answers.mood, hasSelection]);
   const showPredictive = loading || Boolean(error) || Boolean(success);
   const submitDisabled = loading;
+  const successStyle = successIsAi && pintTint
+    ? { '--beer-color': pintTint } as React.CSSProperties
+    : undefined;
   const fadeProps = prefersReduced
     ? { initial: false, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0 } }
     : { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.2 } };
@@ -136,7 +154,8 @@ export function PairingForm({
   return (
     <div className="pairing-form-wrapper">
       <p className="pairing-form-intro" id="pairing-form-intro">
-        Tell us what sounds good today and we’ll suggest a couple taps to try.
+        Need help finding something you might like?<br />
+        Take a quick quiz that helps identify your preferences and we’ll suggest a couple taps to try.
       </p>
       <button
         type="button"
@@ -263,12 +282,31 @@ export function PairingForm({
           <AnimatePresence initial={false}>
             {loading ? (
               <motion.p className="pairing-form-fetch-message" {...fadeProps}>
-                Beer List will update shortly and highlight recommended beers.
+                Beer List will update shortly and highlight recommended beers sorted by score. <br></br>This pairing is AI‑generated recommendations for inspiration. Your taste (and our staff) is the final word.
+                {pendingMessage ? (
+                  <>
+                    <br />
+                    {pendingMessage}
+                  </>
+                ) : null}
               </motion.p>
             ) : null}
           </AnimatePresence>
           {error && <div className="pairing-form-error">{error}</div>}
-          {success && <div className="pairing-form-success">{success}</div>}
+          {success && (
+            <div
+              className={`pairing-form-success${successIsAi ? ' ai-text' : ''}`}
+              style={successStyle}
+            >
+              {success}
+              {topRecommendationName ? (
+                <>
+                  <br />
+                  <span>Top pick: <strong>{topRecommendationName}</strong>.</span>
+                </>
+              ) : null}
+            </div>
+          )}
           </>
         ) : null}
           </motion.div>

@@ -1,5 +1,11 @@
 # Repository Guidelines
 
+## Codex Instruction Discovery (keep current)
+
+- This file participates in Codex instruction discovery. If you need a temporary override, add `AGENTS.override.md` in the relevant directory and remove it when done.
+- Codex walks from repo root to the current working directory, taking at most one instruction file per folder (override wins). Keep this file concise so combined instructions stay under the default 32 KiB cap.
+- If you rely on alternate filenames, add them to `project_doc_fallback_filenames` in `~/.codex/config.toml`.
+
 ## Project Structure & Module Organization
 
 - WordPress core lives at the repo root; custom code is in `wp-content/themes/belltower`.

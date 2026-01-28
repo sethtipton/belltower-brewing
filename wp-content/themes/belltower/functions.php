@@ -2003,6 +2003,7 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
 		3) Always return 5 matches: primary (best), neighbor (adjacent style), contrast (different profile but respect low-ABV requests).
 		4) Reference 1–2 user inputs in match_sentence; keep confidence bands (>0.75 High; 0.40–0.75 Medium; <0.40 Low).
 		5) Use canonical_tag_set and tag_synonyms seeded from the beer data; infer reasonably.
+		6) Create a short, fun success_message for a local brewery; mention 1–2 user inputs and that 5 beers are highlighted below, ordered by score. Prefer phrasing that ends with “here at Belltower.”
 		Return EXACTLY this JSON, no extra prose:
 		{
 		"matches": [
@@ -2016,6 +2017,7 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
 			{ "..." : "..." },
 			{ "..." : "..." }
 		],
+		"success_message": "string",
 		"canonical_tag_set": ["tropical","citrus","roasty","caramel","banana","clove","dry","creamy","crisp","smoky","spicy","tart","funky"],
 		"tag_synonyms": {
 			"tropical": ["mango","pineapple","passionfruit","juicy"],

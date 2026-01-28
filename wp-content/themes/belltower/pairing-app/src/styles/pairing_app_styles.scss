@@ -71,6 +71,12 @@ $pint-width: 60px;
   }
 }
 
+.aidisclaimer {
+  padding: 0 0.3rem;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
 .pairing-app {
   opacity: 0;
   transition: opacity 0.25s ease;
@@ -113,7 +119,7 @@ $pint-width: 60px;
     }
     &.suggestbtn {
       border: none;
-      background-color: $color__btdarkgreen;
+      background-color: $color__btdarkestgreen;
       color: $white;
       &[aria-disabled="true"] {
         background-color: $grey;
@@ -256,7 +262,7 @@ $pint-width: 60px;
       grid-column: 1 / -1;
       display: grid;
       grid-auto-flow: column;
-      gap: 0.5rem;
+      //gap: 0.5rem;
       padding: 0.7rem 0.7rem 0 0.7rem;
     }
     .beer-card-leftclmn {
@@ -269,6 +275,7 @@ $pint-width: 60px;
       max-height: 200px;
       opacity: 1;
       transform: translateY(0);
+      padding: 0 8px;
     }
     .badge-interactive {
       opacity: 1;
@@ -315,8 +322,6 @@ $pint-width: 60px;
   overflow: hidden;
   //background: rgba(var(--color__btwhite-rgb), 0.8);
   border-left: 2px solid var(--beer-color, var(--color__btblack));
-  padding-inline-start: 0.5rem;
-  padding-top: 0.5rem;
 }
 
 .beer-match {
@@ -376,12 +381,9 @@ $pint-width: 60px;
   justify-content: space-between;
 }
 
-.pairing-reason {
-  align-self: flex-start;
+.ai-text {
   position: relative;
   z-index: 1;
-  padding: 0.2rem 0.5rem;
-  margin-inline-start: 0.5rem;
   &:before {
     content: "";
     background-color: var(--beer-color, var(--color__btwhite));
@@ -393,6 +395,16 @@ $pint-width: 60px;
     top: 0;
     opacity: 0.4;
   }
+}
+
+span.ai-text {
+  display: inline-block;
+}
+
+.pairing-reason {
+  align-self: flex-start;
+  padding: 0.2rem 0.5rem;
+  margin-inline-start: 0.5rem;
 }
 
 .flight-toggle {
@@ -609,6 +621,8 @@ $pint-width: 60px;
 .beer-history-content {
   overflow: hidden;
   //background: rgba(var(--color__btwhite-rgb), 0.8);
+  padding-inline-start: 0.5rem;
+  padding-top: 0.5rem;
   p {
     margin: 0;
     &:not(:first-of-type) {
@@ -620,6 +634,8 @@ $pint-width: 60px;
 .pairings-panel {
   overflow: hidden;
   //background: rgba(var(--color__btwhite-rgb), 0.8);
+  padding-inline-start: 0.5rem;
+  padding-top: 0.5rem;
 }
 
 .pairings-results {
@@ -932,6 +948,7 @@ $pint-width: 60px;
 }
 .pairing-form-success {
   //outline: 1px solid var(--color__btblack);
+  padding: 0 0.3rem;
 }
 
 .flight-toast {

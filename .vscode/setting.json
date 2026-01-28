@@ -1,0 +1,12 @@
+{
+    "search.exclude": {
+      "**/dist/**": true,
+      "**/assets/**": true,
+      "**/*.map": true
+    },
+    "files.exclude": {
+      "**/dist/**": true,
+      "**/assets/**": true,
+      "**/*.map": true
+    }
+}
