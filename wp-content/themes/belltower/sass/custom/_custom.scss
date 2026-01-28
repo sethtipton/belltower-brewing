@@ -65,7 +65,7 @@ ul.indentlist {
   bottom: 4px;
   transform: translate(0, -2px);
   opacity: 0;
-  background-color: $color__btpurewhite;
+  background-color: var(--color__btpurewhite);
   transition:
     opacity 100ms ease-in 100ms,
     transform 100ms ease-in 100ms;
@@ -157,7 +157,7 @@ ul li {
     position: relative;
     &:after {
       content: "";
-      background: $color__btlightgreen;
+      background: var(--color__btlightgreen);
       height: 2px;
       position: absolute;
       width: 100%;
@@ -169,12 +169,12 @@ ul li {
     }
     & > a {
       @extend .has-large-font-size;
-      color: $color__btdarkestgreen;
+      color: var(--color__btdarkestgreen);
       line-height: 1;
       transform: translate(0px, -4px);
       display: block;
       &:hover {
-        color: $color__btdarkgreen;
+        color: var(--color__btdarkgreen);
       }
     }
     .wp-block-latest-posts__post-full-content {
@@ -185,8 +185,8 @@ ul li {
   }
   a.read-more {
     display: block;
-    background-color: $color__btdarkestgreen;
-    color: $color__btpurewhite;
+    background-color: var(--color__btdarkestgreen);
+    color: var(--color__btpurewhite);
     padding: 10px;
     float: right;
     clear: both;
@@ -208,7 +208,7 @@ ul li {
   padding-bottom: 4vh;
   .entry-header {
     &:before {
-      background-color: $color__btdarkgreen;
+      background-color: var(--color__btdarkgreen);
       filter: none;
     }
     .entry-meta {
@@ -217,12 +217,12 @@ ul li {
       text-align: center;
       padding-bottom: 0.3em;
       span {
-        color: $color__btpurewhite;
+        color: var(--color__btpurewhite);
         &.event_date_head {
           display: block;
         }
         a {
-          color: $color__btpurewhite;
+          color: var(--color__btpurewhite);
           text-decoration: none;
           pointer-events: none;
         }
@@ -261,7 +261,7 @@ ul li {
   }
   .post-navigation {
     .nav-links a {
-      color: $color__btdarkgreen;
+      color: var(--color__btdarkgreen);
     }
     .nav-title {
       display: block;
@@ -272,7 +272,7 @@ ul li {
   }
   .comments-area {
     a {
-      color: $color__btdarkgreen;
+      color: var(--color__btdarkgreen);
     }
   }
   .googlecalwrap {
@@ -317,10 +317,10 @@ body.page-id-1168 .fullheightimg {
   margin-bottom: 0;
 }
 .newyearslink {
-  border: 1px solid $color__btyellow;
+  border: 1px solid var(--color__btyellow);
   font-size: 2.3rem;
   padding: 0.5em 1em;
-  color: $color__btyellow !important;
+  color: var(--color__btyellow) !important;
   display: table;
   margin-left: auto;
   margin-right: auto;
@@ -328,7 +328,7 @@ body.page-id-1168 .fullheightimg {
 }
 
 .site-footer {
-  background-color: $color__btdarkestgreen;
+  background-color: var(--color__btdarkestgreen);
 }
 
 .footerw1 {
@@ -338,7 +338,7 @@ body.page-id-1168 .fullheightimg {
   //padding-block: 8vh;
   padding: $btcmpPadding1 0;
   a {
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     text-decoration: none;
     display: inline-block;
     position: relative;
@@ -348,7 +348,7 @@ body.page-id-1168 .fullheightimg {
     }
     &:not(.femail, .cta)::after {
       @extend .bt-after;
-      background: $color__btpurewhite;
+      background: var(--color__btpurewhite);
       opacity: 0;
       //transform: translateY(calc(-1 * (#{$u30navPadding} - 8px)));
       transform: translate(0, 6px);
@@ -369,7 +369,7 @@ body.page-id-1168 .fullheightimg {
   }
   strong,
   h3 {
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     display: block;
     @extend .has-medium-font-size;
     margin-bottom: 0;
@@ -445,14 +445,14 @@ body.page-id-1168 .fullheightimg {
   }
   svg {
     height: 100%;
-    fill: $color__btpurewhite;
+    fill: var(--color__btpurewhite);
   }
 }
 
 #mc_embed_signup {
   label {
     display: block;
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     margin-top: 10px;
   }
   input {
@@ -471,17 +471,17 @@ body.page-id-1168 .fullheightimg {
     margin-top: 20px;
     display: block;
     border: none;
-    background-color: $color__btpurewhite;
-    color: $color__btdarkestgreen;
+    background-color: var(--color__btpurewhite);
+    color: var(--color__btdarkestgreen);
     &:hover {
       cursor: pointer;
     }
   }
   input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0px 1000px $color__btpurewhite inset;
+    -webkit-box-shadow: 0 0 0px 1000px var(--color__btpurewhite) inset;
     background-color: transparent;
     border: none;
-    color: $color__btdarkestgreen !important;
+    color: var(--color__btdarkestgreen) !important;
   }
   .mc-field-group:nth-child(2) {
     width: 50%;
@@ -496,11 +496,11 @@ body.page-id-1168 .fullheightimg {
   #mce-responses {
     margin-top: 10px;
     .response {
-      color: $color__btpink;
+      color: var(--color__btpink);
       a {
         margin-top: 10px;
-        color: $color__btdarkgreen;
-        background-color: $color__btpink;
+        color: var(--color__btdarkgreen);
+        background-color: var(--color__btpink);
         padding: 0.5em;
       }
     }
@@ -508,34 +508,34 @@ body.page-id-1168 .fullheightimg {
 }
 
 #mc_embed_signup div.mce_inline_error {
-  background-color: $color__btpink !important;
-  color: $color__btdarkgreen !important;
+  background-color: var(--color__btpink) !important;
+  color: var(--color__btdarkgreen) !important;
 }
 
 #mc_embed_signup input.mce_inline_error {
-  border-color: $color__btpink !important;
+  border-color: var(--color__btpink) !important;
 }
 
 a.googlecal {
-  background: $color__btdarkgreen;
-  color: $color__btwhite;
+  background: var(--color__btdarkgreen);
+  color: var(--color__btwhite);
   padding: 0.3em;
   text-decoration: none;
   position: relative;
   &:hover {
-    color: $color__btpurewhite;
-    color: $color__btyellow;
+    color: var(--color__btpurewhite);
+    color: var(--color__btyellow);
     text-decoration: underline;
   }
   &:visited {
-    color: $color__btwhite;
+    color: var(--color__btwhite);
   }
 }
 .home-head {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-color: $color__btdarkgreen;
+  background-color: var(--color__btdarkgreen);
   height: 100vh;
   min-height: 375px;
   display: flex;
@@ -583,7 +583,7 @@ a.googlecal {
   h1 {
     width: 100%;
     text-align: center;
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     font-size: 4rem;
     padding-top: clamp(100px, 18vh, 150px);
     padding-bottom: 9vh;
@@ -592,11 +592,11 @@ a.googlecal {
 }
 
 .entry-header.blog {
-  background-color: $color__btdarkgreen;
+  background-color: var(--color__btdarkgreen);
   h1 {
     width: 100%;
     text-align: center;
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     font-size: 4rem;
     padding-top: clamp(100px, 18vh, 150px);
     padding-bottom: 9vh;
@@ -615,7 +615,7 @@ a.googlecal {
       font-size: 1.2rem;
       letter-spacing: 1px;
       &.has-pure-white-color:hover {
-        color: $color__btpurewhite;
+        color: var(--color__btpurewhite);
       }
     }
   }
@@ -690,10 +690,10 @@ a.googlecal {
 
 .wp-block-button__link {
   @extend %bt-pill-link;
-  background-color: $color__btdarkestgreen;
+  background-color: var(--color__btdarkestgreen);
   box-shadow: none;
   &:visited {
-    color: $color__btwhite;
+    color: var(--color__btwhite);
   }
   &:hover {
     color: inherit;
@@ -702,17 +702,17 @@ a.googlecal {
 
 .wp-block-file {
   a {
-    color: $color__btdarkgreen;
+    color: var(--color__btdarkgreen);
     @extend .has-medium-font-size;
   }
   .wp-block-file__button {
     @extend %bt-pill-link;
-    color: $color__btpurewhite;
-    background-color: $color__btdarkgreen;
+    color: var(--color__btpurewhite);
+    background-color: var(--color__btdarkgreen);
     @extend .has-medium-font-size;
     &:hover {
-      color: $color__btblack !important;
-      background-color: $color__btlightgreen;
+      color: var(--color__btblack) !important;
+      background-color: var(--color__btlightgreen);
     }
   }
 }
@@ -757,7 +757,7 @@ a.googlecal {
     }
   }
   .has-dark-green-color a {
-    color: $color__btdarkgreen;
+    color: var(--color__btdarkgreen);
   }
 }
 
@@ -856,7 +856,7 @@ a.googlecal {
 
 body.blog {
   a {
-    color: $color__btdarkgreen;
+    color: var(--color__btdarkgreen);
   }
   .site-main > article {
     margin-top: $btcmpPadding2;
@@ -870,7 +870,7 @@ body.blog {
       bottom: 0;
       height: 1px;
       opacity: 0.3;
-      background-color: $color__btdarkgreen;
+      background-color: var(--color__btdarkgreen);
     }
   }
   .entry-content {
@@ -891,10 +891,10 @@ body.blog {
     padding: 1em;
     bottom: 5em;
     margin: 0;
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     &:before {
       content: "";
-      background-color: $color__btdarkgreen;
+      background-color: var(--color__btdarkgreen);
       opacity: 0.8;
       position: absolute;
       width: 100%;
@@ -908,7 +908,7 @@ body.blog {
 }
 
 .blogtitle {
-  background: $color__btdarkgreen;
+  background: var(--color__btdarkgreen);
   height: 200px;
 }
 
@@ -918,12 +918,12 @@ body.blog {
   width: 100%;
   max-width: 300px;
   margin: 80px auto 0;
-  color: $color__btpurewhite;
+  color: var(--color__btpurewhite);
   text-align: center;
   a {
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     &:hover {
-      color: $color__btpurewhite;
+      color: var(--color__btpurewhite);
     }
   }
   p {
@@ -935,7 +935,7 @@ body.blog {
     width: 100%;
     z-index: -1;
     svg {
-      fill: $color__btdarkgreen;
+      fill: var(--color__btdarkgreen);
       transform-origin: 50% 50%;
       transition:
         transform 0.5s ease-out,
@@ -968,7 +968,7 @@ body.blog {
   border: none;
   @extend .has-medium-font-size;
   cursor: pointer;
-  background-color: $color__btpurewhite;
+  background-color: var(--color__btpurewhite);
   &:hover {
     opacity: 0.8;
   }
@@ -1034,7 +1034,7 @@ body.blog {
       position: absolute;
       height: 1px;
       left: 0;
-      background-color: $color__btblack;
+      background-color: var(--color__btblack);
       width: 100%;
       bottom: -25px;
     }
@@ -1059,26 +1059,26 @@ body.blog {
       }
     }
     .event_title {
-      color: $color__btblack;
+      color: var(--color__btblack);
       h2 {
         text-align: left;
         margin: 0;
-        color: $color__btblack;
+        color: var(--color__btblack);
         @extend .has-medium-font-size;
       }
     }
     .event_date {
       @extend .has-medium-font-size;
       font-weight: 900;
-      color: $color__btdarkgreen;
+      color: var(--color__btdarkgreen);
     }
     .event_time {
       @extend .has-medium-font-size;
       font-weight: 600;
-      color: $color__btdarkgreen;
+      color: var(--color__btdarkgreen);
     }
     .event_readmore {
-      color: $color__btdarkgreen;
+      color: var(--color__btdarkgreen);
     }
     .read-more {
       display: none;
@@ -1090,8 +1090,8 @@ body.blog {
   .pagination {
     margin-top: 50px;
     padding: 10px;
-    background-color: $color__btdarkgreen;
-    color: $color__btwhite;
+    background-color: var(--color__btdarkgreen);
+    color: var(--color__btwhite);
     text-align: right;
     .page-numbers {
       margin: 0;
@@ -1099,24 +1099,24 @@ body.blog {
       display: inline-block;
     }
     a {
-      color: $color__btwhite;
-      background-color: $color__btdarkgreen;
+      color: var(--color__btwhite);
+      background-color: var(--color__btdarkgreen);
       &:hover {
-        background-color: $color__btdarkestgreen;
+        background-color: var(--color__btdarkestgreen);
       }
     }
   }
 }
 
 .forohhhhhhhfourpage {
-  background-color: $color__btdarkestgreen;
+  background-color: var(--color__btdarkestgreen);
   min-height: 100vh !important;
   display: flex;
   justify-content: center;
   align-items: center;
   //height: 100vh;
   span {
-    color: $color__btwhite;
+    color: var(--color__btwhite);
     font-size: 2rem;
     padding: 0 25px;
     z-index: 2;
@@ -1124,7 +1124,7 @@ body.blog {
     max-width: 100%;
     span {
       font-size: 7rem;
-      color: $color__btred;
+      color: var(--color__btred);
       padding: 0 25px;
       padding-bottom: 0.3em;
       display: block;
@@ -1133,7 +1133,7 @@ body.blog {
     }
   }
   a {
-    color: $color__btlightgreen;
+    color: var(--color__btlightgreen);
   }
 }
 
@@ -1154,8 +1154,8 @@ body.blog {
   width: auto;
   max-width: 100%;
   path {
-    stroke: $color__btdarkgreen;
-    fill: $color__btlightgreen;
+    stroke: var(--color__btdarkgreen);
+    fill: var(--color__btlightgreen);
     opacity: 0.1;
   }
 }
@@ -1167,9 +1167,9 @@ body.blog {
 .menu-empty-message {
   @extend .has-medium-font-size;
   padding: 0.6rem 1rem;
-  border: 1px solid $color__btdarkestgreen;
+  border: 1px solid var(--color__btdarkestgreen);
   border-radius: $btsiteBorderRadius;
-  color: $color__btdarkestgreen;
+  color: var(--color__btdarkestgreen);
   text-align: center;
   opacity: 0;
   transform: translateY(-100%);
@@ -1209,9 +1209,9 @@ body.blog {
     align-items: center;
     gap: 0.28rem;
     min-width: 85%;
-    background-color: $color__btwhite;
-    color: $color__btdarkestgreen;
-    border: 1px solid $color__btdarkestgreen;
+    background-color: var(--color__btwhite);
+    color: var(--color__btdarkestgreen);
+    border: 1px solid var(--color__btdarkestgreen);
     svg {
       height: 1.25rem; // or whatever fits
       width: auto;
@@ -1232,7 +1232,7 @@ body.blog {
     &.is-hovering {
       svg {
         [data-anim] {
-          stroke: $color__btred; // change color while animating / hovered
+          stroke: var(--color__btred); // change color while animating / hovered
           animation: draw 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
         }
       }
@@ -1242,7 +1242,7 @@ body.blog {
     &.is-unhovering {
       svg {
         [data-anim] {
-          stroke: $color__btdarkestgreen; // revert color while reversing
+          stroke: var(--color__btdarkestgreen); // revert color while reversing
           animation: erase 650ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
         }
       }
@@ -1253,10 +1253,10 @@ body.blog {
     z-index: 1;
     overflow: visible;
     padding: 0.5rem 0.8rem;
-    background: $color__btwhite;
-    border: 1px solid $color__btdarkestgreen;
+    background: var(--color__btwhite);
+    border: 1px solid var(--color__btdarkestgreen);
     border-radius: $btsiteBorderRadius;
-    color: $color__btdarkestgreen;
+    color: var(--color__btdarkestgreen);
     cursor: pointer;
     transition:
       transform 0.12s ease,
@@ -1267,13 +1267,13 @@ body.blog {
       transform: translateY(-1px);
     }
     &:focus-visible {
-      outline: 2px dotted $color__btdarkestgreen;
+      outline: 2px dotted var(--color__btdarkestgreen);
       outline-offset: 2px;
     }
     &[aria-pressed="true"] {
-      background: $color__btdarkestgreen;
-      color: $color__btwhite;
-      border-color: $color__btdarkestgreen;
+      background: var(--color__btdarkestgreen);
+      color: var(--color__btwhite);
+      border-color: var(--color__btdarkestgreen);
       transform: translateY(-1px);
     }
     @media (prefers-reduced-motion: reduce) {
@@ -1288,12 +1288,12 @@ body.blog {
 
 .brewery-menu,
 .drinks-menu {
-  color: $color__btblack;
-  background: $color__btpurewhite;
+  color: var(--color__btblack);
+  background: var(--color__btpurewhite);
   margin-bottom: 4em;
   padding-bottom: 0;
   overflow: hidden;
-  //border-bottom: 1px solid $color__btdarkestgreen;
+  //border-bottom: 1px solid var(--color__btdarkestgreen);
   display: flex;
   flex-direction: column;
   &.empty {
@@ -1357,7 +1357,7 @@ body.blog {
       position: absolute;
       left: 0;
       top: 0;
-      background-color: $color__btdarkestgreen;
+      background-color: var(--color__btdarkestgreen);
     }
   }
   .title-price {
@@ -1375,7 +1375,7 @@ body.blog {
     @extend .has-medium-font-size;
     font-weight: 400;
     padding-left: 0.5em;
-    background: $color__btpurewhite;
+    background: var(--color__btpurewhite);
     z-index: 2;
   }
   .title-price {
@@ -1393,7 +1393,7 @@ body.blog {
   }
   .title-wrap {
     display: flex;
-    background-color: $color__btpurewhite;
+    background-color: var(--color__btpurewhite);
     z-index: 2;
   }
   .tags {
@@ -1424,7 +1424,7 @@ body.blog {
 }
 
 .section-title.heading-3 {
-  color: $color__btpurewhite;
+  color: var(--color__btpurewhite);
   padding: 1vh 1em;
   border-radius: $btsiteBorderRadius;
   margin: 0;
@@ -1442,7 +1442,7 @@ body.blog {
     left: 0;
     top: 0;
     border-radius: 3px;
-    background-color: $color__btdarkgreen;
+    background-color: var(--color__btdarkgreen);
     z-index: 1;
   }
   &:after {
@@ -1454,7 +1454,7 @@ body.blog {
     z-index: -1;
     left: 0;
     top: 0;
-    background-color: $color__btdarkestgreen;
+    background-color: var(--color__btdarkestgreen);
     opacity: 0.95;
     border-radius: 3px;
   }
@@ -1481,7 +1481,7 @@ body.blog {
     margin: 0;
     font-size: 1.6rem;
     white-space: nowrap;
-    color: $color__btdarkestgreen;
+    color: var(--color__btdarkestgreen);
     //padding-left: 1em;
     border-radius: $btsiteBorderRadius;
     margin: 0;
@@ -1495,7 +1495,7 @@ body.blog {
       position: absolute;
       left: 0;
       top: 0;
-      background-color: $color__btdarkestgreen;
+      background-color: var(--color__btdarkestgreen);
     }
     */
   }
@@ -1504,11 +1504,11 @@ body.blog {
 .footer-hours {
   margin: 0 0 clamp(10px, 2vh, 20px) 0;
   dt {
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     font-weight: normal;
   }
   dd {
-    color: $color__btpurewhite;
+    color: var(--color__btpurewhite);
     margin: 0;
     padding-inline-start: 1rem;
     margin: 0 0 clamp(10px, 2vh, 20px) 0;
@@ -1529,7 +1529,7 @@ body.blog {
   .drinks-menu,
   .brewery-menu {
     .tags {
-      //background-color: $color__btpurewhite;
+      //background-color: var(--color__btpurewhite);
       align-self: flex-start;
     }
     .price {
@@ -1588,9 +1588,9 @@ body.blog {
       align-items: baseline;
       gap: 0.28rem;
       min-width: 85%;
-      background-color: $color__btwhite;
-      color: $color__btdarkestgreen;
-      border: 1px solid $color__btdarkestgreen;
+      background-color: var(--color__btwhite);
+      color: var(--color__btdarkestgreen);
+      border: 1px solid var(--color__btdarkestgreen);
       svg {
         height: 1.25rem; // or whatever fits
         width: auto;
@@ -1750,7 +1750,7 @@ body.blog {
   .btscrollbars {
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
-    scrollbar-color: $color__btdarkestgreen $color__btpurewhite;
+    scrollbar-color: var(--color__btdarkestgreen) var(--color__btpurewhite);
     scrollbar-width: thin;
   }
 
@@ -1923,7 +1923,7 @@ body.blog {
   }
 
   .forohhhhhhhfourpage span {
-    color: $color__btwhite;
+    color: var(--color__btwhite);
     font-size: 1.8rem;
   }
 
@@ -1936,7 +1936,7 @@ body.blog {
 //untappd
 .ut-menu {
   .h1 {
-    color: $color__btdarkgreen !important;
+    color: var(--color__btdarkgreen) !important;
     text-transform: none !important;
   }
   .menu-header {
@@ -1946,7 +1946,7 @@ body.blog {
     border-bottom: none !important;
   }
   a.ut-more {
-    color: $color__btdarkgreen !important;
+    color: var(--color__btdarkgreen) !important;
     font-weight: 600;
   }
   .item-name {
@@ -1956,7 +1956,7 @@ body.blog {
     display: none;
   }
   .menu-items-container .menu-item:nth-child(odd) {
-    background-color: $color__btlightgreen !important;
+    background-color: var(--color__btlightgreen) !important;
   }
   .menu-items-container
     .menu-item
@@ -1975,7 +1975,7 @@ body.blog {
     display: none;
   }
   a {
-    color: $color__btdarkgreen !important;
+    color: var(--color__btdarkgreen) !important;
     font-weight: 600;
   }
 }
@@ -1988,10 +1988,10 @@ body.blog {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: $color__btdarkgreen;
+  background-color: var(--color__btdarkgreen);
   padding: 1em;
   border-radius: $btsiteBorderRadius;
-  color: $color__btpurewhite;
+  color: var(--color__btpurewhite);
   h3 {
     margin: 0;
     @extend .has-medium-font-size;
@@ -2010,7 +2010,7 @@ body.blog {
     @extend .has-medium-font-size;
   }
   tr:nth-child(even) {
-    background-color: $color__btwhite;
+    background-color: var(--color__btwhite);
   }
 }
 

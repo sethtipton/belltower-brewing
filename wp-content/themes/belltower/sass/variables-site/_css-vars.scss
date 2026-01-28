@@ -1,0 +1,48 @@
+:root {
+  --color__btdarkestgreen: #515441;
+  --color__btdarkgreen: #787851;
+  --color__btdarkgreen-bg: #5e5f3b;
+  --color__btblack: #231f20;
+  --color__btpink: #e0cdc0;
+  --color__btlightgreen: #bab488;
+  --color__btyellow: #b8a881;
+  --color__btred: #ba583b;
+  --color__btwhite: #e5e5e5;
+  --color__btpurewhite: #ffffff;
+  --color__btdeepnavy: #17292d;
+
+  --color__btdarkestgreen-rgb: 81, 84, 65;
+  --color__btdarkgreen-rgb: 120, 120, 81;
+  --color__btdarkgreen-bg-rgb: 94, 95, 59;
+  --color__btblack-rgb: 35, 31, 32;
+  --color__btpink-rgb: 224, 205, 192;
+  --color__btlightgreen-rgb: 186, 180, 136;
+  --color__btyellow-rgb: 184, 168, 129;
+  --color__btred-rgb: 186, 88, 59;
+  --color__btwhite-rgb: 229, 229, 229;
+  --color__btpurewhite-rgb: 255, 255, 255;
+  --color__btdeepnavy-rgb: 23, 41, 45;
+
+  --color__background-body: var(--color__btpurewhite);
+  --color__background-screen: #f1f1f1;
+  --color__background-hr: #ccc;
+  --color__background-button: #e6e6e6;
+  --color__background-pre: #eee;
+  --color__background-ins: #fff9c0;
+
+  --color__text-screen: #21759b;
+  --color__text-input: #666;
+  --color__text-input-focus: #111;
+  --color__link: #4169e1;
+  --color__link-visited: #800080;
+  --color__link-hover: #191970;
+  --color__text-main: var(--color__btblack);
+
+  --color__border-button: #ccc #ccc #bbb;
+  --color__border-button-hover: #ccc #bbb #aaa;
+  --color__border-button-focus: #aaa #bbb #bbb;
+  --color__border-input: #ccc;
+  --color__border-abbr: #666;
+
+  --bt-mobile-breakpoint: 600px;
+}

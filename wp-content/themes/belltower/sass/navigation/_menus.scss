@@ -20,7 +20,7 @@
 }
 
 .footer-legal {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(var(--color__btblack-rgb), 0.2);
 }
 
 #legal-menu {
@@ -32,7 +32,7 @@
     position: relative;
     &:before {
       content: "";
-      background-color: #fff;
+      background-color: var(--color__btpurewhite);
       width: 1px;
       display: block;
       height: 100%;
@@ -41,7 +41,7 @@
     }
   }
   a {
-    color: #fff;
+    color: var(--color__btpurewhite);
     text-decoration: none;
     font-size: 0.9rem;
     &:hover {

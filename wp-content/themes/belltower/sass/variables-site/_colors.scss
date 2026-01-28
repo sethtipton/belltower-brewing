@@ -1,141 +1,70 @@
-//Old A11Y Fails
-//$color__btdarkestgreen: #515441;
-//$color__btdarkgreen: #808166;
-//$color__btlightgreen: #BAB488;
-//
-$color__btdarkestgreen: #515441;
-$color__btdarkgreen: #787851;
-$color__btdarkgreen-bg: #5e5f3b;
-$color__btblack: #231f20;
-$color__btpink: #e0cdc0;
-$color__btlightgreen: #bab488;
-$color__btyellow: #b8a881;
-$color__btred: #ba583b;
-$color__btwhite: #e5e5e5;
-$color__btpurewhite: #ffffff;
-
-:root {
-  --color__btdarkestgreen: #{$color__btdarkestgreen};
-  --color__btdarkgreen: #{$color__btdarkgreen};
-  --color__btdarkgreen-bg: #{$color__btdarkgreen-bg};
-  --color__btblack: #{$color__btblack};
-  --color__btpink: #{$color__btpink};
-  --color__btlightgreen: #{$color__btlightgreen};
-  --color__btyellow: #{$color__btyellow};
-  --color__btred: #{$color__btred};
-  --color__btwhite: #{$color__btwhite};
-  --color__btpurewhite: #{$color__btpurewhite};
-
-  --color__btdarkestgreen-rgb: #{red($color__btdarkestgreen)},
-    #{green($color__btdarkestgreen)}, #{blue($color__btdarkestgreen)};
-  --color__btdarkgreen-rgb: #{red($color__btdarkgreen)},
-    #{green($color__btdarkgreen)}, #{blue($color__btdarkgreen)};
-  --color__btdarkgreen-bg-rgb: #{red($color__btdarkgreen-bg)},
-    #{green($color__btdarkgreen-bg)}, #{blue($color__btdarkgreen-bg)};
-  --color__btblack-rgb: #{red($color__btblack)}, #{green($color__btblack)},
-    #{blue($color__btblack)};
-  --color__btpink-rgb: #{red($color__btpink)}, #{green($color__btpink)},
-    #{blue($color__btpink)};
-  --color__btlightgreen-rgb: #{red($color__btlightgreen)},
-    #{green($color__btlightgreen)}, #{blue($color__btlightgreen)};
-  --color__btyellow-rgb: #{red($color__btyellow)}, #{green($color__btyellow)},
-    #{blue($color__btyellow)};
-  --color__btred-rgb: #{red($color__btred)}, #{green($color__btred)},
-    #{blue($color__btred)};
-  --color__btwhite-rgb: #{red($color__btwhite)}, #{green($color__btwhite)},
-    #{blue($color__btwhite)};
-  --color__btpurewhite-rgb: #{red($color__btpurewhite)},
-    #{green($color__btpurewhite)}, #{blue($color__btpurewhite)};
-}
-
-$color__background-body: $color__btpurewhite;
-$color__background-screen: #f1f1f1;
-$color__background-hr: #ccc;
-$color__background-button: #e6e6e6;
-$color__background-pre: #eee;
-$color__background-ins: #fff9c0;
-
-$color__text-screen: #21759b;
-$color__text-input: #666;
-$color__text-input-focus: #111;
-$color__link: #4169e1;
-$color__link-visited: #800080;
-$color__link-hover: #191970;
-$color__text-main: $color__btblack;
-
-$color__border-button: #ccc #ccc #bbb;
-$color__border-button-hover: #ccc #bbb #aaa;
-$color__border-button-focus: #aaa #bbb #bbb;
-$color__border-input: #ccc;
-$color__border-abbr: #666;
-
 .has-darkest-green-color {
-  color: $color__btdarkestgreen !important;
+  color: var(--color__btdarkestgreen) !important;
 }
 a.has-darkest-green-color:hover {
-  color: $color__btdarkestgreen !important;
+  color: var(--color__btdarkestgreen) !important;
 }
 .has-darkest-green-bg {
-  background-color: $color__btdarkestgreen !important;
+  background-color: var(--color__btdarkestgreen) !important;
 }
 
 .has-dark-green-color {
-  color: $color__btdarkgreen !important;
+  color: var(--color__btdarkgreen) !important;
 }
 a.has-dark-green-color:hover {
-  color: $color__btdarkgreen !important;
+  color: var(--color__btdarkgreen) !important;
 }
 .has-dark-green-bg {
-  background-color: $color__btdarkgreen-bg !important;
+  background-color: var(--color__btdarkgreen-bg) !important;
 }
 
 .has-black-color {
-  color: $color__btblack !important;
+  color: var(--color__btblack) !important;
 }
 .has-black-bg {
-  background-color: $color__btblack !important;
+  background-color: var(--color__btblack) !important;
 }
 
 .has-pink-color {
-  color: $color__btpink !important;
+  color: var(--color__btpink) !important;
 }
 .has-pink-bg {
-  background-color: $color__btpink !important;
+  background-color: var(--color__btpink) !important;
 }
 
 .has-light-green-color {
-  color: $color__btlightgreen !important;
+  color: var(--color__btlightgreen) !important;
 }
 .has-light-green-bg {
-  background-color: $color__btlightgreen !important;
+  background-color: var(--color__btlightgreen) !important;
 }
 
 .has-yellow-color {
-  color: $color__btyellow !important;
+  color: var(--color__btyellow) !important;
 }
 .has-yellow-bg {
-  background-color: $color__btyellow !important;
+  background-color: var(--color__btyellow) !important;
 }
 
 .has-red-color {
-  color: $color__btred !important;
+  color: var(--color__btred) !important;
 }
 .has-red-bg {
-  background-color: $color__btred !important;
+  background-color: var(--color__btred) !important;
 }
 
 .has-pure-white-color {
-  color: $color__btpurewhite !important;
+  color: var(--color__btpurewhite) !important;
 }
 .has-pure-white-bg {
-  background-color: $color__btpurewhite !important;
+  background-color: var(--color__btpurewhite) !important;
 }
 
 .has-white-color {
-  color: $color__btwhite !important;
+  color: var(--color__btwhite) !important;
 }
 .has-white-bg {
-  background-color: $color__btwhite !important;
+  background-color: var(--color__btwhite) !important;
 }
 
 .entry-header {
@@ -171,24 +100,24 @@ a.has-dark-green-color:hover {
     mix-blend-mode: multiply;
   }
   &.black:after {
-    background-color: $color__btblack;
+    background-color: var(--color__btblack);
   }
   &.darkgreen:after {
-    background-color: $color__btdarkgreen-bg;
+    background-color: var(--color__btdarkgreen-bg);
   }
   &.lightgreen:after {
-    background-color: $color__btlightgreen;
+    background-color: var(--color__btlightgreen);
   }
   &.pink:after {
-    background-color: $color__btpink;
+    background-color: var(--color__btpink);
   }
   &.red:after {
-    background-color: $color__btred;
+    background-color: var(--color__btred);
   }
   &.white:after {
-    background-color: $color__btwhite;
+    background-color: var(--color__btwhite);
   }
   &.purewhite:after {
-    background-color: $color__btpurewhite;
+    background-color: var(--color__btpurewhite);
   }
 }

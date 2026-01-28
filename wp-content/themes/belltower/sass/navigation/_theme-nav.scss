@@ -3,7 +3,7 @@
   width: 100%;
   &:after {
     content: "";
-    background-color: $color__btblack;
+    background-color: var(--color__btblack);
     position: absolute;
     top: 0;
     right: 0;
@@ -60,13 +60,13 @@
     right: 0;
     bottom: -1px;
     height: 1px;
-    background-color: $color__btblack;
+    background-color: var(--color__btblack);
     opacity: 0;
     transition: opacity var(--vt-duration) var(--vt-ease);
   }
   .scrolled &,
   .menu-toggled & {
-    background: $color__btpurewhite;
+    background: var(--color__btpurewhite);
   }
   .scrolled & {
     box-shadow: 0 10px 10px rgb(0, 0, 0, 0.2);
@@ -80,7 +80,7 @@
     }
   }
   .page-template-belltower-home & {
-    background-color: $color__btdarkestgreen;
+    background-color: var(--color__btdarkestgreen);
   }
 }
 
@@ -230,7 +230,7 @@ body:has(#wpadminbar) #masthead {
         }
       }
       a {
-        color: $color__btpurewhite;
+        color: var(--color__btpurewhite);
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
@@ -244,7 +244,7 @@ body:has(#wpadminbar) #masthead {
           opacity 300ms ease,
           color 300ms ease;
         &:after {
-          background-color: $color__btpurewhite;
+          background-color: var(--color__btpurewhite);
           @extend .bt-after;
           //transform: translate(0, calc(-1 * (#{$u30navPadding} - 8px)));
           transform: translate(0, -4px);
@@ -270,13 +270,13 @@ body:has(#wpadminbar) #masthead {
         min-height: auto;
         svg {
           transform: translate(0, 2px);
-          fill: $color__btpurewhite;
+          fill: var(--color__btpurewhite);
           transition: fill 300ms ease;
           .scrolled & {
-            fill: $color__btblack;
+            fill: var(--color__btblack);
           }
           .page-template-belltower-home.scrolled & {
-            fill: $color__btpurewhite;
+            fill: var(--color__btpurewhite);
           }
         }
       }
@@ -295,17 +295,17 @@ body:has(#wpadminbar) #masthead {
       //left:0!important;
       //left:calc((#{$u30navPadding} + #{$u30navPadding}));
       //END TEST
-      background: rgba($color__btdarkestgreen, 0.8);
+      background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
       width: auto;
       padding: 0px 10px;
       .scrolled & {
-        background-color: $color__btpurewhite;
+        background-color: var(--color__btpurewhite);
       }
       .page-template-belltower-home & {
-        background-color: $color__btdarkestgreen;
+        background-color: var(--color__btdarkestgreen);
       }
       .single-post & {
-        background-color: $color__btdarkgreen;
+        background-color: var(--color__btdarkgreen);
       }
       li {
         padding-top: 0;
@@ -363,15 +363,15 @@ body:has(#wpadminbar) #masthead {
     backface-visibility: hidden;
     transition: 200ms;
     stroke-width: 2px;
-    stroke: $color__btpurewhite;
+    stroke: var(--color__btpurewhite);
     .scrolled & {
-      stroke: $color__btdarkgreen;
+      stroke: var(--color__btdarkgreen);
     }
     .page-template-belltower-home.scrolled & {
-      stroke: $color__btpurewhite;
+      stroke: var(--color__btpurewhite);
     }
     .page-template-belltower-home.menu-toggled & {
-      stroke: $color__btpurewhite;
+      stroke: var(--color__btpurewhite);
     }
     &.p1,
     &.p2,
@@ -419,7 +419,7 @@ body:has(#wpadminbar) #masthead {
         opacity 100ms ease-in 100ms,
         -webkit-transform 100ms ease-in 100ms;
       opacity: 1;
-      stroke: $color__btdarkgreen;
+      stroke: var(--color__btdarkgreen);
     }
     .p1 {
       transform: translate(0, 8px);
@@ -439,17 +439,17 @@ body:has(#wpadminbar) #masthead {
 body {
   &.scrolled {
     .main-navigation ul li a {
-      color: $color__btblack;
+      color: var(--color__btblack);
       &:after {
-        background: $color__btblack;
+        background: var(--color__btblack);
       }
     }
   }
   &.scrolled.page-template-belltower-home {
     .main-navigation ul li a {
-      color: $color__btpurewhite;
+      color: var(--color__btpurewhite);
       &:after {
-        background: $color__btpurewhite;
+        background: var(--color__btpurewhite);
       }
     }
   }
@@ -517,19 +517,19 @@ body {
     }
     svg {
       height: 100%;
-      fill: $color__btpurewhite;
+      fill: var(--color__btpurewhite);
       transition: fill 300ms ease;
       .scrolled & {
-        fill: $color__btdarkgreen;
+        fill: var(--color__btdarkgreen);
       }
       .page-template-belltower-home.scrolled & {
-        fill: $color__btpurewhite;
+        fill: var(--color__btpurewhite);
       }
       .menu-toggled & {
-        fill: $color__btdarkgreen;
+        fill: var(--color__btdarkgreen);
       }
       .page-template-belltower-home.menu-toggled & {
-        fill: $color__btpurewhite;
+        fill: var(--color__btpurewhite);
       }
     }
 
@@ -559,7 +559,7 @@ body {
   }
 
   .scrolled .main-navigation ul li a {
-    color: $color__btdarkgreen;
+    color: var(--color__btdarkgreen);
   }
 
   .menu-toggle {
@@ -583,12 +583,12 @@ body {
     background: transparent;
     pointer-events: none;
     display: block;
-    background-color: $color__btpurewhite;
+    background-color: var(--color__btpurewhite);
     transition: opacity 300ms ease-in-out;
     width: 100%;
     opacity: 0;
     z-index: 11;
-    //.page-template-belltower-home & {background-color:$color__btdarkgreen;}
+    //.page-template-belltower-home & {background-color:var(--color__btdarkgreen);}
     @extend .btscrollbars;
     li {
       padding-left: 5px;
@@ -597,11 +597,11 @@ body {
       a {
         padding-top: 8px;
         padding-bottom: 8px;
-        color: $color__btdarkestgreen;
+        color: var(--color__btdarkestgreen);
         height: auto !important;
         font-size: 1.2rem;
         padding-left: 0;
-        //.page-template-belltower-home &{color:$color__btpurewhite;}
+        //.page-template-belltower-home &{color:var(--color__btpurewhite);}
         &:after {
           display: none;
         }
@@ -627,7 +627,7 @@ body {
       background-color: transparent;
       visibility: visible;
       transform: translateY(0);
-      border-left: 1px solid $color__btdarkestgreen;
+      border-left: 1px solid var(--color__btdarkestgreen);
       li {
         padding-left: 0.5em;
         padding-top: 0;
@@ -649,7 +649,7 @@ body {
         position: absolute;
         bottom: 0;
         height: 1px;
-        background-color: $color__btblack;
+        background-color: var(--color__btblack);
         opacity: 0.1;
         right: 24px;
         left: 0px;
@@ -671,9 +671,9 @@ body {
   }
 
   .main-navigation ul li.menu-item-home a {
-    color: $color__btdarkgreen;
+    color: var(--color__btdarkgreen);
     .page-template-belltower-home & {
-      color: $color__btpurewhite;
+      color: var(--color__btpurewhite);
     }
   }
 
@@ -682,7 +682,7 @@ body {
     position: absolute;
     bottom: 0;
     height: 1px;
-    background-color: $color__btblack;
+    background-color: var(--color__btblack);
     opacity: 0.1;
     right: 24px;
     left: 5px;

@@ -1,10 +1,11 @@
 @use "../sass/variables-site/colors" as *;
 @use "../sass/variables-site/structure" as *;
+@import "../../../tokens.css";
 
 $text: var(--color__btblack);
 $bt-mobile-breakpoint: $mobileBreakpoint;
-$white: #ffffff;
-$black: #000000;
+$white: var(--color__btpurewhite);
+$black: var(--color__btblack);
 $grey: #9a9a9a;
 $beeercardgap: 0.5rem;
 $rightcolumnshift: -7px;
@@ -107,7 +108,6 @@ $pint-width: 60px;
 
 .pairing-form-wrapper {
   display: flex;
-  //justify-content: end;
   flex-direction: column;
   button {
     background-color: transparent;
@@ -119,7 +119,7 @@ $pint-width: 60px;
     }
     &.suggestbtn {
       border: none;
-      background-color: $color__btdarkestgreen;
+      background-color: var(--color__btdarkestgreen);
       color: $white;
       &[aria-disabled="true"] {
         background-color: $grey;
@@ -157,24 +157,16 @@ $pint-width: 60px;
   flex-direction: row;
   gap: 1rem;
 }
-.pairing-form-pint {
-}
-.pairing-selection {
-}
 
 .pairing-form-status {
-  //margin-top: 1rem;
   font-weight: 600;
-  background-color: $color__btdarkestgreen;
+  background-color: var(--color__btdarkestgreen);
   color: var(--color__btwhite);
   .bt-loading-message {
     color: var(--color__btwhite);
   }
   .bt-error-message {
     color: red;
-  }
-  .bt-success-message {
-    //color: green;
   }
 }
 
@@ -262,7 +254,6 @@ $pint-width: 60px;
       grid-column: 1 / -1;
       display: grid;
       grid-auto-flow: column;
-      //gap: 0.5rem;
       padding: 0.7rem 0.7rem 0 0.7rem;
     }
     .beer-card-leftclmn {
@@ -320,7 +311,6 @@ $pint-width: 60px;
 
 .beer-details-panel {
   overflow: hidden;
-  //background: rgba(var(--color__btwhite-rgb), 0.8);
   border-left: 2px solid var(--beer-color, var(--color__btblack));
 }
 
@@ -620,7 +610,6 @@ span.ai-text {
 
 .beer-history-content {
   overflow: hidden;
-  //background: rgba(var(--color__btwhite-rgb), 0.8);
   padding-inline-start: 0.5rem;
   padding-top: 0.5rem;
   p {
@@ -633,7 +622,6 @@ span.ai-text {
 
 .pairings-panel {
   overflow: hidden;
-  //background: rgba(var(--color__btwhite-rgb), 0.8);
   padding-inline-start: 0.5rem;
   padding-top: 0.5rem;
 }
@@ -725,7 +713,6 @@ span.ai-text {
     overflow-y: auto;
     overflow-x: hidden;
     padding-inline-end: 5px;
-    //padding-bottom: 5dvh;
     scrollbar-gutter: stable;
   }
   .flight-tray-wrapper {
@@ -928,8 +915,6 @@ span.ai-text {
 }
 
 .pairing-form-fetch {
-  //outline: 1px solid var(--color__btblack);
-  //background: var(--color__btwhite);
   position: absolute;
   z-index: 0;
   top: 100%;
@@ -939,15 +924,12 @@ span.ai-text {
   font-size: 0.9rem;
   width: 100%;
   text-align: center;
-  //box-shadow: 0 0 0 0 rgba(var(--color__btblack-rgb), 0);
-  //animation: bt-glow 4s linear infinite;
 }
 
 .pairing-form-error {
   outline: 1px solid red;
 }
 .pairing-form-success {
-  //outline: 1px solid var(--color__btblack);
   padding: 0 0.3rem;
 }
 

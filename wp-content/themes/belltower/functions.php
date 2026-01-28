@@ -371,7 +371,10 @@ add_action( 'widgets_init', 'belltower_widgets_init' );
  * Enqueue scripts and styles.
  */
 function belltower_scripts() {
-	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), [], _S_VERSION );
+	$tokens_path = get_stylesheet_directory() . '/tokens.css';
+	$tokens_ver  = file_exists( $tokens_path ) ? filemtime( $tokens_path ) : _S_VERSION;
+	wp_enqueue_style( 'belltower-tokens', get_stylesheet_directory_uri() . '/tokens.css', [], $tokens_ver );
+	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), [ 'belltower-tokens' ], _S_VERSION );
 	wp_style_add_data( 'belltower-style', 'rtl', 'replace' );
 	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], _S_VERSION, true );
 	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], _S_VERSION, true );

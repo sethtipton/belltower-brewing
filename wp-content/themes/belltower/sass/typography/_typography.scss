@@ -4,7 +4,7 @@ input,
 select,
 optgroup,
 textarea {
-  color: $color__text-main;
+  color: var(--color__text-main);
   font-family: $font__main;
   //src: $font__src;
   src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
@@ -14,7 +14,7 @@ textarea {
 
 //untappd
 .ut-menu {
-  color: $color__text-main !important;
+  color: var(--color__text-main) !important;
   font-family: $font__main !important;
   src: url("/wp-content/themes/belltower/fonts/RaisonnePro-Regular.ttf");
   font-size: $basefontsize !important;

@@ -7,6 +7,9 @@ export default defineConfig({
   base: '/wp-content/themes/belltower/pairing-app/dist/',
   server: {
     port: 5173,
+    fs: {
+      allow: ['..'],
+    },
     proxy: {
       '/wp-json': {
         target: 'http://belltower.local',

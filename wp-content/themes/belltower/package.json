@@ -40,6 +40,7 @@
   "scripts": {
     "compile:css": "gulp sass && stylelint '*.css' --fix || true && stylelint '*.css' --fix",
     "compile:rtl": "rtlcss style.css style-rtl.css",
+    "build:tokens": "sass sass/tokens.scss tokens.css",
     "lint:scss": "wp-scripts lint-style 'sass/**/*.scss'",
     "lint:js": "wp-scripts lint-js 'js/*.js'",
     "bundle": "node bin/bundle.js"

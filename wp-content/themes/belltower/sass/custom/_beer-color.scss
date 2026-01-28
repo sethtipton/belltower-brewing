@@ -1,6 +1,6 @@
 .beer-item,
 .bt-beer-card {
-  color: $color__btdarkestgreen;
+  color: var(--color__btdarkestgreen);
   .beer-title {
     mix-blend-mode: difference;
   }
@@ -21,7 +21,7 @@
 
 .bt-beer-card {
   border-radius: $btsiteBorderRadius;
-  border-color: $color__btdarkestgreen;
+  border-color: var(--color__btdarkestgreen);
   padding: 1em;
   display: grid;
   gap: 1em;
@@ -43,15 +43,15 @@
       fill: var(--beer-color);
     }
     .cls-2 {
-      fill: #fff;
+      fill: var(--color__btpurewhite);
     }
     .cls-3 {
-      fill: black;
+      fill: var(--color__btblack);
       opacity: 1;
     }
     .cls-4 {
       opacity: 0.14;
-      fill: #17292d;
+      fill: var(--color__btdeepnavy);
     }
   }
   .bt-beer-content {
@@ -70,8 +70,8 @@
     font-weight: bold;
     font-size: 1.1em;
     grid-column: 1 / 3;
-    background-color: $color__btdarkestgreen;
-    color: #fff;
+    background-color: var(--color__btdarkestgreen);
+    color: var(--color__btpurewhite);
     padding: 0.2em 0.5em;
     border-radius: $btsiteBorderRadius;
     margin-bottom: 0.5em;
@@ -91,15 +91,15 @@
     grid-row: 2 / 4;
   }
   &.bt-beer-highlight {
-    outline: 1px solid $color__btdarkestgreen;
+    outline: 1px solid var(--color__btdarkestgreen);
     margin-top: 1em;
   }
   .bt-beer-history-btn {
     display: block;
     padding: 6px 10px;
-    border: 1px solid $color__btdarkestgreen;
-    background: $color__btdarkestgreen;
-    color: #fff;
+    border: 1px solid var(--color__btdarkestgreen);
+    background: var(--color__btdarkestgreen);
+    color: var(--color__btpurewhite);
     cursor: pointer;
     margin: 1em 0;
   }
@@ -114,20 +114,20 @@
 
 .bt-q-opt,
 .bt-chip {
-  background-color: $color__btwhite;
-  color: $color__btdarkestgreen;
+  background-color: var(--color__btwhite);
+  color: var(--color__btdarkestgreen);
   border: none;
-  outline: 1px solid $color__btdarkestgreen;
+  outline: 1px solid var(--color__btdarkestgreen);
 }
 
 .bt-q-opt.active,
 .bt-chip.active {
-  background-color: $color__btdarkestgreen;
-  color: $color__btwhite;
+  background-color: var(--color__btdarkestgreen);
+  color: var(--color__btwhite);
   border: none;
-  outline: 1px solid $color__btwhite;
+  outline: 1px solid var(--color__btwhite);
 }
 
 #bt-favoriteBeer {
-  color: black;
+  color: var(--color__btblack);
 }
