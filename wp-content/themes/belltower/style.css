@@ -899,6 +899,8 @@ a:hover, a:active {
   inset: 0 auto auto 0;
   z-index: 10;
   background-color: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   transition: opacity var(--vt-duration) var(--vt-ease);
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
@@ -921,6 +923,8 @@ a:hover, a:active {
 }
 .scrolled #masthead, .menu-toggled #masthead {
   background: var(--color__btpurewhite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .scrolled #masthead {
   box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
@@ -960,18 +964,44 @@ body:has(#wpadminbar) #masthead {
   padding-left: 0;
 }
 .main-navigation ul ul {
+  background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
   float: left;
   position: absolute;
   top: 100%;
   left: 0;
   z-index: 99999;
   flex-flow: wrap;
-  padding-top: 1em;
   opacity: 0;
   visibility: hidden;
   transform: translateY(6px);
   pointer-events: none;
   transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+  width: auto;
+  padding: 0px 10px;
+}
+.scrolled .main-navigation ul ul {
+  background-color: var(--color__btpurewhite);
+}
+.page-template-belltower-home .main-navigation ul ul {
+  background-color: var(--color__btdarkestgreen);
+}
+.single-post .main-navigation ul ul {
+  background-color: var(--color__btdarkgreen);
+}
+.main-navigation ul ul li {
+  padding-top: 0;
+}
+.main-navigation ul ul li a {
+  width: auto;
+  white-space: nowrap;
+  padding: 0.5em 0;
+}
+.main-navigation ul ul li a:after {
+  left: 0 !important;
+  width: auto !important;
+}
+.main-navigation ul ul ul li {
+  padding-top: 0;
 }
 .main-navigation ul ul ul {
   left: 100%;
@@ -1043,7 +1073,7 @@ body:has(#wpadminbar) #masthead {
 .main-navigation ul li.menu-item-home {
   order: 4;
 }
-.main-navigation ul li.menu-item-home span {
+.main-navigation ul li.menu-item-home span.sr-only {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   height: 1px;
@@ -1126,35 +1156,6 @@ body:has(#wpadminbar) #masthead {
 }
 .main-navigation ul li.current-menu-item > a:after {
   opacity: 1;
-}
-.main-navigation ul ul {
-  background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
-  width: auto;
-  padding: 0px 10px;
-}
-.scrolled .main-navigation ul ul {
-  background-color: var(--color__btpurewhite);
-}
-.page-template-belltower-home .main-navigation ul ul {
-  background-color: var(--color__btdarkestgreen);
-}
-.single-post .main-navigation ul ul {
-  background-color: var(--color__btdarkgreen);
-}
-.main-navigation ul ul li {
-  padding-top: 0;
-}
-.main-navigation ul ul li a {
-  width: auto;
-  white-space: nowrap;
-  padding: 0.5em 0;
-}
-.main-navigation ul ul li a:after {
-  left: 0 !important;
-  width: auto !important;
-}
-.main-navigation ul ul ul li {
-  padding-top: 0;
 }
 
 /* Small menu. */
@@ -1294,15 +1295,28 @@ body.scrolled.page-template-belltower-home .main-navigation ul li a:after {
     display: flex;
     flex-direction: row-reverse;
   }
+  .main-navigation ul li.home a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
   .main-navigation ul li.home a svg {
     display: none;
   }
   .main-navigation ul li.home a span {
     display: block;
   }
+  .menu-logo-slot {
+    display: inline-block;
+    width: 154px;
+    aspect-ratio: 154/50;
+    height: auto;
+  }
   .mlogo {
     display: block;
     height: 44px;
+    width: 154px;
+    aspect-ratio: 154/50;
   }
   .mlogo span {
     clip: rect(0 0 0 0);

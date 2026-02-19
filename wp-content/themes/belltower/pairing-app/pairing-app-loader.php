@@ -139,3 +139,12 @@ function bt_pairing_app_shortcode( $atts = array() ) {
 	return '<div id="pairing-app-root" aria-live="polite"></div><script>console.info("[pairing-app] shortcode rendered", { root: !!document.getElementById("pairing-app-root") });</script>';
 }
 add_shortcode( 'pairing_app', 'bt_pairing_app_shortcode' );
+
+/**
+ * Shortcode [parking] — prints the root div where React will mount.
+ */
+function bt_parking_app_shortcode( $atts = array() ) {
+	bt_pairing_app_enqueue_assets();
+	return '<div id="parking" aria-live="polite"></div><script>console.info("[parking] shortcode rendered", { root: !!document.getElementById("parking") });</script>';
+}
+add_shortcode( 'parking', 'bt_parking_app_shortcode' );

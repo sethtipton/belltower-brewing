@@ -226,12 +226,15 @@ var btlogo = '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/200
 var btbelllogo = '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 593.87"><defs></defs><path class="cls-1" d="M200,0C89.71,0,0,89.71,0,200V503.44H27V200c0-95.41,77.62-173,173-173s173,77.61,173,173V503.44h27V200C400,89.71,310.27,0,200,0Z"/><path class="cls-1" d="M200,62.18C124,62.18,62.18,124,62.18,200V503.43h27V200a110.85,110.85,0,0,1,221.7,0V503.43h27V200C337.81,124,276,62.18,200,62.18Z"/><path class="cls-1" d="M200,124.36A75.72,75.72,0,0,0,124.36,200V503.43h27V200a48.67,48.67,0,0,1,97.34,0V503.43h27V200A75.73,75.73,0,0,0,200,124.36Z"/><path class="cls-1" d="M213.48,512.55V204.31a13.49,13.49,0,1,0-27,0V512.54a41.89,41.89,0,1,0,27,0ZM200,569a17,17,0,1,1,17-17A17.06,17.06,0,0,1,200,569Z"/></svg>';
 var agelogo = '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 594.1"><defs></defs><path class="cls-1" d="M200,0C89.71,0,0,89.71,0,200V503.44H186.48v9.1a41.89,41.89,0,1,0,27,0v-9.1H400V200C400,89.71,310.27,0,200,0Zm17,552a17,17,0,1,1-17-17A17,17,0,0,1,217,552Z"/></svg>';
 
-var src = document.getElementsByClassName('home menu-item');
-var homeAnchor = src[0].children[0];
-homeAnchor.innerHTML = btlogo + '<span>Home</span>';
+var homeSlot = document.querySelector('.menu-item-home .menu-logo-slot');
+if (homeSlot && !homeSlot.hasChildNodes()) {
+	homeSlot.innerHTML = btlogo;
+}
 
 var shw1 = document.getElementsByClassName('site-header-w1');
-shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo"><span>Belltower Home</span>'+btlogo+'</a>');
+if (shw1[0] && !shw1[0].querySelector('.mlogo')) {
+	shw1[0].insertAdjacentHTML('beforeend', '<a href="/" class="mlogo"><span>Belltower Home</span>'+btlogo+'</a>');
+}
 
 window.addEventListener('load', () => {
 	const revealBell = (svg) => {

@@ -403,6 +403,149 @@ function belltower_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'belltower_scripts' );
 
+/**
+ * Inject a stable placeholder for the Home menu logo slot without changing the menu editor.
+ */
+function belltower_nav_logo_slot( $items, $args ) {
+	if ( empty( $args->theme_location ) || 'menu-1' !== $args->theme_location ) {
+		return $items;
+	}
+	return preg_replace_callback(
+		'/(<li[^>]*class="[^"]*menu-item-home[^"]*"[^>]*>\\s*<a[^>]*>)(.*?)(<\\/a>)/is',
+		function( $matches ) {
+			$before = $matches[1];
+			$label  = trim( wp_strip_all_tags( $matches[2] ) );
+			$label  = $label ? $label : esc_html__( 'Home', 'belltower' );
+			return $before
+				. '<span class="menu-logo-slot" aria-hidden="true"></span>'
+				. '<span class="sr-only">' . esc_html( $label ) . '</span>'
+				. $matches[3];
+		},
+		$items,
+		1
+	);
+}
+add_filter( 'wp_nav_menu_items', 'belltower_nav_logo_slot', 10, 2 );
+
+/**
+ * Opt-in cross-document view transitions for masthead-initiated navigations only.
+ */
+function belltower_view_transition_opt_in() {
+	?>
+	<script>
+	(function () {
+		var STYLE_ID = 'bt-view-transition-optin';
+		var STORAGE_KEY = 'bt_vt_nav';
+
+		function prefersReducedMotion() {
+			try {
+				return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			} catch (err) {
+				return false;
+			}
+		}
+
+		function supportsViewTransitions() {
+			return 'startViewTransition' in document || 'onpagereveal' in window;
+		}
+
+		function ensureStyle() {
+			if (document.getElementById(STYLE_ID)) return;
+			var style = document.createElement('style');
+			style.id = STYLE_ID;
+			style.textContent = '@view-transition { navigation: auto; }';
+			document.head.appendChild(style);
+		}
+
+		function removeStyle() {
+			var style = document.getElementById(STYLE_ID);
+			if (style && style.parentNode) {
+				style.parentNode.removeChild(style);
+			}
+		}
+
+		function setFlag() {
+			try {
+				sessionStorage.setItem(STORAGE_KEY, '1');
+			} catch (err) {
+				// Ignore storage failures.
+			}
+		}
+
+		function consumeFlag() {
+			try {
+				var val = sessionStorage.getItem(STORAGE_KEY);
+				if (val === '1') {
+					sessionStorage.removeItem(STORAGE_KEY);
+					return true;
+				}
+			} catch (err) {
+				// Ignore storage failures.
+			}
+			return false;
+		}
+
+		function isEligibleLink(anchor, event) {
+			if (!anchor || event.defaultPrevented) return false;
+			if (event.button !== 0) return false;
+			if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+			if (anchor.hasAttribute('download')) return false;
+			if (anchor.target && anchor.target !== '_self') return false;
+			var href = anchor.getAttribute('href');
+			if (!href) return false;
+			if (href.charAt(0) === '#') return false;
+			var url;
+			try {
+				url = new URL(anchor.href, window.location.href);
+			} catch (err) {
+				return false;
+			}
+			if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+			if (url.origin !== window.location.origin) return false;
+			var current = window.location.origin + window.location.pathname + window.location.search;
+			var next = url.origin + url.pathname + url.search;
+			if (current === next && url.hash) return false;
+			return true;
+		}
+
+		if (!supportsViewTransitions() || prefersReducedMotion()) {
+			return;
+		}
+
+		// Destination opt-in (parser-blocking).
+		if (consumeFlag()) {
+			ensureStyle();
+			var cleanup = function () {
+				removeStyle();
+			};
+			if ('onpagereveal' in window) {
+				window.addEventListener('pagereveal', function (event) {
+					if (event && event.viewTransition && event.viewTransition.finished) {
+						event.viewTransition.finished.finally(cleanup);
+					} else {
+						cleanup();
+					}
+				}, { once: true });
+			}
+			window.addEventListener('load', cleanup, { once: true });
+		}
+
+		// Source opt-in for masthead link clicks only.
+		var masthead = document.getElementById('masthead');
+		if (!masthead) return;
+		masthead.addEventListener('click', function (event) {
+			var anchor = event.target && event.target.closest ? event.target.closest('a') : null;
+			if (!anchor || !masthead.contains(anchor)) return;
+			if (!isEligibleLink(anchor, event)) return;
+			setFlag();
+			ensureStyle();
+		}, true);
+	})();
+	</script>
+	<?php
+}
+add_action( 'wp_head', 'belltower_view_transition_opt_in', 0 );
+
 // Remove jquery-migrate on the front-end to reduce render-blocking JS.
 add_filter( 'wp_default_scripts', function( $scripts ) {
 	if ( is_admin() ) {

@@ -12,6 +12,9 @@ const tsRecommendedTypeChecked = tsPlugin.configs['recommended-type-checked'] ||
 const tsStylisticTypeChecked = tsPlugin.configs['stylistic-type-checked'] || {};
 
 export default [
+	{
+		ignores: [ 'dist/**', 'node_modules/**' ],
+	},
 	js.configs.recommended,
 	{
 		files: [ 'src/**/*.{ts,tsx,js,jsx}' ],

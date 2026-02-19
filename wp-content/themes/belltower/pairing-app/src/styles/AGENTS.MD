@@ -73,6 +73,10 @@ Agents **MUST** match existing patterns in the local file(s):
 
 If conventions are unclear, prefer **the simplest, most local** approach and document the choice briefly in the output summary.
 
+## Token build reminder
+
+If you change design token values, run `npm run build:tokens` from `wp-content/themes/belltower` so `tokens.css` stays in sync.
+
 ### SCSS/Sass guardrails
 
 Agents **SHOULD**:
