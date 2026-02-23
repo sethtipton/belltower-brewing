@@ -1,0 +1,312 @@
+@import "../../../../../themes/belltower/tokens.css";
+
+$bt-mobile-breakpoint: 600px;
+
+.parking-app {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.parking3d-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.parking3d {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  pointer-events: auto;
+  touch-action: manipulation;
+  display: grid;
+  position: relative;
+  & > div:has(canvas) {
+    position: absolute !important;
+    inset: 0;
+  }
+}
+
+.parking3d__image,
+.parking3d canvas {
+  grid-area: 1 / 1;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.parking3d__image {
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.parking3d__controls {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  z-index: 1;
+  padding-inline: 0.25rem;
+  button {
+    border: 0;
+    border-radius: 2px;
+    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+    background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
+    color: #fff;
+    cursor: pointer;
+    &.webgl {
+      background: rgba(var(--color__btdarkgreen-rgb), 0.95);
+    }
+  }
+  .is-active {
+    background: rgba(var(--color__btdarkestgreen-rgb), 0.95);
+    //color: #000;
+  }
+}
+
+.descTxt {
+  margin-block-end: 0;
+  background-color: rgba(var(--color__btdarkestgreen-rgb), 0.95);
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 2px;
+  font-size: 1rem;
+}
+
+body:not(:has(.descTxt)) .parking3d__guide-toggle {
+  justify-content: end;
+}
+
+.parking3d__guide-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 9;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transform: translate(0, -100%);
+  opacity: 1;
+  transition: opacity 320ms ease;
+  &.is-intro-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  button {
+    border: 0;
+    border-radius: 2px;
+    padding: 0.4rem 1rem;
+    font-size: 1rem;
+    background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+}
+
+.parking3d__guide {
+  position: absolute;
+  right: 0;
+  top: 0;
+  left: auto;
+  width: 100%;
+  height: 100%;
+  //padding-top: 0;
+  //padding-bottom: 0;
+  //inset: 1rem;
+  z-index: 9;
+  background: rgba(var(--color__btdarkestgreen-rgb), 0.9);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0;
+  overflow: auto;
+  max-height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+  &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  h3 {
+    margin: 0 0 0.75rem;
+  }
+  p {
+    margin: 0 0 0.75rem;
+  }
+  ul {
+    margin: 0 0 0.75rem;
+    padding-left: 1.1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  li {
+    display: flex;
+    flex-direction: column;
+    //gap: 0.15rem;
+    margin: 0.3rem;
+    border-left: 1px solid white;
+    padding-inline-start: 0.5rem;
+    font-size: 1rem;
+  }
+  .leftclm {
+    padding: 1rem 0 0 1rem;
+    flex: 1;
+  }
+  .rightclm {
+    flex: 0.5;
+  }
+}
+
+.parking3d__readout {
+  background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0.35rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.2;
+  display: grid;
+  gap: 0.35rem;
+  pre {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    background: transparent;
+  }
+}
+
+.parking3d__copy-editor {
+  width: 100%;
+  border-radius: 2px;
+  background: rgba(var(--color__btdarkestgreen-rgb), 0.86);
+  color: #fff;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+.parking3d__copy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.75rem;
+  &.parking3d__copy-grid--guide {
+    grid-template-columns: 1fr;
+  }
+}
+
+.parking3d__copy-field {
+  display: grid;
+  gap: 0.35rem;
+  span {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  input,
+  input[type="text"],
+  textarea {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.98);
+    color: #1d1d1d;
+    padding: 0.45rem 0.55rem;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 7rem;
+  }
+}
+
+.parking3d__label {
+  position: absolute;
+  //right: var(--parking-label-left, 12%);
+  //top: var(--parking-label-top, 20%);
+  right: 3rem;
+  top: 3rem;
+  min-width: min-content;
+  background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
+  color: #fff;
+  border-radius: 2px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--color__btdarkestgreen);
+  padding: 2rem 2rem;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  display: grid;
+  gap: 0.25rem;
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  filter: blur(8px);
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.22, 0.74, 0.24, 1),
+    filter 260ms ease;
+  pointer-events: none;
+  span {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(6px);
+    transition:
+      opacity 240ms ease,
+      transform 320ms cubic-bezier(0.22, 0.74, 0.24, 1),
+      filter 320ms ease;
+  }
+  &.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+    span {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+      @for $i from 1 through 12 {
+        &:nth-child(#{$i}) {
+          transition-delay: #{60 + (($i - 1) * 45)}ms;
+        }
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parking3d__label,
+  .parking3d__label span {
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .parking3d__label span {
+    opacity: 1;
+  }
+}
+
+.parking-app__label {
+  font-size: 1rem;
+}
+
+@media (max-width: $bt-mobile-breakpoint) {
+  .parking3d__guide {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,269 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import BeerCard from './BeerCard';
+import {
+  fetchBeerColorsBatch,
+  getCachedColors,
+  setCachedColors,
+  isCacheStale,
+  observeVisibleIds,
+} from '../utils/beerColor';
+import { createLogger } from '../logger';
+
+import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
+import useFlight from '../hooks/useFlight';
+
+/**
+ * @typedef {Object} Beer
+ * @property {string | number} id
+ * @property {string} name
+ * @property {string | null | undefined} [style]
+ * @property {number | null | undefined} [abv]
+ * @property {number | null | undefined} [ibu]
+ * @property {string | null | undefined} [description]
+ * @property {string | null | undefined} [hexColor]
+ * @property {string | null | undefined} [btKey]
+ * @property {unknown} [pairingProfile]
+ * @property {boolean | undefined} [recommended]
+ * @property {string | null | undefined} [recommendationMatchSentence]
+ * @property {number | null | undefined} [recommendationScore]
+ * @property {string | null | undefined} [recommendationConfidence]
+ * @property {string | null | undefined} [history_fun]
+ */
+
+const CACHE_KEY = 'bt_beer_colors_v1';
+const log = createLogger('beerColors');
+/**
+ * @param {{
+ *  items?: Beer[];
+ *  allowColorFetch?: boolean;
+ *  showHistory?: boolean;
+ *  onFlightOpen?: () => void;
+ *  colorMapOverride?: Record<string, string> | null;
+ *  flightFull?: boolean;
+ *  pairingsState?: {
+ *    status: string;
+ *    error?: string;
+ *    pairingsByBeerKey?: Record<string, { mains?: Array<{ foodKey?: string; pairingReason?: string }>; side?: { foodKey?: string; pairingReason?: string } | null }>;
+ *    foodByKey?: Record<string, { name?: string }>;
+ *    ensureLoaded?: (force?: boolean) => void;
+ *    available?: boolean;
+ *    lastUpdated?: string | null;
+ *    cacheStore?: string;
+ *  };
+ * }} props
+ */
+export default function BeerList({
+  items = [],
+  allowColorFetch = true,
+  showHistory = false,
+  onFlightOpen,
+  colorMapOverride = null,
+  flightFull = false,
+  pairingsState = null,
+}) {
+  const itemList = /** @type {Beer[]} */ (items ?? []);
+  const overrideMap = colorMapOverride && typeof colorMapOverride === 'object'
+    ? /** @type {Record<string, string>} */ (colorMapOverride)
+    : null;
+  /** @type {React.MutableRefObject<HTMLDivElement | null>} */
+  const listRef = useRef(null);
+  const prefersReduced = usePrefersReducedMotion();
+  const announcerRef = useRef(null);
+  const { slots } = /** @type {{ slots: Array<Beer | null> }} */ (useFlight());
+  const orderedIds = useMemo(() => itemList.map((b) => String(b.id)), [itemList]);
+  const [colorFetchFailed, setColorFetchFailed] = useState(false);
+  const colorFetchInFlight = useRef(false);
+  const colorFetchAttempted = useRef(false);
+  const colorFetchLogged = useRef(false);
+  const [colorMap, setColorMap] = useState(() => {
+    const cached = getCachedColors(CACHE_KEY);
+    if (
+      cached &&
+      typeof cached === 'object' &&
+      !isCacheStale(cached) &&
+      'colors' in cached &&
+      cached.colors &&
+      typeof cached.colors === 'object'
+    ) {
+      return /** @type {Record<string, string>} */ (cached.colors);
+    }
+    return {};
+  });
+
+  const mergedColorMap = useMemo(() => {
+    if (overrideMap && Object.keys(overrideMap).length) {
+      return { ...colorMap, ...overrideMap };
+    }
+    return colorMap;
+  }, [colorMap, overrideMap]);
+
+  const itemsById = useMemo(() => {
+    /** @type {Record<string, Beer>} */
+    const map = {};
+    itemList.forEach((b) => { map[String(b.id)] = b; });
+    return map;
+  }, [itemList]);
+
+  const missingIds = useMemo(() => {
+    return itemList
+      .filter((b) => {
+        const id = String(b.id);
+        const nameKey = b.name ? mergedColorMap[b.name] : null;
+        return !b.hexColor && !mergedColorMap[id] && !nameKey && b.description;
+      })
+      .map((b) => String(b.id));
+  }, [itemList, mergedColorMap]);
+
+  useEffect(() => {
+    colorFetchInFlight.current = false;
+    colorFetchAttempted.current = false;
+    setColorFetchFailed(false);
+    colorFetchLogged.current = false;
+  }, [orderedIds]);
+
+  useEffect(() => {
+    if (!allowColorFetch && missingIds.length && !colorFetchLogged.current) {
+      colorFetchLogged.current = true;
+      log.debug('batch.skipped', {
+        phase: 'beerColors',
+        reason: 'allowColorFetch=false',
+        missing: missingIds.length,
+      });
+    }
+    if (!allowColorFetch || !missingIds.length || colorFetchFailed || colorFetchInFlight.current) return;
+    if (colorFetchAttempted.current) return;
+    let cancelled = false;
+    let fetchFailed = false;
+    colorFetchInFlight.current = true;
+    colorFetchAttempted.current = true;
+
+    /**
+     * @param {Record<string, string>} incoming
+     */
+    const mergeAndCache = (incoming) => {
+      if (!incoming || typeof incoming !== 'object' || !Object.keys(incoming).length) return;
+      setColorMap((prev) => {
+        const next = { ...prev, ...incoming };
+        setCachedColors(CACHE_KEY, next, { version: 'v1' });
+        return next;
+      });
+    };
+
+    /** @param {string[]} ids */
+    const fetchBatch = async (ids) => {
+      const payload = /** @type {Array<{ id: string; description: string }>} */ (
+        ids
+          .map((id) => {
+            const beer = itemsById[id];
+            if (!beer) return null;
+            return { id, description: beer.description ?? '' };
+          })
+          .filter(Boolean)
+      );
+      if (!payload.length) return;
+      try {
+        const map = await fetchBeerColorsBatch(payload);
+        if (cancelled) return;
+        if (!map || (typeof map === 'object' && !Object.keys(map).length)) {
+          log.warn('batch.empty', {
+            phase: 'beerColors',
+            ids: ids.slice(0, 5),
+            count: ids.length,
+          });
+          fetchFailed = true;
+          setColorFetchFailed(true);
+          return;
+        }
+        log.debug('batch.result', {
+          phase: 'beerColors',
+          ids: ids.slice(0, 5),
+          count: Object.keys(map).length,
+        });
+        mergeAndCache(map);
+      } catch (err) {
+        log.warn('batch.failed', { phase: 'beerColors', error: err instanceof Error ? err.message : String(err) });
+        fetchFailed = true;
+        setColorFetchFailed(true); // stop retrying if the endpoint is failing
+      }
+    };
+
+    const run = async () => {
+      const visibleIds = await observeVisibleIds(listRef, missingIds);
+      const visibleSet = new Set(visibleIds || []);
+      const visibleBatch = missingIds.filter((id) => visibleSet.has(id));
+      const restBatch = missingIds.filter((id) => !visibleSet.has(id));
+
+      if (visibleBatch.length) {
+        await fetchBatch(visibleBatch);
+      }
+
+      const fetchRest = () => {
+        if (cancelled || !restBatch.length || fetchFailed) return;
+        void fetchBatch(restBatch);
+      };
+
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(fetchRest, { timeout: 500 });
+      } else {
+        setTimeout(fetchRest, 150);
+      }
+    };
+
+    void run().finally(() => {
+      colorFetchInFlight.current = false;
+    });
+
+    return () => {
+      cancelled = true;
+      colorFetchInFlight.current = false;
+    };
+  }, [missingIds, itemsById, allowColorFetch, colorFetchFailed]);
+
+  const decorated = useMemo(() => {
+    if (!items.length) return [];
+    return orderedIds
+      .map((id) => itemsById[id])
+      .filter(Boolean)
+      .map((b) => {
+        const hex = b.hexColor ?? mergedColorMap[String(b.id)] ?? (b.name ? mergedColorMap[b.name] : null) ?? null;
+        return hex ? { ...b, hexColor: hex } : b;
+      });
+  }, [orderedIds, itemsById, mergedColorMap]);
+
+  const flightIds = useMemo(
+    () => new Set(slots.filter(Boolean).map((s) => String(s.id))),
+    [slots]
+  );
+
+  if (!decorated.length) return null;
+  return (
+    <>
+      <ul className="beer-list" ref={listRef}>
+        {decorated.map((beer) => {
+          const id = String(beer.id);
+          const beerKey = beer.btKey ?? '';
+          const entry = beerKey && pairingsState?.pairingsByBeerKey
+            ? pairingsState.pairingsByBeerKey[beerKey]
+            : null;
+          const pairingsToken = `${pairingsState?.status ?? 'idle'}:${pairingsState?.available ? '1' : '0'}:${beerKey}:${entry?.mains?.length ?? 0}:${entry?.side?.foodKey ?? ''}`;
+          return (
+            <li key={id}>
+              <BeerCard
+                beer={beer}
+                showSettle={false}
+                prefersReduced={prefersReduced}
+                showHistory={showHistory}
+                selected={flightIds.has(id)}
+                flightFull={flightFull}
+                onFlightOpen={onFlightOpen}
+                pairingsState={pairingsState}
+                pairingsToken={pairingsToken}
+              />
+            </li>
+          );
+        })}
+      </ul>
+      <div className="sr-only" aria-live="polite" ref={announcerRef} />
+    </>
+  );
+}

@@ -7,15 +7,40 @@ jobs:
     steps:
     - name: Get latest code
       uses: actions/checkout@v4
-    - name: Sync files
+    # Deploy in multiple steps so the full site ships first, then each allowed plugin folder.
+    - name: Deploy site (exclude all plugins)
       uses: SamKirkland/FTP-Deploy-Action@v4.3.6
       with:
-        server: ftp.sethtipton.com
-        username: sethtipt
-        password: 9u!yKBs2E9y
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
         server-dir: public_html/belltowerbrewing/
         exclude: |
           **/.git*
           **/.git*/**
           **/node_modules/**
           **/wp-content/plugins/**
+    - name: Deploy bt-pairing-app plugin
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: wp-content/plugins/bt-pairing-app/
+        server-dir: public_html/belltowerbrewing/wp-content/plugins/bt-pairing-app/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+    - name: Deploy bt-parking-guide plugin
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: wp-content/plugins/bt-parking-guide/
+        server-dir: public_html/belltowerbrewing/wp-content/plugins/bt-parking-guide/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
