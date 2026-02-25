@@ -106,7 +106,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
     east: "East Lot:\nAcross the street from Bell Tower Brewing Co.\nFREE Nights (after 5PM) & Weekends.",
     south: "South Lot:\nOne door down from Bell Tower Brewing Co.\nFREE Nights (after 5PM) & Weekends.\n311 W Main St., Kent, OH 44240",
     north: "North Lot:\n500 ft North of our building.\nFREE 24/7.\n300 Gougler Ave., Kent, OH 44240",
-    main: "Main Lot:\nOur private 18-car parking lot with bike rack,\n310 Park Ave., Kent, OH 44240",
+    main: "Main Lot:\nOur private 18-car parking lot with bike rack.\n310 Park Ave., Kent, OH 44240",
     street: "Street Parking:\nFREE 24/7 street parking.",
     bridge1: "Street Parking:\nFREE 24/7 street parking.",
     bridge2: "Street Parking:\nFREE 24/7 street parking.",

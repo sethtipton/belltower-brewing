@@ -77,7 +77,7 @@ const FALLBACK_MAP: ParkingMapPayload = {
     east: 'East Lot:\nAcross the street from Bell Tower Brewing Co.\nFREE Nights (after 5PM) & Weekends.',
     south: 'South Lot:\nOne door down from Bell Tower Brewing Co.\nFREE Nights (after 5PM) & Weekends.\n311 W Main St., Kent, OH 44240',
     north: 'North Lot:\n500 ft North of our building.\nFREE 24/7.\n300 Gougler Ave., Kent, OH 44240',
-    main: 'Main Lot:\nOur private 18-car parking lot with bike rack,\n310 Park Ave., Kent, OH 44240',
+    main: 'Main Lot:\nOur private 18-car parking lot with bike rack \n310 Park Ave., Kent, OH 44240',
     street: 'Street Parking:\nFREE 24/7 street parking.',
     bridge1: 'Street Parking:\nFREE 24/7 street parking.',
     bridge2: 'Street Parking:\nFREE 24/7 street parking.',
@@ -405,9 +405,11 @@ export default function ParkingMap3D(): React.ReactElement | null {
     }
   });
 
-  const [simulateNoWebgl, setSimulateNoWebgl] = useState(() => readStorageFlag(['bt_parking_simulate_webgl_off', 'bt_pairing_simulate_webgl_off']));
-  const webglActive = webglOk && !simulateNoWebgl;
-  const [showGuide, setShowGuide] = useState(() => !webglOk);
+  const [simulateNoWebgl, setSimulateNoWebgl] = useState(() => (
+    debugMode ? readStorageFlag(['bt_parking_simulate_webgl_off', 'bt_pairing_simulate_webgl_off']) : false
+  ));
+  const webglActive = webglOk && (!debugMode || !simulateNoWebgl);
+  const [showGuide, setShowGuide] = useState(() => !webglActive);
   const [introUiReady, setIntroUiReady] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const lastLabelRef = useRef('');
@@ -429,6 +431,12 @@ export default function ParkingMap3D(): React.ReactElement | null {
       window.clearTimeout(timeout);
     };
   }, [shouldAnimateIntro]);
+
+  useEffect(() => {
+    if (!webglActive) {
+      setShowGuide(true);
+    }
+  }, [webglActive]);
 
   useEffect(() => {
     let cancelled = false;
@@ -723,59 +731,61 @@ export default function ParkingMap3D(): React.ReactElement | null {
         </div>
 
         {!webglActive ? null : (
-          <Canvas
-            frameloop={prefersReduced ? 'never' : 'always'}
-            camera={{ position: CAMERA_POSITION, fov: 45 }}
-            dpr={[1, 1.5]}
-            onPointerMissed={() => {
-              setHasUserInteracted((prev) => (prev ? prev : true));
-              setSelectedLot(null);
-              setHoveredLot(null);
-            }}
-          >
-            <ambientLight intensity={0.6} />
-            <directionalLight position={[4, 5, 3]} intensity={0.9} />
+          <div className="parking3d__canvas-layer">
+            <Canvas
+              frameloop={prefersReduced ? 'never' : 'always'}
+              camera={{ position: CAMERA_POSITION, fov: 45 }}
+              dpr={[1, 1.5]}
+              onPointerMissed={() => {
+                setHasUserInteracted((prev) => (prev ? prev : true));
+                setSelectedLot(null);
+                setHoveredLot(null);
+              }}
+            >
+              <ambientLight intensity={0.6} />
+              <directionalLight position={[4, 5, 3]} intensity={0.9} />
 
-            {isEditing && editVertices && selectedVertex !== null ? (
-              <TransformControls
-                ref={vertexControlsRef}
-                mode="translate"
-                object={activeVertexObject ?? undefined}
-                showZ={false}
-                space="local"
-                onObjectChange={() => {
-                  if (!activeVertexObject) return;
-                  handleVertexMove(activeLot, selectedVertex, [
-                    activeVertexObject.position.x,
-                    activeVertexObject.position.y,
-                    activeVertexObject.position.z,
-                  ]);
-                }}
-              />
-            ) : null}
+              {isEditing && editVertices && selectedVertex !== null ? (
+                <TransformControls
+                  ref={vertexControlsRef}
+                  mode="translate"
+                  object={activeVertexObject ?? undefined}
+                  showZ={false}
+                  space="local"
+                  onObjectChange={() => {
+                    if (!activeVertexObject) return;
+                    handleVertexMove(activeLot, selectedVertex, [
+                      activeVertexObject.position.x,
+                      activeVertexObject.position.y,
+                      activeVertexObject.position.z,
+                    ]);
+                  }}
+                />
+              ) : null}
 
-            {mapData.lotOrder.map((lotKey, lotIndex) => (
-              <ParkingLot
-                key={lotKey}
-                setGroupRef={setLotRef(lotKey)}
-                onHoverChange={handleLotHoverChange}
-                onToggleSelect={toggleLotSelection}
-                lotOrderIndex={lotIndex}
-                animateIntro={shouldAnimateIntro}
-                animatePulse={shouldPulseLots}
-                lotKey={lotKey}
-                lotPoints={mapData.lots[lotKey]}
-                editVertices={isEditing && editVertices && activeLot === lotKey}
-                selectedVertex={activeLot === lotKey ? selectedVertex : null}
-                onSelectVertex={activeLot === lotKey ? setSelectedVertex : () => null}
-                vertexRefs={{ current: vertexRefs.current[lotKey] }}
-                lotScale={UNIT_SCALE}
-                isHovered={hoveredLot === lotKey}
-                isSelected={selectedLot === lotKey}
-                debugColor={isEditing && activeLot === lotKey ? '#ff4fa3' : undefined}
-              />
-            ))}
-          </Canvas>
+              {mapData.lotOrder.map((lotKey, lotIndex) => (
+                <ParkingLot
+                  key={lotKey}
+                  setGroupRef={setLotRef(lotKey)}
+                  onHoverChange={handleLotHoverChange}
+                  onToggleSelect={toggleLotSelection}
+                  lotOrderIndex={lotIndex}
+                  animateIntro={shouldAnimateIntro}
+                  animatePulse={shouldPulseLots}
+                  lotKey={lotKey}
+                  lotPoints={mapData.lots[lotKey]}
+                  editVertices={isEditing && editVertices && activeLot === lotKey}
+                  selectedVertex={activeLot === lotKey ? selectedVertex : null}
+                  onSelectVertex={activeLot === lotKey ? setSelectedVertex : () => null}
+                  vertexRefs={{ current: vertexRefs.current[lotKey] }}
+                  lotScale={UNIT_SCALE}
+                  isHovered={hoveredLot === lotKey}
+                  isSelected={selectedLot === lotKey}
+                  debugColor={isEditing && activeLot === lotKey ? '#ff4fa3' : undefined}
+                />
+              ))}
+            </Canvas>
+          </div>
         )}
 
         <div className={`parking3d__label ${hoveredLabel ? 'is-visible' : ''}`}>

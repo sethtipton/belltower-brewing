@@ -21,10 +21,11 @@ $bt-mobile-breakpoint: 600px;
   touch-action: manipulation;
   display: grid;
   position: relative;
-  & > div:has(canvas) {
-    position: absolute !important;
-    inset: 0;
-  }
+}
+
+.parking3d__canvas-layer {
+  position: absolute;
+  inset: 0;
 }
 
 .parking3d__image,
