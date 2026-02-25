@@ -21,9 +21,23 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     manifest: true,
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
-      input: 'index.html'
+      input: 'index.html',
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/three/')) {
+            return 'three-core';
+          }
+          if (id.includes('/node_modules/@react-three/fiber/')) {
+            return 'r3f-core';
+          }
+          if (id.includes('/node_modules/@react-three/drei/')) {
+            return 'r3f-drei';
+          }
+          return undefined;
+        },
+      },
     }
   }
 });

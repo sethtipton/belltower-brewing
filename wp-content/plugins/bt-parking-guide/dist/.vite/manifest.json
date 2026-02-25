@@ -1,9 +1,33 @@
 {
+  "_r3f-core-Bvm5ilY-.js": {
+    "file": "assets/r3f-core-Bvm5ilY-.js",
+    "name": "r3f-core",
+    "imports": [
+      "_three-core-z5jP0nH8.js"
+    ]
+  },
+  "_r3f-drei-BpIeV1j9.js": {
+    "file": "assets/r3f-drei-BpIeV1j9.js",
+    "name": "r3f-drei",
+    "imports": [
+      "_r3f-core-Bvm5ilY-.js",
+      "_three-core-z5jP0nH8.js"
+    ]
+  },
+  "_three-core-z5jP0nH8.js": {
+    "file": "assets/three-core-z5jP0nH8.js",
+    "name": "three-core"
+  },
   "index.html": {
-    "file": "assets/index-Ce_UraHZ.js",
+    "file": "assets/index-C5dbRobL.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
+    "imports": [
+      "_r3f-core-Bvm5ilY-.js",
+      "_r3f-drei-BpIeV1j9.js",
+      "_three-core-z5jP0nH8.js"
+    ],
     "dynamicImports": [
       "src/components/ParkingMap3D.tsx"
     ],
@@ -12,12 +36,15 @@
     ]
   },
   "src/components/ParkingMap3D.tsx": {
-    "file": "assets/ParkingMap3D-DCT0-SNz.js",
+    "file": "assets/ParkingMap3D-DkbxxWUS.js",
     "name": "ParkingMap3D",
     "src": "src/components/ParkingMap3D.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "index.html"
+      "_r3f-core-Bvm5ilY-.js",
+      "index.html",
+      "_r3f-drei-BpIeV1j9.js",
+      "_three-core-z5jP0nH8.js"
     ]
   }
 }

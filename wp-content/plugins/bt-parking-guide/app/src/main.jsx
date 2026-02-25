@@ -8,7 +8,7 @@ const log = createLogger('app');
 
 if (typeof window !== 'undefined') {
   const rootEl = typeof document !== 'undefined' ? document.getElementById('bt-parking-guide-root') : null;
-  log.info('boot', {
+  log.debug('boot', {
     phase: 'boot',
     rootFound: !!rootEl,
     hasGlobals: typeof window.BT_PARKING_GUIDE_CONFIG === 'object',

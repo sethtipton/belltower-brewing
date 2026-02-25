@@ -653,7 +653,7 @@ function AppContent(): React.ReactElement {
       staticLog.info('trigger', { phase: 'staticPairings', source, hash: stableCacheHash });
       void staticPairings.ensureLoaded();
     },
-    [stableCacheHash, staticPairings, featureFlags.foodPairings]
+    [stableCacheHash, staticPairings.ensureLoaded, featureFlags.foodPairings]
   );
 
   useEffect(() => {
@@ -922,7 +922,7 @@ function AppContent(): React.ReactElement {
     scheduleIdle(() => {
       void staticPairings.ensureLoaded();
     }, 800);
-  }, [featureFlags.foodPairings, staticPairings]);
+  }, [featureFlags.foodPairings, staticPairings.ensureLoaded]);
 
   const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
   const listReady = ready && safeItems.length > 0;

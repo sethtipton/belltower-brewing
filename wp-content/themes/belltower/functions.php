@@ -353,6 +353,77 @@ function belltower_widgets_init() {
 }
 add_action( 'widgets_init', 'belltower_widgets_init' );
 
+function belltower_collect_request_posts() {
+	$posts = array();
+	$current_post = get_post();
+	if ( $current_post instanceof WP_Post ) {
+		$posts[ $current_post->ID ] = $current_post;
+	}
+
+	global $wp_query;
+	if ( isset( $wp_query ) && isset( $wp_query->posts ) && is_array( $wp_query->posts ) ) {
+		foreach ( $wp_query->posts as $query_post ) {
+			if ( $query_post instanceof WP_Post ) {
+				$posts[ $query_post->ID ] = $query_post;
+			}
+		}
+	}
+
+	return array_values( $posts );
+}
+
+function belltower_request_has_shortcodes( $tags ) {
+	$tags = is_array( $tags ) ? $tags : array( $tags );
+	if ( empty( $tags ) ) {
+		return false;
+	}
+
+	foreach ( belltower_collect_request_posts() as $post_item ) {
+		$content = isset( $post_item->post_content ) ? (string) $post_item->post_content : '';
+		if ( '' === trim( $content ) ) {
+			continue;
+		}
+		foreach ( $tags as $tag ) {
+			if ( is_string( $tag ) && '' !== $tag && has_shortcode( $content, $tag ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+function belltower_request_has_blocks( $names ) {
+	$names = is_array( $names ) ? $names : array( $names );
+	if ( empty( $names ) ) {
+		return false;
+	}
+
+	foreach ( belltower_collect_request_posts() as $post_item ) {
+		$content = isset( $post_item->post_content ) ? (string) $post_item->post_content : '';
+		if ( '' === trim( $content ) ) {
+			continue;
+		}
+		foreach ( $names as $name ) {
+			if ( is_string( $name ) && '' !== $name && has_block( $name, $content ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+function belltower_enqueue_embed_assets( $needs_menu = false, $needs_untappd = false ) {
+	wp_enqueue_script( 'belltower-pairing-profiles' );
+	if ( $needs_menu ) {
+		wp_enqueue_script( 'belltower-menu' );
+	}
+	if ( $needs_untappd ) {
+		wp_enqueue_script( 'belltower-untappd-menu' );
+	}
+}
+
 /**
  * Enqueue scripts and styles.
  */
@@ -365,9 +436,9 @@ function belltower_scripts() {
 	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], _S_VERSION, true );
 	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], _S_VERSION, true );
 	$profiles_ver = filemtime( get_stylesheet_directory() . '/js/pairing-profiles.js' );
-	wp_enqueue_script( 'belltower-pairing-profiles', get_stylesheet_directory_uri() . '/js/pairing-profiles.js', [], $profiles_ver, true );
+	wp_register_script( 'belltower-pairing-profiles', get_stylesheet_directory_uri() . '/js/pairing-profiles.js', [], $profiles_ver, true );
 	$ver = filemtime( get_stylesheet_directory() . '/js/menu-from-sheets.js' );
-	wp_enqueue_script( 'belltower-menu', get_stylesheet_directory_uri() . '/js/menu-from-sheets.js', array( 'belltower-pairing-profiles' ), $ver, true );
+	wp_register_script( 'belltower-menu', get_stylesheet_directory_uri() . '/js/menu-from-sheets.js', array( 'belltower-pairing-profiles' ), $ver, true );
 	$sheetId = '1o79G07EDWRihxOlh9GSJvG-_VBaE5ByZULdd_6lqm7Q';
 	$gid     = 0;
 	$csvURL  = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv&gid={$gid}";
@@ -381,7 +452,19 @@ function belltower_scripts() {
 		]
 	);
 	$untappd_ver = filemtime( get_stylesheet_directory() . '/js/untappd-menu.js' );
-	wp_enqueue_script( 'belltower-untappd-menu', get_stylesheet_directory_uri() . '/js/untappd-menu.js', array( 'belltower-pairing-profiles' ), $untappd_ver, true );
+	wp_register_script( 'belltower-untappd-menu', get_stylesheet_directory_uri() . '/js/untappd-menu.js', array( 'belltower-pairing-profiles' ), $untappd_ver, true );
+
+	$has_menu_embed    = belltower_request_has_shortcodes( array( 'brewery_menu', 'drinks_menu' ) );
+	$has_untappd_embed = belltower_request_has_shortcodes( 'untappd_menu' );
+	$has_pairing_embed = belltower_request_has_shortcodes( array( 'bt_pairing_app', 'pairing_app' ) )
+		|| belltower_request_has_blocks( 'bt/pairing-app' );
+	if ( $has_pairing_embed ) {
+		$has_menu_embed = true;
+		$has_untappd_embed = true;
+	}
+	if ( $has_menu_embed || $has_untappd_embed ) {
+		belltower_enqueue_embed_assets( $has_menu_embed, $has_untappd_embed );
+	}
 
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
@@ -546,6 +629,7 @@ add_filter( 'wp_default_scripts', function( $scripts ) {
 function belltower_menu_shortcode( $atts ) {
 	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'brewery_menu' );
 	$cat  = esc_attr( $atts['category'] );
+	belltower_enqueue_embed_assets( true, false );
 
 	return sprintf(
 		'<div class="brewery-menu" data-category="%s"></div>',
@@ -557,6 +641,7 @@ add_shortcode( 'brewery_menu', 'belltower_menu_shortcode' );
 function belltower_drinks_menu_shortcode( $atts ) {
 	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'drinks_menu' );
 	$cat  = esc_attr( $atts['category'] );
+	belltower_enqueue_embed_assets( true, false );
 
 	return sprintf(
 		'<div class="drinks-menu" data-category="%s"></div>',
@@ -634,7 +719,7 @@ function belltower_untappd_menu_shortcode( $atts ) {
 	$class_attr = $atts['class'] ? ' ' . esc_attr( $atts['class'] ) : '';
 
 	// Ensure the embed + snapshot script is present.
-	wp_enqueue_script( 'belltower-untappd-menu' );
+	belltower_enqueue_embed_assets( false, true );
 
 	return sprintf(
 		'<div id="%1$s" class="cwidth bt-untappd-menu%2$s" data-location-id="%3$s" data-menu-id="%4$s"></div>',

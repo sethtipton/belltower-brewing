@@ -19,6 +19,7 @@ jobs:
           **/.git*
           **/.git*/**
           **/node_modules/**
+          **/*.map
           **/wp-content/plugins/**
     - name: Deploy bt-pairing-app plugin
       uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -32,6 +33,7 @@ jobs:
           **/.git*
           **/.git*/**
           **/node_modules/**
+          **/*.map
     - name: Deploy bt-parking-guide plugin
       uses: SamKirkland/FTP-Deploy-Action@v4.3.6
       with:
@@ -44,3 +46,4 @@ jobs:
           **/.git*
           **/.git*/**
           **/node_modules/**
+          **/*.map

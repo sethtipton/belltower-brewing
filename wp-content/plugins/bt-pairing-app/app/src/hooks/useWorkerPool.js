@@ -7,7 +7,7 @@ const log = createLogger('workerPool');
  * Lightweight worker pool for color calculation.
  * @param {string} path
  */
-export function useWorkerPool(path = 'worker/colorWorker.js') {
+export function useWorkerPool(path = 'worker/colorWorker.ts') {
   /** @type {import('react').MutableRefObject<Worker | null>} */
   const workerRef = useRef(null);
 

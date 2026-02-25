@@ -120,6 +120,29 @@ function bt_pairing_app_is_present() {
 	return ! empty( $bt_pairing_app_present );
 }
 
+function bt_pairing_app_scan_posts_for_embed( $posts ) {
+	if ( is_admin() || ! is_array( $posts ) || bt_pairing_app_is_present() ) {
+		return $posts;
+	}
+
+	foreach ( $posts as $post_item ) {
+		if ( ! ( $post_item instanceof WP_Post ) ) {
+			continue;
+		}
+		$content = isset( $post_item->post_content ) ? (string) $post_item->post_content : '';
+		if ( '' === trim( $content ) ) {
+			continue;
+		}
+		if ( has_shortcode( $content, 'bt_pairing_app' ) || has_block( 'bt/pairing-app', $content ) ) {
+			bt_pairing_app_mark_present();
+			break;
+		}
+	}
+
+	return $posts;
+}
+add_filter( 'the_posts', 'bt_pairing_app_scan_posts_for_embed', 10, 1 );
+
 function bt_pairing_app_request_has_embed() {
 	if ( bt_pairing_app_is_present() ) {
 		return true;
@@ -250,7 +273,6 @@ function bt_pairing_app_maybe_enqueue_assets_late() {
 		return;
 	}
 	bt_pairing_app_enqueue_assets();
-	wp_print_styles();
 }
 add_action( 'wp_footer', 'bt_pairing_app_maybe_enqueue_assets_late', 1 );
 

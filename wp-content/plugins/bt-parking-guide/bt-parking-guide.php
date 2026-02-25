@@ -82,6 +82,29 @@ function bt_parking_guide_is_present() {
 	return ! empty( $bt_parking_guide_present );
 }
 
+function bt_parking_guide_scan_posts_for_embed( $posts ) {
+	if ( is_admin() || ! is_array( $posts ) || bt_parking_guide_is_present() ) {
+		return $posts;
+	}
+
+	foreach ( $posts as $post_item ) {
+		if ( ! ( $post_item instanceof WP_Post ) ) {
+			continue;
+		}
+		$content = isset( $post_item->post_content ) ? (string) $post_item->post_content : '';
+		if ( '' === trim( $content ) ) {
+			continue;
+		}
+		if ( has_shortcode( $content, 'bt_parking_guide' ) || has_block( 'bt/parking-guide', $content ) ) {
+			bt_parking_guide_mark_present();
+			break;
+		}
+	}
+
+	return $posts;
+}
+add_filter( 'the_posts', 'bt_parking_guide_scan_posts_for_embed', 10, 1 );
+
 function bt_parking_guide_request_has_embed() {
 	if ( bt_parking_guide_is_present() ) {
 		return true;
@@ -202,7 +225,6 @@ function bt_parking_guide_maybe_enqueue_assets_late() {
 		return;
 	}
 	bt_parking_guide_enqueue_assets();
-	wp_print_styles();
 }
 add_action( 'wp_footer', 'bt_parking_guide_maybe_enqueue_assets_late', 1 );
 

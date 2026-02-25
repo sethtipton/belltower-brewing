@@ -54,6 +54,7 @@ const LOT_INTRO_TOTAL_SECONDS =
 const LOT_PULSE_DELAY_SECONDS = 0.2;
 const LOT_PULSE_PERIOD_SECONDS = 2.2;
 const LOT_PULSE_AMPLITUDE = 0.2;
+const RENDER_WATCHDOG_TIMEOUT_MS = 1200;
 const GUIDE_COPY_FIELDS: { key: keyof ParkingGuideCopy; label: string; multiline?: boolean }[] = [
   { key: 'title', label: 'Guide title' },
   { key: 'intro', label: 'Intro', multiline: true },
@@ -196,6 +197,18 @@ const readStorageFlag = (keys: string[]): boolean => {
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 const easeOutCubic = (value: number): number => 1 - Math.pow(1 - clamp01(value), 3);
+
+function FirstFrameProbe({ onFirstFrame }: { onFirstFrame: () => void }) {
+  const hasSentRef = useRef(false);
+
+  useFrame(() => {
+    if (hasSentRef.current) return;
+    hasSentRef.current = true;
+    onFirstFrame();
+  });
+
+  return null;
+}
 
 function ParkingLot({
   setGroupRef,
@@ -412,6 +425,8 @@ export default function ParkingMap3D(): React.ReactElement | null {
   const [showGuide, setShowGuide] = useState(() => !webglActive);
   const [introUiReady, setIntroUiReady] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [hasFirstFrame, setHasFirstFrame] = useState(false);
+  const [renderWatchdogTriggered, setRenderWatchdogTriggered] = useState(false);
   const lastLabelRef = useRef('');
 
   const mapData = isEditing ? draftMap : savedMap;
@@ -434,9 +449,30 @@ export default function ParkingMap3D(): React.ReactElement | null {
 
   useEffect(() => {
     if (!webglActive) {
+      setHasFirstFrame(false);
+      setRenderWatchdogTriggered(false);
       setShowGuide(true);
     }
   }, [webglActive]);
+
+  useEffect(() => {
+    if (!webglActive || prefersReduced || hasFirstFrame) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderWatchdogTriggered(true);
+      setShowGuide(true);
+      log.warn('render.watchdog_timeout', {
+        phase: 'render',
+        timeoutMs: RENDER_WATCHDOG_TIMEOUT_MS,
+      });
+    }, RENDER_WATCHDOG_TIMEOUT_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [webglActive, prefersReduced, hasFirstFrame]);
 
   useEffect(() => {
     let cancelled = false;
@@ -462,6 +498,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
       }
     };
 
+    // Async data bootstrap for map content; state updates are intentionally performed here.
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
     void load();
     return () => {
@@ -504,6 +541,14 @@ export default function ParkingMap3D(): React.ReactElement | null {
   const toggleLotSelection = useCallback((lot: ActiveLot) => {
     setHasUserInteracted((prev) => (prev ? prev : true));
     setSelectedLot((current) => (current === lot ? null : lot));
+  }, []);
+
+  const handleFirstFrame = useCallback(() => {
+    setHasFirstFrame((current) => {
+      if (current) return current;
+      return true;
+    });
+    setRenderWatchdogTriggered(false);
   }, []);
 
   const handleLotHoverChange = useCallback((lot: ActiveLot | null) => {
@@ -555,7 +600,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
       setEditVertices(false);
       setSelectedVertex(null);
       setLoadError('');
-      log.info('save.success', { phase: 'parking' });
+      log.debug('save.success', { phase: 'parking' });
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Unable to save map.');
       log.error('save.error', { phase: 'parking', error: err instanceof Error ? err.message : String(err) });
@@ -726,7 +771,12 @@ export default function ParkingMap3D(): React.ReactElement | null {
             {loadError ? <p>{loadError}</p> : null}
           </div>
           <div className="rightclm">
-            <img src={mapData.images.guide} alt="" className="parking3d__image" loading="lazy" />
+            <img
+              src={mapData.images.guide}
+              alt="Parking guide map showing lot locations around Bell Tower Brewing Co."
+              className="parking3d__image"
+              loading="lazy"
+            />
           </div>
         </div>
 
@@ -744,6 +794,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
             >
               <ambientLight intensity={0.6} />
               <directionalLight position={[4, 5, 3]} intensity={0.9} />
+              <FirstFrameProbe onFirstFrame={handleFirstFrame} />
 
               {isEditing && editVertices && selectedVertex !== null ? (
                 <TransformControls
@@ -793,6 +844,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
             ? labelForDisplay.split('\n').map((line, index) => <span key={`${line}-${index}`}>{line}</span>)
             : null}
         </div>
+        {renderWatchdogTriggered ? <span className="screen-reader-text">Parking guide fallback enabled.</span> : null}
       </div>
       {adminControls}
     </div>

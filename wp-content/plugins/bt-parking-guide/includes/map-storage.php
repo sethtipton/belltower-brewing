@@ -20,6 +20,17 @@ function bt_parking_guide_decode_text_entities( $value ) {
 	return wp_specialchars_decode( (string) $value, ENT_QUOTES );
 }
 
+function bt_parking_guide_normalize_updated_at( $value ) {
+	if ( ! is_string( $value ) ) {
+		return '';
+	}
+	$trimmed = trim( $value );
+	if ( '' === $trimmed ) {
+		return '';
+	}
+	return sanitize_text_field( $trimmed );
+}
+
 function bt_parking_guide_sanitize_meta_json( $value ) {
 	if ( ! is_string( $value ) ) {
 		return '';
@@ -147,10 +158,18 @@ function bt_parking_guide_sanitize_points( $points, $fallback ) {
 	return $sanitized;
 }
 
-function bt_parking_guide_sanitize_map_payload( $input ) {
+function bt_parking_guide_sanitize_map_payload( $input, $options = array() ) {
 	if ( ! is_array( $input ) ) {
 		return new WP_Error( 'bt_parking_invalid_map', 'Map payload must be an object.' );
 	}
+
+	$options = wp_parse_args(
+		$options,
+		array(
+			'touch_updated_at'    => true,
+			'fallback_updated_at' => '',
+		)
+	);
 
 	$default = bt_parking_guide_get_default_map_data();
 	$lots_in = isset( $input['lots'] ) && is_array( $input['lots'] ) ? $input['lots'] : array();
@@ -212,6 +231,18 @@ function bt_parking_guide_sanitize_map_payload( $input ) {
 		'guide'      => esc_url_raw( isset( $images_in['guide'] ) ? $images_in['guide'] : $images_default['guide'] ),
 	);
 
+	if ( ! empty( $options['touch_updated_at'] ) ) {
+		$updated_at = current_time( 'c' );
+	} else {
+		$updated_at = '';
+		if ( isset( $input['updatedAt'] ) ) {
+			$updated_at = bt_parking_guide_normalize_updated_at( $input['updatedAt'] );
+		}
+		if ( '' === $updated_at ) {
+			$updated_at = bt_parking_guide_normalize_updated_at( $options['fallback_updated_at'] );
+		}
+	}
+
 	return array(
 		'version'   => 1,
 		'lotOrder'  => $lot_order,
@@ -219,7 +250,7 @@ function bt_parking_guide_sanitize_map_payload( $input ) {
 		'labels'    => $labels,
 		'guide'     => $guide,
 		'images'    => $images,
-		'updatedAt' => current_time( 'c' ),
+		'updatedAt' => $updated_at,
 	);
 }
 
@@ -315,7 +346,13 @@ function bt_parking_guide_get_map_payload( $post_id ) {
 	if ( ! is_array( $decoded ) ) {
 		return bt_parking_guide_get_default_map_data();
 	}
-	$sanitized = bt_parking_guide_sanitize_map_payload( $decoded );
+	$sanitized = bt_parking_guide_sanitize_map_payload(
+		$decoded,
+		array(
+			'touch_updated_at'    => false,
+			'fallback_updated_at' => isset( $decoded['updatedAt'] ) ? $decoded['updatedAt'] : '',
+		)
+	);
 	if ( is_wp_error( $sanitized ) ) {
 		return bt_parking_guide_get_default_map_data();
 	}
