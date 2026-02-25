@@ -132,6 +132,7 @@ const getMobileMediaQuery = (): MediaQueryList | null => {
   const breakpoint = raw || '600px';
   return breakpoint ? window.matchMedia(`(max-width: ${breakpoint})`) : null;
 };
+const BOOT_TIMEOUT_MS = 12000;
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
   removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
@@ -928,7 +929,10 @@ function AppContent(): React.ReactElement {
   const listReady = ready && safeItems.length > 0;
   const showFlightTray = listReady;
   const appVisible = beerError ? true : listReady;
+  const [bootTimedOut, setBootTimedOut] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const showBootLoading = !listReady && !beerError && !bootTimedOut;
+  const bootErrorMessage = beerError ?? (bootTimedOut ? 'Unable to load pairing app data. Please refresh and try again.' : '');
   const flightCount = slots.filter(Boolean).length;
   const flightToggleLabel = (() => {
     if (!flightOpen && flightCount === 0) return 'Create a flight';
@@ -1052,6 +1056,19 @@ function AppContent(): React.ReactElement {
     const raf = globalThis?.requestAnimationFrame ?? ((cb: () => void) => setTimeout(cb, 0));
     raf(() => setIsVisible(true));
   }, [appVisible]);
+
+  useEffect(() => {
+    if (listReady || beerError) {
+      setBootTimedOut(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setBootTimedOut(true);
+    }, BOOT_TIMEOUT_MS);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [listReady, beerError]);
 
   useEffect(() => {
     if (!featureFlags.helpForm) return;
@@ -1359,57 +1376,68 @@ function AppContent(): React.ReactElement {
 
   return (
     <LiveAnnouncerProvider>
-      <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
-        <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
-        {featureFlags.helpForm ? (
-          <PairingForm
-            open={formOpen}
-            onToggle={() => setFormOpen(v => !v)}
-            loading={loading}
-            error={error}
-            success={successMessage}
-            successIsAi={successIsAi}
-            topRecommendationName={topRecommendationName}
-            pintFillLevel={pintFillLevel}
-            pintRequestId={pintRequestId}
-            pintTint={pintTint}
-            onSubmit={(vals) => void handleSubmit(vals)}
-            onPreparedChange={(vals) => setPreparedAnswers(vals)}
-            onInteraction={() => setShowRecommendations(false)}
-          />
-        ) : null}
-        <div className={trayClassName}>
-          <div style={!listReady ? { visibility: 'hidden' } : undefined}>
-            {safeItems.length ? (
-              <BeerList
-                items={decoratedItems}
-                allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
-                showHistory={featureFlags.history}
-                onFlightOpen={() => {
-                  flightUserOverride.current = true;
-                  setFlightOpen(true);
-                }}
-                colorMapOverride={colorMapOverride}
-                flightFull={slots.filter(Boolean).length >= 5}
-                pairingsState={featureFlags.foodPairings ? staticPairings : undefined}
+      {showBootLoading ? (
+        <div className="pairing-app pairing-app--boot-state pairing-app--loading" role="status" aria-live="polite">
+          <p className="pairing-app__boot-text">Loading...</p>
+        </div>
+      ) : bootErrorMessage ? (
+        <div className="pairing-app pairing-app--boot-state pairing-app--error" role="alert">
+          <p className="pairing-app__boot-text">{bootErrorMessage}</p>
+        </div>
+      ) : (
+        <>
+          <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
+            <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
+            {featureFlags.helpForm ? (
+              <PairingForm
+                open={formOpen}
+                onToggle={() => setFormOpen(v => !v)}
+                loading={loading}
+                error={error}
+                success={successMessage}
+                successIsAi={successIsAi}
+                topRecommendationName={topRecommendationName}
+                pintFillLevel={pintFillLevel}
+                pintRequestId={pintRequestId}
+                pintTint={pintTint}
+                onSubmit={(vals) => void handleSubmit(vals)}
+                onPreparedChange={(vals) => setPreparedAnswers(vals)}
+                onInteraction={() => setShowRecommendations(false)}
               />
             ) : null}
+            <div className={trayClassName}>
+              <div style={!listReady ? { visibility: 'hidden' } : undefined}>
+                {safeItems.length ? (
+                  <BeerList
+                    items={decoratedItems}
+                    allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
+                    showHistory={featureFlags.history}
+                    onFlightOpen={() => {
+                      flightUserOverride.current = true;
+                      setFlightOpen(true);
+                    }}
+                    colorMapOverride={colorMapOverride}
+                    flightFull={slots.filter(Boolean).length >= 5}
+                    pairingsState={featureFlags.foodPairings ? staticPairings : undefined}
+                  />
+                ) : null}
+              </div>
+              {showFlightTray ? (
+                <FlightTray
+                  open={flightOpen}
+                  colorMap={colorMapOverride}
+                  toggleLabel={flightToggleLabel}
+                  onToggle={() => {
+                    flightUserOverride.current = true;
+                    setFlightOpen((v) => !v);
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
-          {showFlightTray ? (
-            <FlightTray
-              open={flightOpen}
-              colorMap={colorMapOverride}
-              toggleLabel={flightToggleLabel}
-              onToggle={() => {
-                flightUserOverride.current = true;
-                setFlightOpen((v) => !v);
-              }}
-            />
-          ) : null}
-        </div>
-        {beerError ? <p>{beerError}</p> : null}
-      </div>
-      <p className="ai-text aidisclaimer">All text with a background color is being generated by AI.</p>
+          <p className="ai-text aidisclaimer">All text with a background color is being generated by AI.</p>
+        </>
+      )}
     </LiveAnnouncerProvider>
   );
 }

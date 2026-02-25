@@ -55,6 +55,7 @@ const LOT_PULSE_DELAY_SECONDS = 0.2;
 const LOT_PULSE_PERIOD_SECONDS = 2.2;
 const LOT_PULSE_AMPLITUDE = 0.2;
 const RENDER_WATCHDOG_TIMEOUT_MS = 1200;
+const BACKGROUND_PRELOAD_TIMEOUT_MS = 3000;
 const GUIDE_COPY_FIELDS: { key: keyof ParkingGuideCopy; label: string; multiline?: boolean }[] = [
   { key: 'title', label: 'Guide title' },
   { key: 'intro', label: 'Intro', multiline: true },
@@ -382,6 +383,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [isBackgroundReady, setIsBackgroundReady] = useState(false);
 
   const lotRefs = useRef<Record<ActiveLot, Group | null>>({
     east: null,
@@ -430,6 +432,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
   const lastLabelRef = useRef('');
 
   const mapData = isEditing ? draftMap : savedMap;
+  const backgroundImageSrc = mapData.images.background;
   const shouldAnimateIntro = webglActive && !prefersReduced;
   const shouldPulseLots = shouldAnimateIntro && !hasUserInteracted;
 
@@ -505,6 +508,57 @@ export default function ParkingMap3D(): React.ReactElement | null {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId: number | undefined;
+    const image = new Image();
+
+    const settleReady = (): void => {
+      if (cancelled) return;
+      setIsBackgroundReady(true);
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+
+    image.onload = () => {
+      if (typeof image.decode === 'function') {
+        image.decode().catch(() => null).finally(settleReady);
+        return;
+      }
+      settleReady();
+    };
+
+    image.onerror = () => {
+      log.warn('background.preload_error', { phase: 'image', src: backgroundImageSrc });
+      settleReady();
+    };
+
+    timeoutId = window.setTimeout(() => {
+      log.warn('background.preload_timeout', {
+        phase: 'image',
+        src: backgroundImageSrc,
+        timeoutMs: BACKGROUND_PRELOAD_TIMEOUT_MS,
+      });
+      settleReady();
+    }, BACKGROUND_PRELOAD_TIMEOUT_MS);
+
+    setIsBackgroundReady(false);
+    image.src = backgroundImageSrc;
+    if (image.complete && image.naturalWidth > 0) {
+      settleReady();
+    }
+
+    return () => {
+      cancelled = true;
+      image.onload = null;
+      image.onerror = null;
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [backgroundImageSrc]);
 
   const guideId = 'bt-parking-guide-details';
 
@@ -729,6 +783,15 @@ export default function ParkingMap3D(): React.ReactElement | null {
       ) : null}
     </div>
   ) : null;
+
+  const showLoadingState = isLoading || !isBackgroundReady;
+  if (showLoadingState) {
+    return (
+      <div className="parking3d-wrap">
+        <p className="parking-app__label" role="status" aria-live="polite">Loading parking map...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="parking3d-wrap">
