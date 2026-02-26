@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Shape } from 'three';
+import { Shape, Vector3 } from 'three';
 import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { Line, TransformControls } from '@react-three/drei';
 import type { Line2, TransformControls as TransformControlsImpl } from 'three-stdlib';
@@ -37,6 +37,18 @@ interface ParkingMapPayload {
 interface ParkingMapResponse {
   id?: number;
   map?: unknown;
+}
+
+interface ScreenPoint {
+  x: number;
+  y: number;
+  onScreen: boolean;
+}
+
+interface ScreenProjectionState {
+  points: Partial<Record<ActiveLot, ScreenPoint>>;
+  width: number;
+  height: number;
 }
 
 const log = createLogger('parking');
@@ -198,6 +210,17 @@ const readStorageFlag = (keys: string[]): boolean => {
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 const easeOutCubic = (value: number): number => 1 - Math.pow(1 - clamp01(value), 3);
+const getLotCentroid = (points: Vec2[]): Vec2 => {
+  if (!points.length) return [0, 0];
+  const { x, y } = points.reduce(
+    (acc, [px, py]) => ({
+      x: acc.x + px,
+      y: acc.y + py,
+    }),
+    { x: 0, y: 0 }
+  );
+  return [x / points.length, y / points.length];
+};
 
 function FirstFrameProbe({ onFirstFrame }: { onFirstFrame: () => void }) {
   const hasSentRef = useRef(false);
@@ -206,6 +229,46 @@ function FirstFrameProbe({ onFirstFrame }: { onFirstFrame: () => void }) {
     if (hasSentRef.current) return;
     hasSentRef.current = true;
     onFirstFrame();
+  });
+
+  return null;
+}
+
+function LotScreenTracker({
+  lotCenters,
+  onUpdate,
+}: {
+  lotCenters: Record<ActiveLot, Vec2>;
+  onUpdate: (payload: ScreenProjectionState) => void;
+}) {
+  const projected = useMemo(() => new Vector3(), []);
+  const lastKeyRef = useRef('');
+
+  useFrame(({ camera, size }) => {
+    const nextPoints: Partial<Record<ActiveLot, ScreenPoint>> = {};
+    LOT_KEYS.forEach((lotKey) => {
+      const [cx, cy] = lotCenters[lotKey];
+      projected.set(cx, 0.02, -cy).project(camera);
+      nextPoints[lotKey] = {
+        x: ((projected.x + 1) / 2) * size.width,
+        y: ((1 - projected.y) / 2) * size.height,
+        onScreen: projected.z >= -1 && projected.z <= 1,
+      };
+    });
+
+    const nextKey = `${size.width.toFixed(0)}x${size.height.toFixed(0)}|${LOT_KEYS.map((lotKey) => {
+      const point = nextPoints[lotKey];
+      if (!point) return `${lotKey}:`;
+      return `${lotKey}:${point.x.toFixed(1)},${point.y.toFixed(1)},${point.onScreen ? '1' : '0'}`;
+    }).join('|')}`;
+
+    if (nextKey === lastKeyRef.current) return;
+    lastKeyRef.current = nextKey;
+    onUpdate({
+      points: nextPoints,
+      width: size.width,
+      height: size.height,
+    });
   });
 
   return null;
@@ -430,8 +493,23 @@ export default function ParkingMap3D(): React.ReactElement | null {
   const [hasFirstFrame, setHasFirstFrame] = useState(false);
   const [renderWatchdogTriggered, setRenderWatchdogTriggered] = useState(false);
   const lastLabelRef = useRef('');
+  const parkingRootRef = useRef<HTMLDivElement | null>(null);
+  const labelRef = useRef<HTMLDivElement | null>(null);
+  const [screenProjection, setScreenProjection] = useState<ScreenProjectionState>({
+    points: {},
+    width: 0,
+    height: 0,
+  });
+  const [labelBounds, setLabelBounds] = useState<{ left: number; right: number; top: number; bottom: number } | null>(null);
 
   const mapData = isEditing ? draftMap : savedMap;
+  const lotCenters = useMemo<Record<ActiveLot, Vec2>>(
+    () => LOT_KEYS.reduce((acc, lotKey) => {
+      acc[lotKey] = getLotCentroid(mapData.lots[lotKey] ?? []);
+      return acc;
+    }, {} as Record<ActiveLot, Vec2>),
+    [mapData.lots]
+  );
   const backgroundImageSrc = mapData.images.background;
   const shouldAnimateIntro = webglActive && !prefersReduced;
   const shouldPulseLots = shouldAnimateIntro && !hasUserInteracted;
@@ -455,6 +533,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
       setHasFirstFrame(false);
       setRenderWatchdogTriggered(false);
       setShowGuide(true);
+      setScreenProjection({ points: {}, width: 0, height: 0 });
     }
   }, [webglActive]);
 
@@ -570,6 +649,77 @@ export default function ParkingMap3D(): React.ReactElement | null {
     lastLabelRef.current = hoveredLabel;
   }
   const labelForDisplay = hoveredLabel ?? lastLabelRef.current;
+  const activeLotScreenPoint = activeInfoLot ? screenProjection.points[activeInfoLot] ?? null : null;
+
+  useEffect(() => {
+    if (!activeInfoLot || !labelForDisplay || !webglActive || showGuide) {
+      setLabelBounds(null);
+      return;
+    }
+
+    const measure = (): void => {
+      const rootEl = parkingRootRef.current;
+      const labelEl = labelRef.current;
+      if (!rootEl || !labelEl) return;
+      const rootRect = rootEl.getBoundingClientRect();
+      const labelRect = labelEl.getBoundingClientRect();
+      setLabelBounds({
+        left: labelRect.left - rootRect.left,
+        right: labelRect.right - rootRect.left,
+        top: labelRect.top - rootRect.top,
+        bottom: labelRect.bottom - rootRect.top,
+      });
+    };
+
+    const frameId = window.requestAnimationFrame(measure);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', measure);
+    };
+  }, [activeInfoLot, labelForDisplay, webglActive, showGuide]);
+
+  const leaderLine = useMemo(() => {
+    if (!activeLotScreenPoint || !activeLotScreenPoint.onScreen || !labelBounds) return null;
+    const viewportWidth = Math.max(screenProjection.width, 1);
+    const viewportPadding = 10;
+    const clampToViewport = (value: number): number => (
+      Math.min(viewportWidth - viewportPadding, Math.max(viewportPadding, value))
+    );
+    const leftCandidateX = clampToViewport(labelBounds.left);
+    const rightCandidateX = clampToViewport(labelBounds.right);
+    const candidateScores = [
+      {
+        side: 'left' as const,
+        x: leftCandidateX,
+        score:
+          Math.abs(leftCandidateX - activeLotScreenPoint.x) +
+          (leftCandidateX <= viewportPadding + 4 ? 120 : 0),
+      },
+      {
+        side: 'right' as const,
+        x: rightCandidateX,
+        score:
+          Math.abs(rightCandidateX - activeLotScreenPoint.x) +
+          (rightCandidateX >= viewportWidth - viewportPadding - 4 ? 120 : 0),
+      },
+    ];
+    candidateScores.sort((a, b) => a.score - b.score);
+    const bestCandidate = candidateScores[0];
+    const lineEndX = bestCandidate.x;
+    const lineEndY = Math.min(
+      labelBounds.bottom - 10,
+      Math.max(labelBounds.top + 10, activeLotScreenPoint.y)
+    );
+    const bendOffset = bestCandidate.side === 'left' ? -8 : 8;
+    const bendX = clampToViewport(activeLotScreenPoint.x + (lineEndX - activeLotScreenPoint.x) * 0.58 + bendOffset);
+
+    return {
+      points: `${activeLotScreenPoint.x},${activeLotScreenPoint.y} ${bendX},${activeLotScreenPoint.y} ${lineEndX},${lineEndY}`,
+      dotX: activeLotScreenPoint.x,
+      dotY: activeLotScreenPoint.y,
+    };
+  }, [activeLotScreenPoint, labelBounds, screenProjection.width]);
 
   const formatVec2 = (value: Vec2) => `[${value.map((item) => item.toFixed(3)).join(', ')}]`;
   const activeLotPointsText = useMemo(() => activeLotPoints.map(formatVec2).join(', '), [activeLotPoints]);
@@ -795,7 +945,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
 
   return (
     <div className="parking3d-wrap">
-      <div className="parking3d">
+      <div className="parking3d" ref={parkingRootRef}>
         <div className={`parking3d__guide-toggle${shouldAnimateIntro && !introUiReady ? ' is-intro-hidden' : ''}`}>
           {webglActive && !showGuide ? (
             <p className="descTxt">Available parking is highlighted in green. Hover or tap on a lot for more info.</p>
@@ -858,6 +1008,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
               <ambientLight intensity={0.6} />
               <directionalLight position={[4, 5, 3]} intensity={0.9} />
               <FirstFrameProbe onFirstFrame={handleFirstFrame} />
+              <LotScreenTracker lotCenters={lotCenters} onUpdate={setScreenProjection} />
 
               {isEditing && editVertices && selectedVertex !== null ? (
                 <TransformControls
@@ -902,7 +1053,19 @@ export default function ParkingMap3D(): React.ReactElement | null {
           </div>
         )}
 
-        <div className={`parking3d__label ${hoveredLabel ? 'is-visible' : ''}`}>
+        {webglActive && !showGuide && hoveredLabel && leaderLine && screenProjection.width > 0 && screenProjection.height > 0 ? (
+          <svg
+            className="parking3d__leader"
+            aria-hidden="true"
+            viewBox={`0 0 ${screenProjection.width} ${screenProjection.height}`}
+            preserveAspectRatio="none"
+          >
+            <polyline className="parking3d__leader-line" points={leaderLine.points} />
+            <circle className="parking3d__leader-dot" cx={leaderLine.dotX} cy={leaderLine.dotY} r="3.5" />
+          </svg>
+        ) : null}
+
+        <div ref={labelRef} className={`parking3d__label ${hoveredLabel ? 'is-visible' : ''}`}>
           {labelForDisplay
             ? labelForDisplay.split('\n').map((line, index) => <span key={`${line}-${index}`}>{line}</span>)
             : null}
