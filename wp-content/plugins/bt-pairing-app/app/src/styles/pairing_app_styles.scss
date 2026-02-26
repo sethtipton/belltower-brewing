@@ -106,10 +106,20 @@ $pint-width: 60px;
   display: flex;
   flex-direction: column;
   button {
-    background-color: transparent;
-    -webkit-appearance: none;
-    appearance: none;
-    border-color: $black;
+    //background-color: transparent;
+    //-webkit-appearance: none;
+    //appearance: none;
+    //border-color: $black;
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+    padding: 0.5rem 0.8rem;
+    background: var(--color__btpurewhite);
+    border: 1px solid var(--color__btdarkestgreen);
+    border-radius: 3px;
+    color: var(--color__btdarkestgreen);
+    cursor: pointer;
+    //transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
     &:hover {
       cursor: pointer;
     }
@@ -677,17 +687,17 @@ span.ai-text {
 .flight-toggle-btn {
   cursor: pointer;
   border-width: 1px;
-  border-style: solid;
-  background-color: $white;
-  border-color: $black;
+  background-color: var(--color__btpurewhite);
   margin-top: 1rem;
   position: absolute;
   top: 0;
   right: 0;
   z-index: 6;
   min-width: max-content;
-  //accounts for scrollbars on flight
-  //margin-inline-end: 5px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--color__btdarkestgreen);
+  border-radius: 3px;
+  color: var(--color__btdarkestgreen);
   margin-bottom: 0;
   &[aria-expanded="true"] {
     //accounts for scrollbars on flight
@@ -738,7 +748,7 @@ span.ai-text {
     margin: 0 1px 1rem 0;
     align-items: center;
     min-width: var(--tray-width);
-    padding-top: 2rem;
+    padding-top: 3rem;
     text-align: center;
     padding-inline-end: 5px;
     padding-inline-start: 5px;
@@ -753,7 +763,7 @@ span.ai-text {
       margin-bottom: 0;
       font-size: 1rem;
       line-height: 1;
-      margin-top: 0.5rem;
+      margin-top: 0.8rem;
     }
     div.muted.small {
       grid-column: 1;
@@ -837,7 +847,7 @@ span.ai-text {
     top: 50%;
     left: 50%;
     transform: translate(-50%, 40%);
-    background-color: var(--color__btwhite);
+    background-color: var(--color__btpurewhite);
     border: 1px solid var(--color__btblack);
   }
   &[aria-pressed="true"]:hover {
@@ -865,7 +875,7 @@ span.ai-text {
     position: absolute;
     left: 0;
     top: 0;
-    transform: translate(-7px, -3px);
+    transform: translate(-11px, -3px);
     bottom: 0;
     width: 20px;
     display: flex;
