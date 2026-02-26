@@ -8,13 +8,13 @@
     "WordPress",
     "Theme"
   ],
-  "homepage": "https://github.com/sethtipton/belltower.git",
+  "homepage": "https://github.com/sethtipton/belltower-brewing#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sethtipton/belltower.git"
+    "url": "git+https://github.com/sethtipton/belltower-brewing.git"
   },
   "bugs": {
-    "url": "https://github.com/Automattic/_s/issues"
+    "url": "https://github.com/sethtipton/belltower-brewing/issues"
   },
   "devDependencies": {
     "@wordpress/scripts": "^9.0.0",

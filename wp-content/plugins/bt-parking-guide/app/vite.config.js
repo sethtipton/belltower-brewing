@@ -22,6 +22,7 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true,
     sourcemap: false,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       input: 'index.html',
       output: {

@@ -1,5 +1,3 @@
-@import "../../../../../themes/belltower/tokens.css";
-
 $bt-mobile-breakpoint: 600px;
 
 .parking-app {
@@ -263,8 +261,8 @@ body:not(:has(.descTxt)) .parking3d__guide-toggle {
   position: absolute;
   //right: var(--parking-label-left, 12%);
   //top: var(--parking-label-top, 20%);
-  right: 10rem;
-  top: 10rem;
+  right: clamp(0px, 10dvw, 120px);
+  top: clamp(0px, 15dvh, 20%);
   min-width: min-content;
   background: rgba(var(--color__btdarkestgreen-rgb), 0.8);
   color: #fff;
@@ -272,7 +270,7 @@ body:not(:has(.descTxt)) .parking3d__guide-toggle {
   border-width: 2px;
   border-style: solid;
   border-color: var(--color__btdarkestgreen);
-  padding: 2rem 2rem;
+  padding: 2dvh 2dvw;
   font-size: 1.2rem;
   line-height: 1.3;
   display: grid;
