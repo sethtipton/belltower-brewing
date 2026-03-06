@@ -129,7 +129,7 @@ body:not(:has(.descTxt)) .parking3d__guide-toggle {
   right: 0;
   z-index: 4;
   width: 100%;
-  //min-height: var(--parking3d-guide-toggle-height);
+  min-height: var(--parking3d-guide-toggle-height);
   display: flex;
   //justify-content: space-between;
   //align-items: center;
@@ -380,7 +380,8 @@ body:not(:has(.descTxt)) .parking3d__guide-toggle {
   }
 
   .parking3d.is-webgl-active.is-guide-open .parking3d__guide-toggle button {
-    top: 0;
+    //top: 1px;
+    outline: 1px solid var(--color__btpurewhite, white);
   }
 
   .parking3d.is-webgl-active .parking3d__guide {
