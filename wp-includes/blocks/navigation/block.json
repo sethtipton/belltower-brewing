@@ -137,17 +137,9 @@
 				"type": "flex"
 			}
 		},
-		"__experimentalStyle": {
-			"elements": {
-				"link": {
-					"color": {
-						"text": "inherit"
-					}
-				}
-			}
-		},
 		"interactivity": true,
-		"renaming": false
+		"renaming": false,
+		"contentRole": true
 	},
 	"editorStyle": "wp-block-navigation-editor",
 	"style": "wp-block-navigation"

@@ -1,4 +1,13 @@
 <?php
+/**
+ * @package ACF
+ * @author  WP Engine
+ *
+ * © 2026 Advanced Custom Fields (ACF®). All rights reserved.
+ * "ACF" is a trademark of WP Engine.
+ * Licensed under the GNU General Public License v2 or later.
+ * https://www.gnu.org/licenses/gpl-2.0.html
+ */
 
 /**
  * This function will return true for a non empty array
@@ -687,14 +696,30 @@ function acf_verify_nonce( $value ) {
  *
  * @since   5.2.3
  *
- * @param string $nonce  The nonce to check.
- * @param string $action The action of the nonce.
+ * @param string  $nonce           The nonce to check.
+ * @param string  $action          The action of the nonce.
+ * @param boolean $action_is_field If the action is a field, modify the action to match validate the field type.
  * @return boolean
  */
-function acf_verify_ajax( $nonce = '', $action = '' ) {
+function acf_verify_ajax( $nonce = '', $action = '', $action_is_field = false ) {
 	// Bail early if we don't have a nonce to check.
 	if ( empty( $nonce ) && empty( $_REQUEST['nonce'] ) ) {
 		return false;
+	}
+
+	// Build the action if we're trying to validate a specific field nonce.
+	if ( $action_is_field ) {
+		if ( ! acf_is_field_key( $action ) ) {
+			return false;
+		}
+
+		$field = acf_get_field( $action );
+
+		if ( empty( $field['type'] ) ) {
+			return false;
+		}
+
+		$action = 'acf_field_' . $field['type'] . '_' . $action;
 	}
 
 	$nonce_to_check = ! empty( $nonce ) ? $nonce : $_REQUEST['nonce']; // phpcs:ignore WordPress.Security -- We're verifying a nonce here.
@@ -1271,8 +1296,19 @@ function acf_get_grouped_posts( $args ) {
 
 	// find array of post_type
 	$post_types          = acf_get_array( $args['post_type'] );
-	$post_types_labels   = acf_get_pretty_post_types( $post_types );
-	$is_single_post_type = ( count( $post_types ) == 1 );
+	$is_single_post_type = ( count( $post_types ) === 1 );
+
+	// WordPress 6.8+ sorts post_type arrays for cache key generation
+	// We need to use the same sorted order when processing results
+	if (
+		! $is_single_post_type &&
+		$args['posts_per_page'] !== -1 &&
+		version_compare( get_bloginfo( 'version' ), '6.8', '>=' )
+	) {
+		sort( $post_types );
+	}
+
+	$post_types_labels = acf_get_pretty_post_types( $post_types );
 
 	// attachment doesn't work if it is the only item in an array
 	if ( $is_single_post_type ) {
@@ -3974,3 +4010,20 @@ function acf_is_multisite_main_site() {
 	}
 	return false;
 }
+
+/**
+ * Allow filterable permissions metabox callbacks.
+ *
+ * @since   6.3.10
+ *
+ * @param   boolean $enable_meta_box_cb_edit Can the current user edit metabox callbacks.
+ * @return  boolean
+ */
+function acf_settings_enable_meta_box_cb_edit( $enable_meta_box_cb_edit ): bool {
+	if ( ! is_super_admin() ) {
+		return false;
+	}
+
+	return (bool) $enable_meta_box_cb_edit;
+}
+add_filter( 'acf/settings/enable_meta_box_cb_edit', 'acf_settings_enable_meta_box_cb_edit', 1 );

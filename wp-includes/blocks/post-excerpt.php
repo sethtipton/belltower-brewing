@@ -8,6 +8,8 @@
 /**
  * Renders the `core/post-excerpt` block on the server.
  *
+ * @since 5.8.0
+ *
  * @param array    $attributes Block attributes.
  * @param string   $content    Block default content.
  * @param WP_Block $block      Block instance.
@@ -16,18 +18,6 @@
 function render_block_core_post_excerpt( $attributes, $content, $block ) {
 	if ( ! isset( $block->context['postId'] ) ) {
 		return '';
-	}
-
-	/*
-	* The purpose of the excerpt length setting is to limit the length of both
-	* automatically generated and user-created excerpts.
-	* Because the excerpt_length filter only applies to auto generated excerpts,
-	* wp_trim_words is used instead.
-	*/
-	$excerpt_length = $attributes['excerptLength'];
-	$excerpt        = get_the_excerpt( $block->context['postId'] );
-	if ( isset( $excerpt_length ) ) {
-		$excerpt = wp_trim_words( $excerpt, $excerpt_length );
 	}
 
 	$more_text           = ! empty( $attributes['moreText'] ) ? '<a class="wp-block-post-excerpt__more-link" href="' . esc_url( get_the_permalink( $block->context['postId'] ) ) . '">' . wp_kses_post( $attributes['moreText'] ) . '</a>' : '';
@@ -42,8 +32,24 @@ function render_block_core_post_excerpt( $attributes, $content, $block ) {
 	 * So if the block's attribute is not empty override the
 	 * `excerpt_more` filter and return nothing. This will
 	 * result in showing only one `read more` link at a time.
+	 *
+	 * This hook needs to be applied before the excerpt is retrieved with get_the_excerpt.
+	 * Otherwise, the read more link filter from the theme is not removed.
 	 */
 	add_filter( 'excerpt_more', $filter_excerpt_more );
+
+	/*
+	* The purpose of the excerpt length setting is to limit the length of both
+	* automatically generated and user-created excerpts.
+	* Because the excerpt_length filter only applies to auto generated excerpts,
+	* wp_trim_words is used instead.
+	*/
+	$excerpt_length = $attributes['excerptLength'];
+	$excerpt        = get_the_excerpt( $block->context['postId'] );
+	if ( isset( $excerpt_length ) ) {
+		$excerpt = wp_trim_words( $excerpt, $excerpt_length );
+	}
+
 	$classes = array();
 	if ( isset( $attributes['textAlign'] ) ) {
 		$classes[] = 'has-text-align-' . $attributes['textAlign'];
@@ -66,6 +72,8 @@ function render_block_core_post_excerpt( $attributes, $content, $block ) {
 
 /**
  * Registers the `core/post-excerpt` block on the server.
+ *
+ * @since 5.8.0
  */
 function register_block_core_post_excerpt() {
 	register_block_type_from_metadata(

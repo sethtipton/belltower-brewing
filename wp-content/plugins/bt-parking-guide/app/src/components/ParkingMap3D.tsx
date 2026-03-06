@@ -640,6 +640,7 @@ export default function ParkingMap3D(): React.ReactElement | null {
   }, [backgroundImageSrc]);
 
   const guideId = 'bt-parking-guide-details';
+  const rootClassName = `parking3d${showGuide && webglActive ? ' is-guide-open' : ''}${webglActive ? ' is-webgl-active' : ' is-webgl-fallback'}`;
 
   const activeLotPoints = mapData.lots[activeLot] ?? [];
   const activeVertexObject = selectedVertex === null ? null : vertexRefs.current[activeLot][selectedVertex] ?? null;
@@ -761,6 +762,36 @@ export default function ParkingMap3D(): React.ReactElement | null {
     }
     setHoveredLot(lot);
   }, []);
+
+  const guideContent = (
+    <>
+      <div className="leftclm">
+        <h3>{mapData.guide.title}</h3>
+        <p>{mapData.guide.intro}</p>
+        <ul>
+          {GUIDE_ORDER.map((lotKey) => (
+            <li key={lotKey}>
+              {mapData.labels[lotKey].split('\n').map((line, index) => (
+                <span key={`${lotKey}-${line}-${index}`}>{line}</span>
+              ))}
+            </li>
+          ))}
+        </ul>
+        <p>{mapData.guide.bikeParking}</p>
+        <p>{mapData.guide.altTransportation}</p>
+        <p>{mapData.guide.respectNotice}</p>
+        {loadError ? <p>{loadError}</p> : null}
+      </div>
+      <div className="rightclm">
+        <img
+          src={mapData.images.guide}
+          alt="Parking guide map showing lot locations around Bell Tower Brewing Co."
+          className="parking3d__image"
+          loading="lazy"
+        />
+      </div>
+    </>
+  );
 
   const updateLabelCopy = useCallback((lot: ActiveLot, value: string) => {
     setDraftMap((current) => {
@@ -945,53 +976,33 @@ export default function ParkingMap3D(): React.ReactElement | null {
 
   return (
     <div className="parking3d-wrap">
-      <div className="parking3d" ref={parkingRootRef}>
-        <div className={`parking3d__guide-toggle${shouldAnimateIntro && !introUiReady ? ' is-intro-hidden' : ''}`}>
-          {webglActive && !showGuide ? (
-            <p className="descTxt">Available parking is highlighted in green. Hover or tap on a lot for more info.</p>
-          ) : null}
-          <button
-            type="button"
-            aria-expanded={showGuide}
-            aria-controls={guideId}
-            onClick={() => {
-              setHasUserInteracted((prev) => (prev ? prev : true));
-              setShowGuide((prev) => !prev);
-            }}
-          >
-            {showGuide ? 'Close Parking Guide' : 'Open Parking Guide'}
-          </button>
-        </div>
+      <div className={rootClassName} ref={parkingRootRef}>
+        {webglActive ? (
+          <div className={`parking3d__guide-toggle${shouldAnimateIntro && !introUiReady ? ' is-intro-hidden' : ''}`}>
+            <p className={`descTxt${showGuide ? ' is-hidden' : ''}`}>
+              Available parking is highlighted in green. Hover or tap on a lot for more info.
+            </p>
+            <button
+              type="button"
+              aria-expanded={showGuide}
+              aria-controls={guideId}
+              onClick={() => {
+                setHasUserInteracted((prev) => (prev ? prev : true));
+                setShowGuide((prev) => !prev);
+              }}
+            >
+              {showGuide ? 'Close Parking Guide' : 'Open Parking Guide'}
+            </button>
+          </div>
+        ) : null}
 
         <img src={mapData.images.background} alt="" className="parking3d__image" loading="lazy" />
 
-        <div id={guideId} className={`parking3d__guide ${showGuide ? 'is-visible' : ''}`}>
-          <div className="leftclm">
-            <h3>{mapData.guide.title}</h3>
-            <p>{mapData.guide.intro}</p>
-            <ul>
-              {GUIDE_ORDER.map((lotKey) => (
-                <li key={lotKey}>
-                  {mapData.labels[lotKey].split('\n').map((line, index) => (
-                    <span key={`${lotKey}-${line}-${index}`}>{line}</span>
-                  ))}
-                </li>
-              ))}
-            </ul>
-            <p>{mapData.guide.bikeParking}</p>
-            <p>{mapData.guide.altTransportation}</p>
-            <p>{mapData.guide.respectNotice}</p>
-            {loadError ? <p>{loadError}</p> : null}
+        {webglActive ? (
+          <div id={guideId} className={`parking3d__guide ${showGuide ? 'is-visible' : ''}`}>
+            {guideContent}
           </div>
-          <div className="rightclm">
-            <img
-              src={mapData.images.guide}
-              alt="Parking guide map showing lot locations around Bell Tower Brewing Co."
-              className="parking3d__image"
-              loading="lazy"
-            />
-          </div>
-        </div>
+        ) : null}
 
         {!webglActive ? null : (
           <div className="parking3d__canvas-layer">
@@ -1072,6 +1083,11 @@ export default function ParkingMap3D(): React.ReactElement | null {
         </div>
         {renderWatchdogTriggered ? <span className="screen-reader-text">Parking guide fallback enabled.</span> : null}
       </div>
+      {!webglActive ? (
+        <div className="parking3d__guide parking3d__guide--fallback is-visible">
+          {guideContent}
+        </div>
+      ) : null}
       {adminControls}
     </div>
   );
