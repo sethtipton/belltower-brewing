@@ -280,6 +280,53 @@ function belltower_content_width() {
 add_action( 'after_setup_theme', 'belltower_content_width', 0 );
 
 /**
+ * Disable WordPress core emoji scripts/styles and related integrations.
+ */
+function belltower_disable_wp_emojis() {
+	remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+	remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+	remove_action( 'wp_print_styles', 'print_emoji_styles' );
+	remove_action( 'admin_print_styles', 'print_emoji_styles' );
+	remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+	remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+	remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+
+	add_filter( 'tiny_mce_plugins', 'belltower_disable_wp_emojis_tinymce' );
+	add_filter( 'wp_resource_hints', 'belltower_disable_wp_emojis_remove_dns_prefetch', 10, 2 );
+}
+add_action( 'init', 'belltower_disable_wp_emojis' );
+
+/**
+ * Remove the WP Emoji TinyMCE plugin.
+ *
+ * @param array $plugins TinyMCE plugins.
+ * @return array
+ */
+function belltower_disable_wp_emojis_tinymce( $plugins ) {
+	if ( is_array( $plugins ) ) {
+		return array_diff( $plugins, array( 'wpemoji' ) );
+	}
+
+	return array();
+}
+
+/**
+ * Remove emoji CDN host from DNS prefetch hints.
+ *
+ * @param array  $urls          URLs to print for resource hints.
+ * @param string $relation_type The relation type the URLs are printed for.
+ * @return array
+ */
+function belltower_disable_wp_emojis_remove_dns_prefetch( $urls, $relation_type ) {
+	if ( 'dns-prefetch' === $relation_type ) {
+		$emoji_svg_url = apply_filters( 'emoji_svg_url', 'https://s.w.org/images/core/emoji/2/svg/' );
+		$urls          = array_diff( $urls, array( $emoji_svg_url ) );
+	}
+
+	return $urls;
+}
+
+/**
  * Set a custom Excerpt Length.
  */
 /*
@@ -430,11 +477,17 @@ function belltower_enqueue_embed_assets( $needs_menu = false, $needs_untappd = f
 function belltower_scripts() {
 	$tokens_path = get_stylesheet_directory() . '/tokens.css';
 	$tokens_ver  = file_exists( $tokens_path ) ? filemtime( $tokens_path ) : _S_VERSION;
+	$style_path  = get_stylesheet_directory() . '/style.css';
+	$style_ver   = file_exists( $style_path ) ? filemtime( $style_path ) : _S_VERSION;
+	$nav_path    = get_template_directory() . '/js/navigation.js';
+	$nav_ver     = file_exists( $nav_path ) ? filemtime( $nav_path ) : _S_VERSION;
+	$skip_path   = get_template_directory() . '/js/skip-link-focus-fix.js';
+	$skip_ver    = file_exists( $skip_path ) ? filemtime( $skip_path ) : _S_VERSION;
 	wp_enqueue_style( 'belltower-tokens', get_stylesheet_directory_uri() . '/tokens.css', [], $tokens_ver );
-	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), [ 'belltower-tokens' ], _S_VERSION );
+	wp_enqueue_style( 'belltower-style', get_stylesheet_uri(), [ 'belltower-tokens' ], $style_ver );
 	wp_style_add_data( 'belltower-style', 'rtl', 'replace' );
-	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], _S_VERSION, true );
-	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], _S_VERSION, true );
+	wp_enqueue_script( 'belltower-navigation', get_template_directory_uri() . '/js/navigation.js', [], $nav_ver, true );
+	wp_enqueue_script( 'belltower-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', [], $skip_ver, true );
 	$profiles_ver = filemtime( get_stylesheet_directory() . '/js/pairing-profiles.js' );
 	wp_register_script( 'belltower-pairing-profiles', get_stylesheet_directory_uri() . '/js/pairing-profiles.js', [], $profiles_ver, true );
 	$ver = filemtime( get_stylesheet_directory() . '/js/menu-from-sheets.js' );
