@@ -26,5 +26,8 @@
     "fibers": "^5.0.0",
     "gulp-cli": "^3.0.0",
     "gulp-sourcemaps": "^2.6.5"
+  },
+  "overrides": {
+    "immutable": "^4.3.8"
   }
 }
