@@ -33,6 +33,16 @@
     "vite": "^7.3.2"
   },
   "overrides": {
-    "flatted": "^3.4.2"
+    "flatted": "^3.4.2",
+    "picomatch": "^2.3.2",
+    "vite": {
+      "picomatch": "^4.0.4"
+    },
+    "fdir": {
+      "picomatch": "^4.0.4"
+    },
+    "tinyglobby": {
+      "picomatch": "^4.0.4"
+    }
   }
 }
