@@ -496,18 +496,20 @@ function belltower_scripts() {
 	$gid     = 0;
 	$csvURL  = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv&gid={$gid}";
 	$drinks_csv = "https://docs.google.com/spreadsheets/d/{$sheetId}/gviz/tq?tqx=out:csv&sheet=" . rawurlencode( 'Drinks' );
+	$spirits_csv = "https://docs.google.com/spreadsheets/d/{$sheetId}/gviz/tq?tqx=out:csv&sheet=" . rawurlencode( 'Spirits' );
 	wp_localize_script(
 		'belltower-menu',
 		'belltowerMenu',
 		[
 			'csvURL'       => $csvURL,
 			'drinksCsvURL' => $drinks_csv,
+			'spiritsCsvURL' => $spirits_csv,
 		]
 	);
 	$untappd_ver = filemtime( get_stylesheet_directory() . '/js/untappd-menu.js' );
 	wp_register_script( 'belltower-untappd-menu', get_stylesheet_directory_uri() . '/js/untappd-menu.js', array( 'belltower-pairing-profiles' ), $untappd_ver, true );
 
-	$has_menu_embed    = belltower_request_has_shortcodes( array( 'brewery_menu', 'drinks_menu' ) );
+	$has_menu_embed    = belltower_request_has_shortcodes( array( 'brewery_menu', 'drinks_menu', 'spirits_menu' ) );
 	$has_untappd_embed = belltower_request_has_shortcodes( 'untappd_menu' );
 	$has_pairing_embed = belltower_request_has_shortcodes( array( 'bt_pairing_app', 'pairing_app' ) )
 		|| belltower_request_has_blocks( 'bt/pairing-app' );
@@ -702,6 +704,19 @@ function belltower_drinks_menu_shortcode( $atts ) {
 	);
 }
 add_shortcode( 'drinks_menu', 'belltower_drinks_menu_shortcode' );
+
+function belltower_spirits_menu_shortcode( $atts ) {
+	$atts = shortcode_atts( [ 'category' => '' ], $atts, 'spirits_menu' );
+	$cat     = esc_attr( $atts['category'] );
+
+	belltower_enqueue_embed_assets( true, false );
+
+	return sprintf(
+		'<div class="drinks-menu spirits-menu" data-category="%s"></div>',
+		$cat
+	);
+}
+add_shortcode( 'spirits_menu', 'belltower_spirits_menu_shortcode' );
 
 /**
  * Keg list shortcode: [keg_list type="retail|wholesale|both"].

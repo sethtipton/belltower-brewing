@@ -12,9 +12,9 @@ function style() {
 
 function serve(done) {
   browserSync.init({
-    proxy: 'https://belltower.local', // Local site domain (use https:// if Local is HTTPS)
+    proxy: 'https://belltower.local',
     port: 3000,
-    https: true,           // set true to match Local's trusted cert
+    https: false,
     open: false,
     notify: false,
     files: [
@@ -31,6 +31,12 @@ function serve(done) {
   done();
 }
 
+function watchTheme(done) {
+  gulp.watch('wp-content/themes/belltower/sass/**/*.scss', style);
+  done();
+}
+
 exports.style = style;
-exports.watch = gulp.series(style, serve);
+exports.serve = gulp.series(style, serve);
+exports.watch = gulp.series(style, watchTheme);
 exports.default = exports.watch;

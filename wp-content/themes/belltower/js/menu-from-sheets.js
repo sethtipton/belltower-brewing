@@ -6,11 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const pairingTools = window.BT_PAIRING_PROFILES || null;
 	const foodMenus = document.querySelectorAll('.brewery-menu');
-	const drinksMenus = document.querySelectorAll('.drinks-menu');
+	const drinksMenus = document.querySelectorAll('.drinks-menu:not(.spirits-menu)');
+	const spiritsMenus = document.querySelectorAll('.spirits-menu');
 	const hasFoodMenus = !!foodMenus.length;
 	const hasDrinksMenus = !!drinksMenus.length;
+	const hasSpiritsMenus = !!spiritsMenus.length;
 	const csvFoodURL = window.belltowerMenu.csvURL;
 	const csvDrinksURL = window.belltowerMenu.drinksCsvURL;
+	const csvSpiritsURL = window.belltowerMenu.spiritsCsvURL;
 
 	function normalizePriceDisplay(price) {
 		const raw = (price || '').trim();
@@ -75,9 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		return tags.some(tag => tag.includes('kids'));
 	}
 
-	function renderAll(kind, items) {
-		const menus = kind === 'food' ? foodMenus : drinksMenus;
-		const hasMenus = kind === 'food' ? hasFoodMenus : hasDrinksMenus;
+	function renderAll(kind, items, menusOverride = null) {
+		const menus = menusOverride || (kind === 'food' ? foodMenus : kind === 'drinks' ? drinksMenus : spiritsMenus);
+		const hasMenus = !!menus.length;
 		const allTags = new Set();
 		items.forEach(it => {
 			if (!it.tagsArray || !it.tagsArray.length) return;
@@ -94,7 +97,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				renderLegend(div, items)
 			);
 		}
-		generateMenuJSONLD(items);
+		if (kind === 'food') {
+			generateMenuJSONLD(items);
+		}
 	}
 
 	function fetchAndPublish(url, kind, hasMenus, menus) {
@@ -153,6 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Fetch drinks sheet -> __BT_DATA.drinks (no __BT_MENU_DATA override)
 	if (csvDrinksURL) {
 		fetchAndPublish(csvDrinksURL, 'drinks', hasDrinksMenus, drinksMenus);
+	}
+
+	if (hasSpiritsMenus) {
+		if (csvSpiritsURL) {
+			fetchAndPublish(csvSpiritsURL, 'spirits', true, spiritsMenus);
+		} else {
+			spiritsMenus.forEach(menu => {
+				renderErrorState(menu, 'Sorry — spirits menu unavailable.');
+			});
+		}
 	}
 });
 

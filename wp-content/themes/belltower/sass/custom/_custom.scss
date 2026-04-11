@@ -1471,6 +1471,11 @@ body.blog {
   margin-bottom: 1em;
 }
 
+#menu-filters:has(+ .spirits-menu),
+#menu-filters:has(+ .category-section .spirits-menu) {
+  display: none;
+}
+
 .menu-filters-wrap {
   display: flex;
   justify-content: flex-start;
