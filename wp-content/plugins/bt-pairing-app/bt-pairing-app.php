@@ -272,6 +272,8 @@ function bt_pairing_app_enqueue_assets() {
 	);
 	wp_script_add_data( $handle, 'type', 'module' );
 
+	$openai_configured = '' !== (string) bt_pairing_app_get_openai_config()['api_key'];
+
 	wp_localize_script(
 		$handle,
 		'BT_PAIRING_APP_CONFIG',
@@ -290,6 +292,7 @@ function bt_pairing_app_enqueue_assets() {
 				'restUrl'   => get_rest_url(),
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'isAdmin'   => current_user_can( 'manage_options' ),
+				'openaiConfigured' => $openai_configured,
 				'cacheHash' => get_option( 'bt_pairing_latest_hash', '' ),
 				'siteUrl'   => get_site_url(),
 				'menuSnapshot' => bt_pairing_menu_get_snapshot(),

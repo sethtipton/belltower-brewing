@@ -48,7 +48,7 @@ const formatPrefix = (scope: string, event: string): string => `[PAIRING_APP] ${
 const logWithLevel = (level: 'debug' | 'info' | 'warn' | 'error', scope: string, event: string, data?: Record<string, unknown>) => {
   const logger = getConsole();
   if (!logger) return;
-  if (level === 'debug' && !DEBUG) return;
+  if ((level === 'debug' || level === 'info') && !DEBUG) return;
   EVENT_SEQ += 1;
   const payload = { traceId: TRACE_ID, seq: EVENT_SEQ, ...data };
   const method = level === 'debug' ? 'log' : level;

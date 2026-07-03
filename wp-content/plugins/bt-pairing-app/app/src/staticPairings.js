@@ -615,7 +615,7 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
       if (!currentFood) {
         setStatus('no-food-data');
         setAvailable(false);
-        log.warn('noFoodData', { phase: 'staticPairings' });
+        log.debug('noFoodData', { phase: 'staticPairings' });
         return;
       }
       if (!beerData) {

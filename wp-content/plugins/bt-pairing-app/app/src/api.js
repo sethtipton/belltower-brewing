@@ -4,7 +4,7 @@ import { createLogger } from './logger';
 const log = createLogger('api');
 
 /**
- * @typedef {{ restUrl?: string; nonce?: string }} PairingGlobals
+ * @typedef {{ restUrl?: string; nonce?: string; openaiConfigured?: boolean }} PairingGlobals
  * @typedef {Window & { BT_PAIRING_APP_CONFIG?: PairingGlobals; PAIRING_APP?: PairingGlobals; PAIRINGAPP?: PairingGlobals }} PairingWindow
  */
 
@@ -18,7 +18,8 @@ function getGlobals() {
   if (!source || typeof source !== 'object') return {};
   const restUrl = typeof source.restUrl === 'string' ? source.restUrl : undefined;
   const nonce = typeof source.nonce === 'string' ? source.nonce : undefined;
-  return { restUrl, nonce };
+  const openaiConfigured = typeof source.openaiConfigured === 'boolean' ? source.openaiConfigured : undefined;
+  return { restUrl, nonce, openaiConfigured };
 }
 
 export function getWPBase() {
@@ -29,6 +30,11 @@ export function getWPBase() {
 function getNonce() {
   const g = getGlobals();
   return g.nonce ?? '';
+}
+
+export function isOpenAIConfigured() {
+  const g = getGlobals();
+  return g.openaiConfigured !== false;
 }
 
 /**
@@ -81,6 +87,7 @@ let beerColorsCooldownUntil = 0;
  */
 export async function getBeerColors(items = []) {
   if (!items.length) return null;
+  if (!isOpenAIConfigured()) return null;
   if (Date.now() < beerColorsCooldownUntil) return null;
   if (beerColorsInFlight) return beerColorsInFlight;
   log.debug('beerColors.start', { phase: 'api', count: items.length });

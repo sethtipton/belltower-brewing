@@ -1,4 +1,4 @@
-import { getWPBase } from '../api';
+import { getWPBase, isOpenAIConfigured } from '../api';
 import { createLogger } from '../logger';
 
 const log = createLogger('beerColors');
@@ -32,6 +32,7 @@ let beerColorInFlight = null;
 
 export async function fetchBeerColorsBatch(items = []) {
   if (!Array.isArray(items) || !items.length) return {};
+  if (!isOpenAIConfigured()) return null;
   if (Date.now() < nextBeerColorAllowedAt || beerColorInFlight) return null;
   const url = `${getWPBase().replace(/\/$/, '')}/bt/v1/beer-colors`;
   beerColorInFlight = (async () => {

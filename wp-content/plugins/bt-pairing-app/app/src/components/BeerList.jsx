@@ -7,6 +7,7 @@ import {
   isCacheStale,
   observeVisibleIds,
 } from '../utils/beerColor';
+import { isOpenAIConfigured } from '../api';
 import { createLogger } from '../logger';
 
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
@@ -133,6 +134,14 @@ export default function BeerList({
       });
     }
     if (!allowColorFetch || !missingIds.length || colorFetchFailed || colorFetchInFlight.current) return;
+    if (!isOpenAIConfigured()) {
+      log.debug('batch.skipped', {
+        phase: 'beerColors',
+        reason: 'openaiConfigured=false',
+        missing: missingIds.length,
+      });
+      return;
+    }
     if (colorFetchAttempted.current) return;
     let cancelled = false;
     let fetchFailed = false;
