@@ -465,6 +465,34 @@ function publishCanonicalMenuData(items, meta = {}) {
 			}
 		}
 	}
+
+	postCanonicalSnapshot(kind, payload, meta);
+}
+
+function postCanonicalSnapshot(kind, payload, meta = {}) {
+	if (typeof window === 'undefined' || !payload || !Array.isArray(payload.items)) return;
+	if (kind !== 'beer' && kind !== 'food') return;
+	const cfg = window.BT_PAIRING_APP_CONFIG || window.PAIRING_APP || window.PAIRINGAPP || null;
+	const base = cfg && typeof cfg.restUrl === 'string' ? cfg.restUrl.replace(/\/$/, '') : `${window.location.origin}/wp-json`;
+	const nonce = cfg && typeof cfg.nonce === 'string' ? cfg.nonce : '';
+	const endpoint = `${base}/bt/v1/menu-snapshot/intake`;
+	const sourceName = kind === 'food' ? 'sheets-menu' : 'theme-bridge';
+	const sourceUrl = typeof meta.sourceUrl === 'string' ? meta.sourceUrl : '';
+	fetch(endpoint, {
+		method: 'POST',
+		credentials: 'same-origin',
+		headers: {
+			'Content-Type': 'application/json',
+			...(nonce ? { 'X-WP-Nonce': nonce } : {}),
+		},
+		body: JSON.stringify({
+			kind,
+			payload,
+			source: { name: sourceName, url: sourceUrl },
+		}),
+	}).catch(() => {
+		// Transitional bridge: snapshot intake failures should not break menu rendering.
+	});
 }
 
 function generateMenuJSONLD(items) {

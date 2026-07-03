@@ -117,7 +117,9 @@ function normalizePayload(payload, expectedKind) {
 /** @returns {MenuPayload | null} */
 export function getCanonicalFoodData() {
   if (typeof window !== 'undefined') {
-    const win = /** @type {Window & { __BT_FOOD_DATA?: unknown; __BT_DATA?: { food?: unknown } }} */ (window);
+    const win = /** @type {Window & { __BT_CANONICAL_MENU_SNAPSHOT?: { food?: unknown }; __BT_FOOD_DATA?: unknown; __BT_DATA?: { food?: unknown } }} */ (window);
+    const canonical = normalizePayload(win.__BT_CANONICAL_MENU_SNAPSHOT?.food, 'food');
+    if (canonical) return canonical;
     const direct = normalizePayload(win.__BT_FOOD_DATA, 'food');
     if (direct) return direct;
     const nested = normalizePayload(win.__BT_DATA?.food, 'food');
@@ -131,7 +133,9 @@ export function getCanonicalFoodData() {
 /** @returns {MenuPayload | null} */
 export function getCanonicalBeerDataFallback() {
   if (typeof window !== 'undefined') {
-    const win = /** @type {Window & { __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
+    const win = /** @type {Window & { __BT_CANONICAL_MENU_SNAPSHOT?: { beer?: unknown }; __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
+    const canonical = normalizePayload(win.__BT_CANONICAL_MENU_SNAPSHOT?.beer, 'beer');
+    if (canonical) return canonical;
     const direct = normalizePayload(win.__BT_BEER_DATA, 'beer');
     if (direct) return direct;
     const nested = normalizePayload(win.__BT_DATA?.beer, 'beer');
@@ -513,6 +517,7 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
   }, [beers]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (typeof document === 'undefined') return;
     const updateFoodData = () => {
       const next = getCanonicalFoodData();
@@ -537,9 +542,10 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
       document.removeEventListener('btFoodDataReady', onFoodReady);
       if (observer) observer.disconnect();
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (typeof document === 'undefined') return;
     const onReset = () => {
       resetGuardRef.current = true;
@@ -556,7 +562,7 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
       document.removeEventListener('btPairingReset', onReset);
       document.removeEventListener('btPairingRefresh', onRefresh);
     };
-  }, []);
+  }, [enabled]);
 
   const cacheKey = useMemo(
     () => getStaticPairingsCacheKey({ beerData, foodData }),
@@ -688,6 +694,20 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
     [beerData, foodData, foodIndex, enabled]
   );
 
+  const clearCurrentCache = useCallback(() => {
+    if (!cacheKey) return;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(cacheKey);
+      }
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem(cacheKey);
+      }
+    } catch {
+      // ignore cache clear errors
+    }
+  }, [cacheKey]);
+
   return {
     status: effectiveStatus,
     error,
@@ -697,5 +717,7 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
     available: effectiveAvailable,
     lastUpdated,
     cacheStore,
+    cacheKey,
+    clearCurrentCache,
   };
 }

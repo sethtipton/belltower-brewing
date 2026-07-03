@@ -37,6 +37,7 @@ const log = createLogger('beerColors');
  *  items?: Beer[];
  *  allowColorFetch?: boolean;
  *  showHistory?: boolean;
+ *  showFunFacts?: boolean;
  *  onFlightOpen?: () => void;
  *  colorMapOverride?: Record<string, string> | null;
  *  flightFull?: boolean;
@@ -56,6 +57,7 @@ export default function BeerList({
   items = [],
   allowColorFetch = true,
   showHistory = false,
+  showFunFacts = false,
   onFlightOpen,
   colorMapOverride = null,
   flightFull = false,
@@ -253,6 +255,7 @@ export default function BeerList({
                 showSettle={false}
                 prefersReduced={prefersReduced}
                 showHistory={showHistory}
+                showFunFacts={showFunFacts}
                 selected={flightIds.has(id)}
                 flightFull={flightFull}
                 onFlightOpen={onFlightOpen}

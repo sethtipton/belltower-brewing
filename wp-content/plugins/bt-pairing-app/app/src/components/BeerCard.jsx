@@ -20,6 +20,8 @@ import useFlight from '../hooks/useFlight';
  * @property {number | null | undefined} [recommendationScore]
  * @property {string | null | undefined} [recommendationConfidence]
  * @property {string | null | undefined} [history_fun]
+ * @property {string | null | undefined} [history_text]
+ * @property {string | null | undefined} [fun_facts_text]
  */
 
 const MotionCard = React.memo(
@@ -29,6 +31,7 @@ const MotionCard = React.memo(
    *  showSettle?: boolean;
    *  prefersReduced?: boolean;
  *  showHistory?: boolean;
+ *  showFunFacts?: boolean;
  *  selected?: boolean;
  *  onSelect?: () => void;
  *  flightFull?: boolean;
@@ -50,6 +53,7 @@ const MotionCard = React.memo(
     showSettle,
     prefersReduced,
     showHistory: enableHistory,
+    showFunFacts: enableFunFacts,
     selected,
     onSelect,
     flightFull = false,
@@ -62,7 +66,10 @@ const MotionCard = React.memo(
     const rgb = useMemo(() => hexToRgb(tint), [tint]);
     const isRecommended = Boolean(beer?.recommended);
     const historyText = enableHistory
-      ? beer?.history_fun ?? `Loading History & fun facts for ${beer?.name ?? 'this beer'}.`
+      ? beer?.history_text ?? `Loading history for ${beer?.name ?? 'this beer'}.`
+      : '';
+    const funFactsText = enableFunFacts
+      ? beer?.fun_facts_text ?? `Loading fun facts for ${beer?.name ?? 'this beer'}.`
       : '';
     const historyParagraphs = useMemo(() => {
       if (!historyText) return [];
@@ -71,9 +78,17 @@ const MotionCard = React.memo(
         .map((p) => p.trim())
         .filter(Boolean);
     }, [historyText]);
+    const funFactsParagraphs = useMemo(() => {
+      if (!funFactsText) return [];
+      return funFactsText
+        .split(/\n+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+    }, [funFactsText]);
     const hasHistory = Boolean(historyParagraphs.length);
+    const hasFunFacts = Boolean(funFactsParagraphs.length);
     const hasPairings = Boolean(pairingsState);
-    const [activeTab, setActiveTab] = useState(/** @type {'history' | 'pairings' | 'none'} */ ('none'));
+    const [activeTab, setActiveTab] = useState(/** @type {'history' | 'funFacts' | 'pairings' | 'none'} */ ('none'));
     /** @type {React.MutableRefObject<Record<string, HTMLButtonElement | null>>} */
     const tabRefs = useRef({});
     const score = beer?.recommendationScore;
@@ -89,21 +104,24 @@ const MotionCard = React.memo(
     const beerKey = beer?.btKey ?? '';
     const pairings = beerKey ? pairingsState?.pairingsByBeerKey?.[beerKey] : null;
     const foodByKey = pairingsState?.foodByKey ?? {};
-    /** @type {{ history: string; pairings: string }} */
+    /** @type {{ history: string; funFacts: string; pairings: string }} */
     const tabIds = {
       history: `beer-tab-history-${beer.id}`,
+      funFacts: `beer-tab-fun-facts-${beer.id}`,
       pairings: `beer-tab-pairings-${beer.id}`,
     };
     const panelIds = {
       history: `beer-panel-history-${beer.id}`,
+      funFacts: `beer-panel-fun-facts-${beer.id}`,
       pairings: `beer-panel-pairings-${beer.id}`,
     };
 
-    const showTabs = hasHistory || hasPairings;
-    /** @type {{ key: 'history' | 'pairings'; label: string }[]} */
+    const showTabs = hasHistory || hasFunFacts || hasPairings;
+    /** @type {{ key: 'history' | 'funFacts' | 'pairings'; label: string }[]} */
     const tabs = showTabs
       ? [
-        ...(hasHistory ? [{ key: 'history', label: 'History & fun facts' }] : []),
+        ...(hasHistory ? [{ key: 'history', label: 'History' }] : []),
+        ...(hasFunFacts ? [{ key: 'funFacts', label: 'Fun facts' }] : []),
         ...(hasPairings ? [{ key: 'pairings', label: 'Food pairings we suggest' }] : []),
       ]
       : [];
@@ -249,6 +267,18 @@ const MotionCard = React.memo(
                             ? historyParagraphs.map((p, idx) => <p key={idx}>{p}</p>)
                             : <p>{historyText}</p>}
                         </motion.div>
+                      ) : resolvedActiveTab === 'funFacts' ? (
+                        <motion.div
+                          key="funFacts"
+                          className="beer-history-content ai-text"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.2, ease: 'easeOut', delay: 0.12 }}
+                        >
+                          {funFactsParagraphs.length
+                            ? funFactsParagraphs.map((p, idx) => <p key={idx}>{p}</p>)
+                            : <p>{funFactsText}</p>}
+                        </motion.div>
                       ) : (
                         <motion.div
                           key="pairings"
@@ -381,11 +411,14 @@ const MotionCard = React.memo(
     return (
       prev.selected === next.selected &&
       prev.showHistory === next.showHistory &&
+      prev.showFunFacts === next.showFunFacts &&
       prev.pairingsToken === next.pairingsToken &&
       prevBeer.id === nextBeer.id &&
       prevBeer.recommended === nextBeer.recommended &&
       prevBeer.recommendationMatchSentence === nextBeer.recommendationMatchSentence &&
       prevBeer.hexColor === nextBeer.hexColor &&
+      prevBeer.history_text === nextBeer.history_text &&
+      prevBeer.fun_facts_text === nextBeer.fun_facts_text &&
       prevBeer.history_fun === nextBeer.history_fun
     );
   }
@@ -397,6 +430,7 @@ const MotionCard = React.memo(
  *  showSettle?: boolean;
  *  prefersReduced?: boolean;
  *  showHistory?: boolean;
+ *  showFunFacts?: boolean;
  *  selected?: boolean;
  *  onSelect?: () => void;
  *  onFlightOpen?: () => void;
@@ -416,6 +450,7 @@ export default function BeerCard({
   showSettle,
   prefersReduced,
   showHistory,
+  showFunFacts,
   selected,
   onSelect,
   onFlightOpen,
@@ -450,6 +485,7 @@ export default function BeerCard({
       showSettle={showSettle}
       prefersReduced={prefersReduced}
       showHistory={showHistory}
+      showFunFacts={showFunFacts}
       selected={inFlight || selected}
       onSelect={handleToggle}
       flightFull={isFlightFull}

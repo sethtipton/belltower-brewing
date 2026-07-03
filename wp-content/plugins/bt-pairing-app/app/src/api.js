@@ -207,32 +207,74 @@ export async function getPairingCacheStatus(hash) {
 
 /**
  * @param {Array<string | { slug?: string; name?: string; description?: string }>} items
- * @param {{ force?: boolean }} options
+ * @param {{ force?: boolean; hash?: string | null }} options
  * @returns {Promise<{ histories: Record<string, unknown>; partial: boolean; cached: unknown[] }>}
  */
 export function getHistories(items = [], options = {}) {
   if (!Array.isArray(items) || !items.length) {
     return Promise.resolve({ histories: {}, partial: false, cached: [] });
   }
-  /** @type {{ force: boolean; slugs?: string[]; items?: Array<{ slug: string; name: string; description: string }> }} */
+  /** @type {{ force: boolean; hash?: string; slugs?: string[]; items?: Array<{ slug: string; name: string; description: string; style?: string }> }} */
   const payload = {
     force: options.force ? true : false,
   };
+  if (typeof options.hash === 'string' && options.hash) {
+    payload.hash = options.hash;
+  }
   if (typeof items[0] === 'string') {
     payload.slugs = /** @type {string[]} */ (items);
   } else {
-    const rawItems = /** @type {Array<{ slug?: string; name?: string; description?: string }>} */ (items);
-    /** @type {Array<{ slug: string; name: string; description: string }> } */
+    const rawItems = /** @type {Array<{ slug?: string; name?: string; description?: string; style?: string }>} */ (items);
+    /** @type {Array<{ slug: string; name: string; description: string; style?: string }> } */
     const itemObjects = rawItems.map((it) => ({
       slug: it.slug ?? it.name ?? '',
       name: it.name ?? '',
       description: it.description ?? '',
+      style: it.style ?? '',
     }));
     payload.items = itemObjects;
     payload.slugs = itemObjects.map((it) => it.slug).filter(Boolean);
   }
   return /** @type {Promise<{ histories: Record<string, unknown>; partial: boolean; cached: unknown[] }>} */ (
     wpFetch('/bt/v1/pairing/history', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+/**
+ * @param {Array<string | { slug?: string; name?: string; description?: string; style?: string }>} items
+ * @param {{ force?: boolean; hash?: string | null }} options
+ * @returns {Promise<{ histories: Record<string, unknown>; partial: boolean; cached: unknown[] }>}
+ */
+export function getFunFacts(items = [], options = {}) {
+  if (!Array.isArray(items) || !items.length) {
+    return Promise.resolve({ histories: {}, partial: false, cached: [] });
+  }
+  /** @type {{ force: boolean; hash?: string; slugs?: string[]; items?: Array<{ slug: string; name: string; description: string; style?: string }> }} */
+  const payload = {
+    force: options.force ? true : false,
+  };
+  if (typeof options.hash === 'string' && options.hash) {
+    payload.hash = options.hash;
+  }
+  if (typeof items[0] === 'string') {
+    payload.slugs = /** @type {string[]} */ (items);
+  } else {
+    const rawItems = /** @type {Array<{ slug?: string; name?: string; description?: string; style?: string }>} */ (items);
+    /** @type {Array<{ slug: string; name: string; description: string; style?: string }> } */
+    const itemObjects = rawItems.map((it) => ({
+      slug: it.slug ?? it.name ?? '',
+      name: it.name ?? '',
+      description: it.description ?? '',
+      style: it.style ?? '',
+    }));
+    payload.items = itemObjects;
+    payload.slugs = itemObjects.map((it) => it.slug).filter(Boolean);
+  }
+  return /** @type {Promise<{ histories: Record<string, unknown>; partial: boolean; cached: unknown[] }>} */ (
+    wpFetch('/bt/v1/pairing/fun-facts', {
       method: 'POST',
       body: JSON.stringify(payload),
     })

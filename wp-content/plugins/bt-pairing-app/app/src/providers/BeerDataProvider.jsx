@@ -15,7 +15,11 @@ const BeerDataContext = createContext(null);
 /** @returns {{ items: unknown[]; error?: string }} */
 function readSnapshot() {
   if (typeof window === 'undefined') return { items: [] };
-  const win = /** @type {Window & { __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
+  const win = /** @type {Window & { __BT_CANONICAL_MENU_SNAPSHOT?: { beer?: unknown }; __BT_BEER_DATA?: unknown; __BT_DATA?: { beer?: unknown } }} */ (window);
+  const canonical = win.__BT_CANONICAL_MENU_SNAPSHOT?.beer ?? null;
+  if (canonical && typeof canonical === 'object' && 'items' in canonical && Array.isArray(canonical.items)) {
+    return { items: /** @type {unknown[]} */ (canonical.items) };
+  }
   const inline = win.__BT_BEER_DATA ?? win.__BT_DATA?.beer ?? null;
   if (Array.isArray(inline)) return { items: /** @type {unknown[]} */ (inline) };
   const script = typeof document !== 'undefined' ? document.getElementById('bt-beer-data') : null;

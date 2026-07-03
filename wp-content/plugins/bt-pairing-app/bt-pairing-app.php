@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/includes/menu-snapshot.php';
 require_once __DIR__ . '/includes/rest.php';
 
 function bt_pairing_app_plugin_dir_path() {
@@ -109,6 +110,58 @@ function bt_pairing_app_activate() {
 	}
 }
 register_activation_hook( __FILE__, 'bt_pairing_app_activate' );
+
+function bt_pairing_app_bool_from_attr( $value, $default = true ) {
+	if ( null === $value || '' === $value ) {
+		return (bool) $default;
+	}
+	if ( is_bool( $value ) ) {
+		return $value;
+	}
+	$raw = strtolower( trim( (string) $value ) );
+	if ( in_array( $raw, array( '1', 'true', 'yes', 'on' ), true ) ) {
+		return true;
+	}
+	if ( in_array( $raw, array( '0', 'false', 'no', 'off' ), true ) ) {
+		return false;
+	}
+	return (bool) $default;
+}
+
+function bt_pairing_app_default_page_features() {
+	$flags = bt_pairing_get_feature_flags();
+	return array(
+		'show_quiz'      => ! empty( $flags['help_form'] ),
+		'show_flight'    => true,
+		'show_history'   => ! empty( $flags['history'] ),
+		'show_fun_facts' => ! empty( $flags['fun_facts'] ),
+		'show_pairings'  => ! empty( $flags['food_pairings'] ),
+	);
+}
+
+function bt_pairing_app_normalize_page_features( $raw = array() ) {
+	$defaults = bt_pairing_app_default_page_features();
+	return array(
+		'show_quiz'      => bt_pairing_app_bool_from_attr( isset( $raw['show_quiz'] ) ? $raw['show_quiz'] : null, $defaults['show_quiz'] ),
+		'show_flight'    => bt_pairing_app_bool_from_attr( isset( $raw['show_flight'] ) ? $raw['show_flight'] : null, $defaults['show_flight'] ),
+		'show_history'   => bt_pairing_app_bool_from_attr( isset( $raw['show_history'] ) ? $raw['show_history'] : null, $defaults['show_history'] ),
+		'show_fun_facts' => bt_pairing_app_bool_from_attr( isset( $raw['show_fun_facts'] ) ? $raw['show_fun_facts'] : null, $defaults['show_fun_facts'] ),
+		'show_pairings'  => bt_pairing_app_bool_from_attr( isset( $raw['show_pairings'] ) ? $raw['show_pairings'] : null, $defaults['show_pairings'] ),
+	);
+}
+
+function bt_pairing_app_set_page_features( $features ) {
+	global $bt_pairing_app_page_features;
+	$bt_pairing_app_page_features = bt_pairing_app_normalize_page_features( is_array( $features ) ? $features : array() );
+}
+
+function bt_pairing_app_get_page_features() {
+	global $bt_pairing_app_page_features;
+	if ( is_array( $bt_pairing_app_page_features ) ) {
+		return bt_pairing_app_normalize_page_features( $bt_pairing_app_page_features );
+	}
+	return bt_pairing_app_default_page_features();
+}
 
 function bt_pairing_app_mark_present() {
 	global $bt_pairing_app_present;
@@ -223,21 +276,45 @@ function bt_pairing_app_enqueue_assets() {
 		$handle,
 		'BT_PAIRING_APP_CONFIG',
 		array(
-			'features' => ( function() {
-				$flags = bt_pairing_get_feature_flags();
-				return array(
-					'helpForm'     => ! empty( $flags['help_form'] ),
-					'history'      => ! empty( $flags['history'] ),
-					'foodPairings' => ! empty( $flags['food_pairings'] ),
-				);
-			} )(),
-			'restUrl'   => get_rest_url(),
-			'nonce'     => wp_create_nonce( 'wp_rest' ),
-			'isAdmin'   => current_user_can( 'manage_options' ),
-			'cacheHash' => get_option( 'bt_pairing_latest_hash', '' ),
-			'siteUrl'   => get_site_url(),
-		)
-	);
+				'features' => ( function() {
+					$flags = bt_pairing_get_feature_flags();
+						return array(
+							'helpForm'     => ! empty( $flags['help_form'] ),
+							'history'      => ! empty( $flags['history'] ),
+							'funFacts'     => ! empty( $flags['fun_facts'] ),
+							'fun_facts'    => ! empty( $flags['fun_facts'] ),
+							'foodPairings' => ! empty( $flags['food_pairings'] ),
+						);
+					} )(),
+				'pageFeatures' => bt_pairing_app_get_page_features(),
+				'restUrl'   => get_rest_url(),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'isAdmin'   => current_user_can( 'manage_options' ),
+				'cacheHash' => get_option( 'bt_pairing_latest_hash', '' ),
+				'siteUrl'   => get_site_url(),
+				'menuSnapshot' => bt_pairing_menu_get_snapshot(),
+			)
+		);
+
+	$snapshot = bt_pairing_menu_get_snapshot();
+	$inline_snapshot = wp_json_encode( $snapshot );
+	if ( $inline_snapshot ) {
+		$bootstrap = '(function(){'
+			. 'var snapshot=' . $inline_snapshot . ';'
+			. 'if(!snapshot||typeof snapshot!=="object"){return;}'
+			. 'window.__BT_CANONICAL_MENU_SNAPSHOT=snapshot;'
+			. 'window.__BT_DATA=window.__BT_DATA||{};'
+			. 'if(snapshot.beer&&typeof snapshot.beer==="object"){window.__BT_DATA.beer=snapshot.beer;window.__BT_BEER_DATA=snapshot.beer;}'
+			. 'if(snapshot.food&&typeof snapshot.food==="object"){window.__BT_DATA.food=snapshot.food;window.__BT_FOOD_DATA=snapshot.food;window.__BT_MENU_DATA=snapshot.food;}'
+			. '})();';
+		wp_add_inline_script( $handle, $bootstrap, 'before' );
+	}
+
+	$page_features_json = wp_json_encode( bt_pairing_app_get_page_features() );
+	if ( $page_features_json ) {
+		$page_bootstrap = '(function(){window.BT_PAIRING_APP_PAGE_FEATURES=' . $page_features_json . ';})();';
+		wp_add_inline_script( $handle, $page_bootstrap, 'before' );
+	}
 
 	wp_enqueue_script( $handle );
 }
@@ -276,20 +353,49 @@ function bt_pairing_app_maybe_enqueue_assets_late() {
 }
 add_action( 'wp_footer', 'bt_pairing_app_maybe_enqueue_assets_late', 1 );
 
-function bt_pairing_app_render_mount() {
+function bt_pairing_app_render_mount( $page_features = array() ) {
 	bt_pairing_app_mark_present();
-	return '<div id="bt-pairing-app-root" aria-live="polite"></div>';
+	$normalized = bt_pairing_app_normalize_page_features( is_array( $page_features ) ? $page_features : array() );
+	bt_pairing_app_set_page_features( $normalized );
+	return sprintf(
+		'<div id="bt-pairing-app-root" aria-live="polite" data-show-quiz="%1$s" data-show-flight="%2$s" data-show-history="%3$s" data-show-fun-facts="%4$s" data-show-pairings="%5$s"></div>',
+		$normalized['show_quiz'] ? '1' : '0',
+		$normalized['show_flight'] ? '1' : '0',
+		$normalized['show_history'] ? '1' : '0',
+		$normalized['show_fun_facts'] ? '1' : '0',
+		$normalized['show_pairings'] ? '1' : '0'
+	);
 }
 
 function bt_pairing_app_shortcode( $atts = array() ) {
-	unset( $atts );
-	return bt_pairing_app_render_mount();
+	$defaults = bt_pairing_app_default_page_features();
+	$atts = shortcode_atts(
+		array(
+			'show_quiz'      => $defaults['show_quiz'] ? '1' : '0',
+			'show_flight'    => $defaults['show_flight'] ? '1' : '0',
+			'show_history'   => $defaults['show_history'] ? '1' : '0',
+			'show_fun_facts' => $defaults['show_fun_facts'] ? '1' : '0',
+			'show_pairings'  => $defaults['show_pairings'] ? '1' : '0',
+		),
+		$atts,
+		'bt_pairing_app'
+	);
+	return bt_pairing_app_render_mount( $atts );
 }
 add_shortcode( 'bt_pairing_app', 'bt_pairing_app_shortcode' );
 
 function bt_pairing_app_block_render_callback( $attributes, $content ) {
-	unset( $attributes, $content );
-	return bt_pairing_app_render_mount();
+	unset( $content );
+	$raw = is_array( $attributes ) ? $attributes : array();
+	return bt_pairing_app_render_mount(
+		array(
+			'show_quiz'      => isset( $raw['show_quiz'] ) ? $raw['show_quiz'] : null,
+			'show_flight'    => isset( $raw['show_flight'] ) ? $raw['show_flight'] : null,
+			'show_history'   => isset( $raw['show_history'] ) ? $raw['show_history'] : null,
+			'show_fun_facts' => isset( $raw['show_fun_facts'] ) ? $raw['show_fun_facts'] : null,
+			'show_pairings'  => isset( $raw['show_pairings'] ) ? $raw['show_pairings'] : null,
+		)
+	);
 }
 
 function bt_pairing_app_register_block() {

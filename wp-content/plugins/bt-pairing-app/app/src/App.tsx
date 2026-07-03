@@ -4,7 +4,7 @@ import { useBeerData } from './hooks/useBeerData';
 import { BeerDataProvider } from './providers/BeerDataProvider';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
-import { preloadPairing, getHistories, getPairingCache, getPairingCacheStatus } from './api';
+import { preloadPairing, getHistories, getFunFacts, getPairingCache, getPairingCacheStatus } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
 import { getCachedColors, isCacheStale } from './utils/beerColor';
@@ -50,7 +50,8 @@ interface BeerItem {
   recommendationScore?: number | null;
   recommendationConfidence?: string | null;
   recommendationMatchSentence?: string | null;
-  history_fun?: string | null;
+  history_text?: string | null;
+  fun_facts_text?: string | null;
 }
 interface MatchLike { beer?: unknown; score?: unknown; confidence?: unknown; match_sentence?: unknown; matchSentence?: unknown }
 type FetchStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -70,13 +71,28 @@ interface RecommendState {
   savedAt: number;
 }
 interface PairingFeatureFlags {
+  show_quiz?: boolean;
+  show_flight?: boolean;
+  show_history?: boolean;
+  show_fun_facts?: boolean;
+  show_pairings?: boolean;
   helpForm?: boolean;
   history?: boolean;
+  funFacts?: boolean;
+  fun_facts?: boolean;
   foodPairings?: boolean;
+}
+interface ResolvedFeatureFlags {
+  showQuiz: boolean;
+  showFlight: boolean;
+  showHistory: boolean;
+  showFunFacts: boolean;
+  showPairings: boolean;
 }
 
 const PAIRING_MAP_KEY = 'bt_pairing_cache_v1_map';
-const HISTORY_CACHE_KEY = 'bt_history_cache_v1';
+const HISTORY_CACHE_KEY = 'bt_history_cache_v2';
+const FUN_FACTS_CACHE_KEY = 'bt_fun_facts_cache_v1';
 const RECOMMEND_STATE_KEY = 'bt_pairing_recommend_state_v1';
 const EMPTY_PREPARED: PreparedAnswers = { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' };
 const session = typeof globalThis !== 'undefined' ? globalThis.sessionStorage : null;
@@ -87,9 +103,10 @@ const staticLog = createLogger('staticPairings');
 const recLog = createLogger('recommendations');
 const pairingGlobals = typeof globalThis !== 'undefined'
   ? (globalThis as {
-      BT_PAIRING_APP_CONFIG?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags };
-      PAIRING_APP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags };
-      PAIRINGAPP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags };
+      BT_PAIRING_APP_CONFIG?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags; pageFeatures?: PairingFeatureFlags };
+      PAIRING_APP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags; pageFeatures?: PairingFeatureFlags };
+      PAIRINGAPP?: { isAdmin?: boolean; cacheHash?: string; features?: PairingFeatureFlags; pageFeatures?: PairingFeatureFlags };
+      BT_PAIRING_APP_PAGE_FEATURES?: PairingFeatureFlags;
     })
   : null;
 const isAdmin = Boolean(
@@ -97,15 +114,55 @@ const isAdmin = Boolean(
   ?? pairingGlobals?.PAIRING_APP?.isAdmin
   ?? pairingGlobals?.PAIRINGAPP?.isAdmin
 );
-const getFeatureFlags = (): { helpForm: boolean; history: boolean; foodPairings: boolean } => {
-  const raw = pairingGlobals?.BT_PAIRING_APP_CONFIG?.features
+const toBool = (value: unknown, fallback: boolean): boolean => {
+  if (typeof value === 'boolean') return value;
+  return fallback;
+};
+const getFeatureFlags = (): ResolvedFeatureFlags => {
+  const siteRaw = pairingGlobals?.BT_PAIRING_APP_CONFIG?.features
     ?? pairingGlobals?.PAIRING_APP?.features
     ?? pairingGlobals?.PAIRINGAPP?.features
     ?? {};
+  const pageRaw = pairingGlobals?.BT_PAIRING_APP_PAGE_FEATURES
+    ?? pairingGlobals?.BT_PAIRING_APP_CONFIG?.pageFeatures
+    ?? pairingGlobals?.PAIRING_APP?.pageFeatures
+    ?? pairingGlobals?.PAIRINGAPP?.pageFeatures
+    ?? {};
+  const siteDefaults = {
+    showQuiz: siteRaw?.helpForm !== false,
+    showFlight: true,
+    showHistory: siteRaw?.history !== false,
+    showFunFacts: (siteRaw?.funFacts ?? siteRaw?.show_fun_facts ?? siteRaw?.fun_facts) !== false,
+    showPairings: siteRaw?.foodPairings !== false,
+  };
+  const pageFlags = {
+    showQuiz: toBool(pageRaw?.show_quiz, siteDefaults.showQuiz),
+    showFlight: toBool(pageRaw?.show_flight, siteDefaults.showFlight),
+    showHistory: toBool(pageRaw?.show_history, siteDefaults.showHistory),
+    showFunFacts: toBool(pageRaw?.show_fun_facts, siteDefaults.showFunFacts),
+    showPairings: toBool(pageRaw?.show_pairings, siteDefaults.showPairings),
+  };
+  if (typeof document !== 'undefined') {
+    const root = document.getElementById('bt-pairing-app-root');
+    if (root?.dataset) {
+      const attrBool = (value: string | undefined, fallback: boolean) => {
+        if (value === '1' || value === 'true') return true;
+        if (value === '0' || value === 'false') return false;
+        return fallback;
+      };
+      pageFlags.showQuiz = attrBool(root.dataset.showQuiz, pageFlags.showQuiz);
+      pageFlags.showFlight = attrBool(root.dataset.showFlight, pageFlags.showFlight);
+      pageFlags.showHistory = attrBool(root.dataset.showHistory, pageFlags.showHistory);
+      pageFlags.showFunFacts = attrBool(root.dataset.showFunFacts, pageFlags.showFunFacts);
+      pageFlags.showPairings = attrBool(root.dataset.showPairings, pageFlags.showPairings);
+    }
+  }
   return {
-    helpForm: raw?.helpForm !== false,
-    history: raw?.history !== false,
-    foodPairings: raw?.foodPairings !== false,
+    showQuiz: siteDefaults.showQuiz && pageFlags.showQuiz,
+    showFlight: siteDefaults.showFlight && pageFlags.showFlight,
+    showHistory: siteDefaults.showHistory && pageFlags.showHistory,
+    showFunFacts: siteDefaults.showFunFacts && pageFlags.showFunFacts,
+    showPairings: siteDefaults.showPairings && pageFlags.showPairings,
   };
 };
 const getServerCacheHash = (): string => {
@@ -143,12 +200,17 @@ const detectDataSources = () => {
     return { beerSource: 'server', foodSource: 'server' };
   }
   const win = window as { __BT_BEER_DATA?: unknown; __BT_FOOD_DATA?: unknown; __BT_DATA?: { beer?: unknown; food?: unknown } };
-  const beerSource = win.__BT_BEER_DATA || win.__BT_DATA?.beer
+  const canonical = (window as { __BT_CANONICAL_MENU_SNAPSHOT?: { beer?: unknown; food?: unknown } }).__BT_CANONICAL_MENU_SNAPSHOT;
+  const beerSource = canonical?.beer
+    ? 'snapshot'
+    : win.__BT_BEER_DATA || win.__BT_DATA?.beer
     ? 'window'
     : document.getElementById('bt-beer-data')
     ? 'script'
     : 'missing';
-  const foodSource = win.__BT_FOOD_DATA || win.__BT_DATA?.food
+  const foodSource = canonical?.food
+    ? 'snapshot'
+    : win.__BT_FOOD_DATA || win.__BT_DATA?.food
     ? 'window'
     : document.getElementById('bt-food-data') || document.getElementById('bt-menu-data')
     ? 'script'
@@ -432,7 +494,7 @@ function AppContent(): React.ReactElement {
   const [recMeta, setRecMeta] = useState<Record<string, { score: number | null; confidence: string | null; matchSentence: string | null }>>({});
   const [pairingData, setPairingData] = useState<PairingResponse | null>(null);
   const [error, setError] = useState('');
-  const [historyByName, setHistoryByName] = useState<Record<string, string>>(() => {
+  const [historyTextByName, setHistoryTextByName] = useState<Record<string, string>>(() => {
     if (!session) return {};
     try {
       const raw = session.getItem(HISTORY_CACHE_KEY);
@@ -443,10 +505,24 @@ function AppContent(): React.ReactElement {
       return {};
     }
   });
-  const historyResolved = useRef<Set<string>>(new Set(Object.keys(historyByName || {})));
+  const [funFactsByName, setFunFactsByName] = useState<Record<string, string>>(() => {
+    if (!session) return {};
+    try {
+      const raw = session.getItem(FUN_FACTS_CACHE_KEY);
+      if (!raw) return {};
+      return toHistoryMap(JSON.parse(raw));
+    } catch {
+      return {};
+    }
+  });
+  const historyResolved = useRef<Set<string>>(new Set(Object.keys(historyTextByName || {})));
   const historyAttempts = useRef<Record<string, number>>({});
   const historyRequestInProgress = useRef(false);
   const historyCooldownUntil = useRef(0);
+  const funFactsResolved = useRef<Set<string>>(new Set(Object.keys(funFactsByName || {})));
+  const funFactsAttempts = useRef<Record<string, number>>({});
+  const funFactsRequestInProgress = useRef(false);
+  const funFactsCooldownUntil = useRef(0);
   const [pairingFetched, setPairingFetched] = useState(false);
   const [flightOpen, setFlightOpen] = useState(false);
   const [colorMapOverride, setColorMapOverride] = useState<Record<string, string>>({});
@@ -505,7 +581,7 @@ function AppContent(): React.ReactElement {
   const [successMessage, setSuccessMessage] = useState('');
   const [successIsAi, setSuccessIsAi] = useState(false);
   const [topRecommendationName, setTopRecommendationName] = useState('');
-  const staticPairings = useStaticPairings({ beers: safeItems, enabled: featureFlags.foodPairings });
+  const staticPairings = useStaticPairings({ beers: safeItems, enabled: featureFlags.showPairings });
   const hasColorOverrides = useMemo(() => Object.keys(colorMapOverride).length > 0, [colorMapOverride]);
   const flightUserOverride = useRef(false);
   const cacheMetaLogged = useRef(false);
@@ -647,18 +723,18 @@ function AppContent(): React.ReactElement {
 
   const triggerStaticPairings = useCallback(
     (source: 'cached' | 'preload') => {
-      if (!featureFlags.foodPairings) return;
+      if (!featureFlags.showPairings) return;
       if (!stableCacheHash) return;
       if (staticPairingsTriggered.current === stableCacheHash) return;
       staticPairingsTriggered.current = stableCacheHash;
       staticLog.info('trigger', { phase: 'staticPairings', source, hash: stableCacheHash });
       void staticPairings.ensureLoaded();
     },
-    [stableCacheHash, staticPairings.ensureLoaded, featureFlags.foodPairings]
+    [stableCacheHash, staticPairings.ensureLoaded, featureFlags.showPairings]
   );
 
   useEffect(() => {
-    if (!featureFlags.foodPairings) return;
+    if (!featureFlags.showPairings) return;
     if (uiPairingsLogged.current) return;
     if (staticPairings.available && staticPairings.status === 'ready') {
       uiPairingsLogged.current = true;
@@ -669,11 +745,11 @@ function AppContent(): React.ReactElement {
         hash: stableCacheHash || null,
       });
     }
-  }, [staticPairings.available, staticPairings.status, featureFlags.foodPairings]);
+  }, [staticPairings.available, staticPairings.status, featureFlags.showPairings]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const pairingsEnabled = featureFlags.foodPairings;
+    const pairingsEnabled = featureFlags.showPairings;
     const pairingsAvailable = pairingsEnabled && staticPairings.available;
     const detail = {
       lastFetched,
@@ -694,7 +770,7 @@ function AppContent(): React.ReactElement {
     stableCacheHash,
     fetchStatus,
     fetchError,
-    featureFlags.foodPairings,
+    featureFlags.showPairings,
   ]);
 
   const makeAnswerKey = useCallback((a: PreparedAnswers | null | undefined) => {
@@ -806,11 +882,20 @@ function AppContent(): React.ReactElement {
     }
   }, []);
 
+  const persistFunFactsCache = useCallback((map: Record<string, string>) => {
+    if (!session) return;
+    try {
+      session.setItem(FUN_FACTS_CACHE_KEY, JSON.stringify(map));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const mergeHistories = useCallback(
     (incoming: unknown) => {
       const safeHistory = toHistoryMap(incoming);
       if (!Object.keys(safeHistory).length) return;
-      setHistoryByName((prev) => {
+      setHistoryTextByName((prev) => {
         const next = { ...prev };
         Object.entries(safeHistory).forEach(([slug, val]) => {
           historyResolved.current.add(slug);
@@ -822,6 +907,24 @@ function AppContent(): React.ReactElement {
       });
     },
     [persistHistoryCache]
+  );
+
+  const mergeFunFacts = useCallback(
+    (incoming: unknown) => {
+      const safeFacts = toHistoryMap(incoming);
+      if (!Object.keys(safeFacts).length) return;
+      setFunFactsByName((prev) => {
+        const next = { ...prev };
+        Object.entries(safeFacts).forEach(([slug, val]) => {
+          funFactsResolved.current.add(slug);
+          next[slug] = val;
+          historyLog.debug('saved', { phase: 'fun_facts', slug, preview: val.slice(0, 80) + '...' });
+        });
+        persistFunFactsCache(next);
+        return next;
+      });
+    },
+    [persistFunFactsCache]
   );
 
   const readAnyCachedPairing = useCallback((): PairingResponse | null => {
@@ -839,7 +942,7 @@ function AppContent(): React.ReactElement {
   }, [pairingCacheMapKey]);
 
   const fetchAndMergeHistories = useCallback(async () => {
-    if (!featureFlags.history) return;
+    if (!featureFlags.showHistory) return;
     if (historyRequestInProgress.current) return;
     if (!safeItems.length) return;
     if (Date.now() < historyCooldownUntil.current) return;
@@ -863,7 +966,7 @@ function AppContent(): React.ReactElement {
       hash: stableCacheHash || null,
     });
     try {
-      const res = await getHistories(missing);
+      const res = await getHistories(missing, { hash: stableCacheHash || '' });
       const incoming = toHistoryMap(res?.histories);
       if (!Object.keys(incoming).length) {
         historyLog.warn('empty', { phase: 'history', count: missing.length, ms: Date.now() - historyStarted });
@@ -908,26 +1011,97 @@ function AppContent(): React.ReactElement {
       historyLog.debug('resolved', { phase: 'history', count: historyResolved.current.size });
       historyRequestInProgress.current = false;
     }
-  }, [safeItems, mergeHistories, stableCacheHash, featureFlags.history]);
+  }, [safeItems, mergeHistories, stableCacheHash, featureFlags.showHistory]);
 
   useEffect(() => {
-    if (!featureFlags.history) return;
+    if (!featureFlags.showHistory) return;
     if (!safeItems.length) return;
     scheduleIdle(() => {
       void fetchAndMergeHistories();
     }, 800);
-  }, [featureFlags.history, safeItems.length, fetchAndMergeHistories]);
+  }, [featureFlags.showHistory, safeItems.length, fetchAndMergeHistories]);
+
+  const fetchAndMergeFunFacts = useCallback(async () => {
+    if (!featureFlags.showFunFacts) return;
+    if (funFactsRequestInProgress.current) return;
+    if (!safeItems.length) return;
+    if (Date.now() < funFactsCooldownUntil.current) return;
+    const payload = safeItems.map((it) => ({
+      slug: slugify(it.name ?? it.id ?? ''),
+      name: it.name ?? '',
+      description: it.description ?? '',
+      style: it.style ?? '',
+    }));
+    const missing = payload.filter((it) => {
+      const tries = funFactsAttempts.current[it.slug] ?? 0;
+      return it.slug && !funFactsResolved.current.has(it.slug) && tries < 2;
+    });
+    if (!missing.length) return;
+    funFactsRequestInProgress.current = true;
+    const started = Date.now();
+    historyLog.info('request', {
+      phase: 'fun_facts',
+      count: missing.length,
+      slugsSample: missing.slice(0, 5).map((p) => p.slug),
+      hash: stableCacheHash || null,
+    });
+    try {
+      const res = await getFunFacts(missing, { hash: stableCacheHash || '' });
+      const incoming = toHistoryMap(res?.histories);
+      mergeFunFacts(incoming);
+      funFactsCooldownUntil.current = 0;
+      Object.keys(incoming).forEach((slug) => {
+        const prev = funFactsAttempts.current[slug] ?? 0;
+        funFactsAttempts.current[slug] = prev + 1;
+        funFactsResolved.current.add(slug);
+      });
+      missing.forEach((it) => {
+        const prev = funFactsAttempts.current[it.slug] ?? 0;
+        funFactsAttempts.current[it.slug] = prev + 1;
+        if (!funFactsResolved.current.has(it.slug) && funFactsAttempts.current[it.slug] >= 2) {
+          funFactsResolved.current.add(it.slug);
+        }
+      });
+    } catch (err) {
+      const error = formatError(err);
+      historyLog.warn('failed', {
+        phase: 'fun_facts',
+        error,
+        errorType: toErrorType(error),
+        ms: Date.now() - started,
+      });
+      funFactsCooldownUntil.current = Date.now() + 60 * 1000;
+      missing.forEach((it) => {
+        const prev = funFactsAttempts.current[it.slug] ?? 0;
+        funFactsAttempts.current[it.slug] = prev + 1;
+        if (funFactsAttempts.current[it.slug] >= 2) {
+          funFactsResolved.current.add(it.slug);
+        }
+      });
+    } finally {
+      funFactsRequestInProgress.current = false;
+    }
+  }, [featureFlags.showFunFacts, safeItems, stableCacheHash, mergeFunFacts]);
 
   useEffect(() => {
-    if (!featureFlags.foodPairings) return;
+    if (!featureFlags.showFunFacts) return;
+    if (!safeItems.length) return;
+    scheduleIdle(() => {
+      void fetchAndMergeFunFacts();
+    }, 900);
+  }, [featureFlags.showFunFacts, safeItems.length, fetchAndMergeFunFacts]);
+
+  useEffect(() => {
+    if (!featureFlags.showPairings) return;
     scheduleIdle(() => {
       void staticPairings.ensureLoaded();
     }, 800);
-  }, [featureFlags.foodPairings, staticPairings.ensureLoaded]);
+  }, [featureFlags.showPairings, staticPairings.ensureLoaded]);
 
   const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
   const listReady = ready && safeItems.length > 0;
   const showFlightTray = listReady;
+  const showAiDisclaimer = featureFlags.showQuiz || featureFlags.showHistory || featureFlags.showFunFacts || featureFlags.showPairings;
   const appVisible = beerError ? true : listReady;
   const [bootTimedOut, setBootTimedOut] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -989,13 +1163,24 @@ function AppContent(): React.ReactElement {
     const ranked = safeItems.map((b) => {
       const slug = slugify(b.name ?? '');
       const isRec = recommendedIds.has(String(b.id)) || recommendedIds.has(slug);
-      const history = historyByName[slug];
+      const history = historyTextByName[slug];
+      const funFacts = funFactsByName[slug];
       const meta = recMeta[slug];
-      const next = isRec || history || meta
+      const combinedText = (() => {
+        if (featureFlags.showHistory && featureFlags.showFunFacts) {
+          return [history, funFacts].filter(Boolean).join('\n\n');
+        }
+        if (featureFlags.showHistory) return history ?? null;
+        if (featureFlags.showFunFacts) return funFacts ?? null;
+        return null;
+      })();
+      const next = isRec || history || funFacts || meta
         ? {
             ...b,
             recommended: isRec,
-            history_fun: history ?? null,
+            history_text: history ?? null,
+            fun_facts_text: funFacts ?? null,
+            history_fun: combinedText,
             recommendationScore: meta?.score ?? null,
             recommendationConfidence: meta?.confidence ?? null,
             recommendationMatchSentence: meta?.matchSentence ?? null,
@@ -1012,7 +1197,7 @@ function AppContent(): React.ReactElement {
       if (sa === sb) return 0;
       return sb - sa;
     });
-  }, [safeItems, recommendedIds, historyByName, recMeta, showRecommendations]);
+  }, [safeItems, recommendedIds, historyTextByName, funFactsByName, recMeta, showRecommendations, featureFlags.showHistory, featureFlags.showFunFacts]);
 
   const applyRecommendations = useCallback((matches: unknown) => {
     const safeMatches = toMatches(matches);
@@ -1038,7 +1223,7 @@ function AppContent(): React.ReactElement {
 
   const applyHistoryOnly = useCallback(
     (matches: unknown, historyMapFromResult?: unknown) => {
-      if (!featureFlags.history) return;
+      if (!featureFlags.showHistory) return;
       const safeHistory = toHistoryMap(historyMapFromResult ?? (isRecord(pairingData) ? pairingData.history_map : null));
       if (Object.keys(safeHistory).length) {
         mergeHistories(safeHistory);
@@ -1048,7 +1233,7 @@ function AppContent(): React.ReactElement {
         scheduleIdle(() => void fetchAndMergeHistories(), 800);
       }
     },
-    [fetchAndMergeHistories, mergeHistories, pairingData, featureFlags.history]
+    [fetchAndMergeHistories, mergeHistories, pairingData, featureFlags.showHistory]
   );
 
   useEffect(() => {
@@ -1071,7 +1256,7 @@ function AppContent(): React.ReactElement {
   }, [listReady, beerError]);
 
   useEffect(() => {
-    if (!featureFlags.helpForm) return;
+    if (!featureFlags.showQuiz) return;
     if (!stableCacheHash) return;
     const cached = readAnyCachedPairing();
     const hydrate = (data: PairingResponse, fetchedAt?: number | null) => {
@@ -1113,7 +1298,7 @@ function AppContent(): React.ReactElement {
       cancelled = true;
     };
   }, [
-    featureFlags.helpForm,
+    featureFlags.showQuiz,
     stableCacheHash,
     readAnyCachedPairing,
     applyHistoryOnly,
@@ -1128,7 +1313,7 @@ function AppContent(): React.ReactElement {
   const colorApplied = useRef(false);
 
   const handleFetchPairing = useCallback(async (preparedOverride?: PreparedAnswers | null): Promise<PairingResponse | null> => {
-    if (!featureFlags.helpForm) return null;
+    if (!featureFlags.showQuiz) return null;
     setFetchStatus('loading');
     setFetchError('');
     const prepared = toPreparedAnswers(preparedOverride ?? preparedAnswers ?? EMPTY_PREPARED);
@@ -1250,13 +1435,13 @@ function AppContent(): React.ReactElement {
     pairingCacheBeerData,
     pairingCacheFoodData,
     fetchAndMergeHistories,
-    featureFlags.helpForm,
+    featureFlags.showQuiz,
   ]);
 
   const statusCheckedRef = useRef<string>('');
 
   useEffect(() => {
-    if (!featureFlags.helpForm || !isAdmin || !stableCacheHash || !localStore) return;
+    if (!featureFlags.showQuiz || !isAdmin || !stableCacheHash || !localStore) return;
     if (!pairingCacheMeta?.hash) return;
     if (statusCheckedRef.current === stableCacheHash) return;
     statusCheckedRef.current = stableCacheHash;
@@ -1280,10 +1465,10 @@ function AppContent(): React.ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [stableCacheHash, isAdmin, localStore, handleFetchPairing, featureFlags.helpForm, pairingCacheMeta?.hash]);
+  }, [stableCacheHash, isAdmin, localStore, handleFetchPairing, featureFlags.showQuiz, pairingCacheMeta?.hash]);
 
   const handleSubmit = async (preparedOverride?: PreparedAnswers | null): Promise<void> => {
-    if (!featureFlags.helpForm) return;
+    if (!featureFlags.showQuiz) return;
     setError('');
     setLoading(true);
     setPintError(false);
@@ -1374,6 +1559,139 @@ function AppContent(): React.ReactElement {
     }
   };
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const detail = {
+      features: featureFlags,
+      beerCount: safeItems.length,
+      foodCount: pairingCacheFoodData?.items?.length ?? 0,
+      cacheHash: stableCacheHash || null,
+      staticPairingsCacheKey: featureFlags.showPairings ? staticPairings.cacheKey ?? null : null,
+    };
+    document.dispatchEvent(new CustomEvent('btPairingPageContext', { detail }));
+  }, [featureFlags, safeItems.length, pairingCacheFoodData, stableCacheHash, staticPairings.cacheKey]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!isAdmin) return;
+    const onAdminAction = (event: Event) => {
+      const detail = 'detail' in event ? (event as CustomEvent<{ action?: string }>).detail : null;
+      const action = detail?.action ?? '';
+      if (!action) return;
+      if (action === 'refresh-colors') {
+        if (refreshColors) void refreshColors(true);
+        return;
+      }
+      if (action === 'clear-colors') {
+        try {
+          if (sessionStorage) {
+            sessionStorage.removeItem('bt_beer_color_map');
+            sessionStorage.removeItem('bt_beer_colors_v1');
+          }
+        } catch {
+          // ignore
+        }
+        setColorMapOverride({});
+        setAllowColors(true);
+        return;
+      }
+      if (action === 'refresh-history') {
+        if (!featureFlags.showHistory) return;
+        if (!safeItems.length) return;
+        const previousHistory = { ...historyTextByName };
+        const payload = safeItems.map((it) => ({
+          slug: slugify(it.name ?? it.id ?? ''),
+          name: it.name ?? '',
+          description: it.description ?? '',
+          style: it.style ?? '',
+        }));
+        setHistoryTextByName((prev) => {
+          const next = { ...prev };
+          payload.forEach((it) => {
+            if (!it.slug) return;
+            next[it.slug] = `Loading history for ${it.name || 'this beer'}…`;
+          });
+          return next;
+        });
+        void getHistories(payload, { force: true, hash: stableCacheHash || '' })
+          .then((res) => {
+            mergeHistories(res?.histories ?? {});
+          })
+          .catch((err) => {
+            setHistoryTextByName(previousHistory);
+            historyLog.warn('admin.refreshHistory.failed', { phase: 'history', error: formatError(err) });
+          });
+        return;
+      }
+      if (action === 'refresh-fun-facts') {
+        if (!featureFlags.showFunFacts) return;
+        if (!safeItems.length) return;
+        const previousFunFacts = { ...funFactsByName };
+        const payload = safeItems.map((it) => ({
+          slug: slugify(it.name ?? it.id ?? ''),
+          name: it.name ?? '',
+          description: it.description ?? '',
+          style: it.style ?? '',
+        }));
+        setFunFactsByName((prev) => {
+          const next = { ...prev };
+          payload.forEach((it) => {
+            if (!it.slug) return;
+            next[it.slug] = `Loading fun facts for ${it.name || 'this beer'}…`;
+          });
+          return next;
+        });
+        void getFunFacts(payload, { force: true, hash: stableCacheHash || '' })
+          .then((res) => {
+            mergeFunFacts(res?.histories ?? {});
+          })
+          .catch((err) => {
+            setFunFactsByName(previousFunFacts);
+            historyLog.warn('admin.refreshFunFacts.failed', { phase: 'fun_facts', error: formatError(err) });
+          });
+        return;
+      }
+      if (action === 'clear-history') {
+        if (!featureFlags.showHistory) return;
+        setHistoryTextByName({});
+        historyResolved.current = new Set();
+        historyAttempts.current = {};
+        try {
+          if (sessionStorage) sessionStorage.removeItem(HISTORY_CACHE_KEY);
+        } catch {
+          // ignore
+        }
+        return;
+      }
+      if (action === 'clear-fun-facts') {
+        if (!featureFlags.showFunFacts) return;
+        setFunFactsByName({});
+        funFactsResolved.current = new Set();
+        funFactsAttempts.current = {};
+        try {
+          if (sessionStorage) sessionStorage.removeItem(FUN_FACTS_CACHE_KEY);
+        } catch {
+          // ignore
+        }
+        return;
+      }
+      if (action === 'refresh-static-pairings') {
+        if (!featureFlags.showPairings) return;
+        void staticPairings.ensureLoaded(true);
+        return;
+      }
+      if (action === 'clear-static-pairings') {
+        if (!featureFlags.showPairings) return;
+        staticPairings.clearCurrentCache?.();
+        void staticPairings.ensureLoaded(true);
+      }
+    };
+    document.addEventListener('btPairingAdminAction', onAdminAction);
+    return () => {
+      document.removeEventListener('btPairingAdminAction', onAdminAction);
+    };
+  }, [isAdmin, featureFlags.showHistory, featureFlags.showFunFacts, featureFlags.showPairings, refreshColors, safeItems, mergeHistories, mergeFunFacts, stableCacheHash, staticPairings.ensureLoaded]);
+
   return (
     <LiveAnnouncerProvider>
       {showBootLoading ? (
@@ -1388,7 +1706,7 @@ function AppContent(): React.ReactElement {
         <>
           <div className={`pairing-app${isVisible ? ' pairing-app--visible' : ''}`}>
             <div id="flight-announcer" className="sr-only" aria-live="polite" aria-atomic="true" />
-            {featureFlags.helpForm ? (
+            {featureFlags.showQuiz ? (
               <PairingForm
                 open={formOpen}
                 onToggle={() => setFormOpen(v => !v)}
@@ -1411,18 +1729,19 @@ function AppContent(): React.ReactElement {
                   <BeerList
                     items={decoratedItems}
                     allowColorFetch={allowColors || !pairingFetched || !hasColorOverrides}
-                    showHistory={featureFlags.history}
+                    showHistory={featureFlags.showHistory}
+                    showFunFacts={featureFlags.showFunFacts}
                     onFlightOpen={() => {
                       flightUserOverride.current = true;
                       setFlightOpen(true);
                     }}
                     colorMapOverride={colorMapOverride}
                     flightFull={slots.filter(Boolean).length >= 5}
-                    pairingsState={featureFlags.foodPairings ? staticPairings : undefined}
+                    pairingsState={featureFlags.showPairings ? staticPairings : undefined}
                   />
                 ) : null}
               </div>
-              {showFlightTray ? (
+              {showFlightTray && featureFlags.showFlight ? (
                 <FlightTray
                   open={flightOpen}
                   colorMap={colorMapOverride}
@@ -1435,7 +1754,9 @@ function AppContent(): React.ReactElement {
               ) : null}
             </div>
           </div>
-          <p className="ai-text aidisclaimer">All text with a background color is AI generated.</p>
+          {showAiDisclaimer ? (
+            <p className="ai-text aidisclaimer">All text with a background color is AI generated.</p>
+          ) : null}
         </>
       )}
     </LiveAnnouncerProvider>

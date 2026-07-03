@@ -145,6 +145,7 @@ function bt_beer_colors_handler( WP_REST_Request $request ) {
 	}
 
 	set_transient( $cache_key, $results, 60 * DAY_IN_SECONDS );
+	bt_beer_colors_index_add( $cache_key );
 
 	return rest_ensure_response( $results );
 }
@@ -506,6 +507,101 @@ function bt_pairing_cache_index_clear() {
 	update_option( 'bt_pairing_cache_keys', array(), false );
 }
 
+function bt_beer_colors_index() {
+	$list = get_option( 'bt_beer_colors_cache_keys', array() );
+	return is_array( $list ) ? $list : array();
+}
+
+function bt_beer_colors_index_add( $cache_key ) {
+	if ( ! $cache_key ) {
+		return;
+	}
+	$list = bt_beer_colors_index();
+	if ( ! in_array( $cache_key, $list, true ) ) {
+		$list[] = $cache_key;
+		update_option( 'bt_beer_colors_cache_keys', $list, false );
+	}
+}
+
+function bt_beer_colors_index_clear() {
+	update_option( 'bt_beer_colors_cache_keys', array(), false );
+}
+
+function bt_pairing_text_kind_normalize( $kind ) {
+	$kind = sanitize_key( (string) $kind );
+	return in_array( $kind, array( 'history', 'fun_facts' ), true ) ? $kind : 'history';
+}
+
+function bt_pairing_text_cache_hash( $hash ) {
+	return sanitize_key( (string) $hash );
+}
+
+function bt_pairing_text_key( $kind, $hash, $slug ) {
+	$kind = bt_pairing_text_kind_normalize( $kind );
+	$slug = sanitize_title( $slug );
+	$hash = bt_pairing_text_cache_hash( $hash );
+	if ( ! $slug || ! $hash ) {
+		return '';
+	}
+	return 'bt_' . $kind . '_' . $hash . '_' . $slug;
+}
+
+function bt_pairing_text_index_option_key( $kind ) {
+	$kind = bt_pairing_text_kind_normalize( $kind );
+	return 'bt_' . $kind . '_cache_index_v2';
+}
+
+function bt_pairing_text_index_get( $kind ) {
+	$raw = get_option( bt_pairing_text_index_option_key( $kind ), array() );
+	return is_array( $raw ) ? $raw : array();
+}
+
+function bt_pairing_text_index_add( $kind, $hash, $slug ) {
+	$hash = bt_pairing_text_cache_hash( $hash );
+	$slug = sanitize_title( $slug );
+	if ( ! $hash || ! $slug ) {
+		return;
+	}
+	$index = bt_pairing_text_index_get( $kind );
+	if ( ! isset( $index[ $hash ] ) || ! is_array( $index[ $hash ] ) ) {
+		$index[ $hash ] = array();
+	}
+	if ( ! in_array( $slug, $index[ $hash ], true ) ) {
+		$index[ $hash ][] = $slug;
+		update_option( bt_pairing_text_index_option_key( $kind ), $index, false );
+	}
+}
+
+function bt_pairing_text_index_remove_hash( $kind, $hash ) {
+	$hash = bt_pairing_text_cache_hash( $hash );
+	if ( ! $hash ) {
+		return;
+	}
+	$index = bt_pairing_text_index_get( $kind );
+	if ( isset( $index[ $hash ] ) ) {
+		unset( $index[ $hash ] );
+		update_option( bt_pairing_text_index_option_key( $kind ), $index, false );
+	}
+}
+
+function bt_pairing_text_index_hash_slugs( $kind, $hash ) {
+	$index = bt_pairing_text_index_get( $kind );
+	$hash  = bt_pairing_text_cache_hash( $hash );
+	if ( ! $hash || ! isset( $index[ $hash ] ) || ! is_array( $index[ $hash ] ) ) {
+		return array();
+	}
+	return array_values(
+		array_filter(
+			array_map( 'sanitize_title', $index[ $hash ] )
+		)
+	);
+}
+
+function bt_pairing_text_index_clear( $kind ) {
+	update_option( bt_pairing_text_index_option_key( $kind ), array(), false );
+}
+
+// Legacy helpers kept for compatibility during migration.
 function bt_pairing_history_key( $slug ) {
 	return 'bt_history_' . sanitize_title( $slug );
 }
@@ -557,8 +653,50 @@ function bt_pairings_static_index_add( $cache_key ) {
 	}
 }
 
+function bt_pairings_static_hash_index_get() {
+	$raw = get_option( 'bt_pairings_static_hash_index_v2', array() );
+	return is_array( $raw ) ? $raw : array();
+}
+
+function bt_pairings_static_hash_index_add( $hash, $cache_key ) {
+	$hash = sanitize_key( (string) $hash );
+	if ( ! $hash || ! $cache_key ) {
+		return;
+	}
+	$index = bt_pairings_static_hash_index_get();
+	if ( ! isset( $index[ $hash ] ) || ! is_array( $index[ $hash ] ) ) {
+		$index[ $hash ] = array();
+	}
+	if ( ! in_array( $cache_key, $index[ $hash ], true ) ) {
+		$index[ $hash ][] = $cache_key;
+		update_option( 'bt_pairings_static_hash_index_v2', $index, false );
+	}
+}
+
+function bt_pairings_static_hash_index_remove_hash( $hash ) {
+	$hash = sanitize_key( (string) $hash );
+	if ( ! $hash ) {
+		return;
+	}
+	$index = bt_pairings_static_hash_index_get();
+	if ( isset( $index[ $hash ] ) ) {
+		unset( $index[ $hash ] );
+		update_option( 'bt_pairings_static_hash_index_v2', $index, false );
+	}
+}
+
+function bt_pairings_static_hash_index_keys( $hash ) {
+	$index = bt_pairings_static_hash_index_get();
+	$hash  = sanitize_key( (string) $hash );
+	if ( ! $hash || ! isset( $index[ $hash ] ) || ! is_array( $index[ $hash ] ) ) {
+		return array();
+	}
+	return $index[ $hash ];
+}
+
 function bt_pairings_static_index_clear() {
 	update_option( 'bt_pairings_static_keys', array(), false );
+	update_option( 'bt_pairings_static_hash_index_v2', array(), false );
 }
 
 /**
@@ -568,6 +706,7 @@ function bt_pairing_feature_defaults() {
 	return array(
 		'help_form'     => true,
 		'history'       => true,
+		'fun_facts'     => true,
 		'food_pairings' => true,
 	);
 }
@@ -634,10 +773,11 @@ function bt_pairing_set_feature_flags( $incoming ) {
  * @param int   $timeout Timeout seconds.
  * @return array Map slug => history text (only filled on success).
  */
-function bt_fetch_history_batch( $items, $timeout = 3 ) {
+function bt_fetch_beer_text_batch( $kind, $items, $timeout = 3 ) {
 	if ( empty( $items ) ) {
 		return array();
 	}
+	$kind = bt_pairing_text_kind_normalize( $kind );
 	$clean = array();
 	foreach ( $items as $it ) {
 		$slug = sanitize_title( $it['slug'] ?? '' );
@@ -661,8 +801,9 @@ function bt_fetch_history_batch( $items, $timeout = 3 ) {
 	}
 
 	$items_json = wp_json_encode( $clean );
-	$prompt     = <<<PROMPT
-	You are a concise beer historian. For each beer provided (slug, description, style), return one "history_fun" string
+	$prompt = 'history' === $kind
+		? <<<PROMPT
+	You are a concise beer historian. For each beer provided (slug, description, style), return one "history_text" string
 	with two short paragraphs (3–5 sentences each, <=200 words total) about the styles origins, cultural context, and traditions.
   
 	Hard rules:
@@ -670,16 +811,33 @@ function bt_fetch_history_batch( $items, $timeout = 3 ) {
 	- Do NOT mention the brewery, venue, or beer name unless the style itself is named.
 	- Do NOT mention specific ingredients, flavors, or aromatics from the description.
 	- Avoid any “story rooted in its ingredients” phrasing or similar templates.
-	- Always return distinct, style‑level history + fun facts even if the description is rich.
+	- Always return distinct style-level history.
   
 	Output:
 	- Always key results by the provided slug exactly.
-	- JSON only: { "histories": { "slug-one": "history_fun text", "...": "..." } }
+	- JSON only: { "texts": { "slug-one": "history text", "...": "..." } }
   
 	If unsure, provide a brief, accurate history of the styles origin and tradition.
 
 Input beers (array): {$items_json}
-Return JSON only: { "histories": { "slug-one": "history_fun text", "...": "..." } }
+Return JSON only: { "texts": { "slug-one": "history text", "...": "..." } }
+PROMPT
+		: <<<PROMPT
+	You are a beer educator writing concise fun facts. For each beer provided (slug, description, style), return one "fun_facts_text" string
+	with two short paragraphs (3-5 sentences each, <=200 words total) focused on surprising style trivia, traditions, and cultural facts.
+
+	Hard rules:
+	- Do NOT reuse exact phrases from the provided description.
+	- Do NOT include brewery-specific claims.
+	- Keep the tone playful but accurate.
+	- Focus on fun facts, not full style history recaps.
+
+	Output:
+	- Always key results by the provided slug exactly.
+	- JSON only: { "texts": { "slug-one": "fun facts text", "...": "..." } }
+
+Input beers (array): {$items_json}
+Return JSON only: { "texts": { "slug-one": "fun facts text", "...": "..." } }
 PROMPT;
 
 	$payload = array(
@@ -728,6 +886,9 @@ PROMPT;
 	}
 
 	$maybe = bt_extract_json_object( $text ? $text : $resp_body );
+	if ( is_array( $maybe ) && isset( $maybe['texts'] ) && is_array( $maybe['texts'] ) ) {
+		return $maybe['texts'];
+	}
 	if ( is_array( $maybe ) && isset( $maybe['histories'] ) && is_array( $maybe['histories'] ) ) {
 		return $maybe['histories'];
 	}
@@ -784,13 +945,30 @@ add_action(
 				},
 			)
 		);
+		register_rest_route(
+			'bt/v1',
+			'/pairing/fun-facts',
+			array(
+				'methods'             => 'POST',
+				'callback'            => function( WP_REST_Request $request ) {
+					return bt_pairing_beer_text( $request, 'fun_facts' );
+				},
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 );
 
 function bt_pairing_history( WP_REST_Request $request ) {
+	return bt_pairing_beer_text( $request, 'history' );
+}
+
+function bt_pairing_beer_text( WP_REST_Request $request, $kind = 'history' ) {
+	$kind  = bt_pairing_text_kind_normalize( $kind );
 	$body  = json_decode( $request->get_body(), true );
 	$slugs = isset( $body['slugs'] ) && is_array( $body['slugs'] ) ? $body['slugs'] : array();
 	$items = isset( $body['items'] ) && is_array( $body['items'] ) ? $body['items'] : array();
+	$hash  = isset( $body['hash'] ) ? bt_pairing_text_cache_hash( $body['hash'] ) : '';
 	$requested = array();
 	// Prefer items (slug/name/description) when provided.
 	foreach ( $items as $it ) {
@@ -824,7 +1002,13 @@ function bt_pairing_history( WP_REST_Request $request ) {
 		return new WP_REST_Response( array( 'error' => 'Missing slugs' ), 400 );
 	}
 	$slugs = array_keys( $requested );
-	error_log( '[bt_history] requested ' . wp_json_encode( $requested ) );
+	if ( ! $hash ) {
+		$hash = get_option( 'bt_pairing_latest_hash', '' );
+		$hash = bt_pairing_text_cache_hash( $hash );
+	}
+	if ( ! $hash ) {
+		$hash = 'fallback';
+	}
 
 	$allow_force = current_user_can( 'manage_options' );
 	$force       = ! empty( $body['force'] ) && $allow_force;
@@ -838,7 +1022,7 @@ function bt_pairing_history( WP_REST_Request $request ) {
 			$missing[] = $slug;
 			continue;
 		}
-		$key = bt_pairing_history_key( $slug );
+		$key = bt_pairing_text_key( $kind, $hash, $slug );
 		$val = get_transient( $key );
 		if ( false !== $val && null !== $val ) {
 			$histories[ $slug ] = $val;
@@ -862,8 +1046,7 @@ function bt_pairing_history( WP_REST_Request $request ) {
 						$subset[] = $requested[ $slug ];
 					}
 				}
-				$fetched = bt_fetch_history_batch( $subset, 3 );
-				error_log( '[bt_history] batch fetched ' . wp_json_encode( $fetched ) );
+				$fetched = bt_fetch_beer_text_batch( $kind, $subset, 3 );
 			}
 			if ( ! empty( $fetched ) ) {
 				$normalized = array();
@@ -882,8 +1065,8 @@ function bt_pairing_history( WP_REST_Request $request ) {
 					}
 					if ( $val ) {
 						$histories[ $slug ] = $val;
-						set_transient( bt_pairing_history_key( $slug ), $val, WEEK_IN_SECONDS );
-						bt_pairing_history_index_add( $slug );
+						set_transient( bt_pairing_text_key( $kind, $hash, $slug ), $val, WEEK_IN_SECONDS );
+						bt_pairing_text_index_add( $kind, $hash, $slug );
 					}
 				}
 			}
@@ -898,21 +1081,34 @@ function bt_pairing_history( WP_REST_Request $request ) {
 		$name        = $item['name'] ?? $slug;
 		$description = $item['description'] ?? '';
 		$style       = $item['style'] ?? '';
-		$fallback    = $style
-			? sprintf(
-				'%s is a %s. This style has a long tradition; expect notes that reflect its classic roots. %s',
-				$name,
-				$style,
-				$description ? wp_strip_all_tags( $description ) : ''
-			)
-			: sprintf(
-				'%s has a story rooted in its ingredients and brewing approach. %s',
-				$name,
-				$description ? wp_strip_all_tags( $description ) : ''
-			);
+		$fallback    = ( 'fun_facts' === $kind )
+			? ( $style
+				? sprintf(
+					'%s is a %s. Fun fact: this style is known for regional traditions and long-running pub culture. %s',
+					$name,
+					$style,
+					$description ? wp_strip_all_tags( $description ) : ''
+				)
+				: sprintf(
+					'%s has fun facts tied to how brewers and drinkers popularized this style over time. %s',
+					$name,
+					$description ? wp_strip_all_tags( $description ) : ''
+				) )
+			: ( $style
+				? sprintf(
+					'%s is a %s. This style has a long tradition; expect notes that reflect its classic roots. %s',
+					$name,
+					$style,
+					$description ? wp_strip_all_tags( $description ) : ''
+				)
+				: sprintf(
+					'%s has a story rooted in its ingredients and brewing approach. %s',
+					$name,
+					$description ? wp_strip_all_tags( $description ) : ''
+				) );
 		$histories[ $slug ] = $fallback;
-		set_transient( bt_pairing_history_key( $slug ), $fallback, WEEK_IN_SECONDS );
-		bt_pairing_history_index_add( $slug );
+		set_transient( bt_pairing_text_key( $kind, $hash, $slug ), $fallback, WEEK_IN_SECONDS );
+		bt_pairing_text_index_add( $kind, $hash, $slug );
 	}
 
 	$partial = array();
@@ -924,6 +1120,8 @@ function bt_pairing_history( WP_REST_Request $request ) {
 
 	return new WP_REST_Response(
 		array(
+			'kind'      => $kind,
+			'hash'      => $hash,
 			'histories' => $histories,
 			'partial'   => ! empty( $partial ),
 			'cached'    => $cached,
@@ -981,6 +1179,7 @@ function bt_pairings_static( WP_REST_Request $request ) {
 	$profile_v = isset( $beer['pairingProfileVersion'] ) ? intval( $beer['pairingProfileVersion'] ) : ( isset( $food['pairingProfileVersion'] ) ? intval( $food['pairingProfileVersion'] ) : 1 );
 	$beer_hash = bt_pairing_fingerprint_beers( $beer['items'] );
 	$food_hash = bt_pairing_fingerprint_food( $food['items'] );
+	$menu_hash = sanitize_key( $beer_hash . '.' . $food_hash );
 	$cache_key = 'bt_pairings_static_' . sha1( $profile_v . '|' . $prompt_v . '|' . $beer_hash . '|' . $food_hash );
 
 	if ( ! $force ) {
@@ -1095,6 +1294,7 @@ function bt_pairings_static( WP_REST_Request $request ) {
 			'foodGeneratedAt'       => isset( $food['generatedAt'] ) ? sanitize_text_field( $food['generatedAt'] ) : 'unknown',
 			'pairingProfileVersion' => $profile_v,
 			'promptVersion'         => $prompt_v,
+			'menuHash'              => $menu_hash,
 			'cached'                => false,
 		),
 		'counts'            => array(
@@ -1106,6 +1306,7 @@ function bt_pairings_static( WP_REST_Request $request ) {
 
 	set_transient( $cache_key, $result, 7 * DAY_IN_SECONDS );
 	bt_pairings_static_index_add( $cache_key );
+	bt_pairings_static_hash_index_add( $menu_hash, $cache_key );
 
 	return rest_ensure_response( $result );
 }
@@ -1225,12 +1426,37 @@ function bt_pairing_purge( WP_REST_Request $request ) {
 	$body   = json_decode( $request->get_body(), true );
 	$target = isset( $body['target'] ) ? $body['target'] : 'all';
 	$slug   = isset( $body['slug'] ) ? sanitize_title( $body['slug'] ) : '';
+	$hash   = isset( $body['hash'] ) ? sanitize_key( (string) $body['hash'] ) : '';
 
 	if ( in_array( $target, array( 'history', 'all' ), true ) ) {
-		if ( $slug ) {
+		if ( $hash ) {
+			$slugs = bt_pairing_text_index_hash_slugs( 'history', $hash );
+			foreach ( $slugs as $s ) {
+				$key = bt_pairing_text_key( 'history', $hash, $s );
+				if ( $key ) {
+					delete_transient( $key );
+				}
+			}
+			bt_pairing_text_index_remove_hash( 'history', $hash );
+		} elseif ( $slug ) {
+			// Legacy fallback.
 			delete_transient( bt_pairing_history_key( $slug ) );
 			bt_pairing_history_index_remove( $slug );
 		} else {
+			$index = bt_pairing_text_index_get( 'history' );
+			foreach ( $index as $h => $hash_slugs ) {
+				if ( ! is_array( $hash_slugs ) ) {
+					continue;
+				}
+				foreach ( $hash_slugs as $s ) {
+					$key = bt_pairing_text_key( 'history', $h, $s );
+					if ( $key ) {
+						delete_transient( $key );
+					}
+				}
+			}
+			bt_pairing_text_index_clear( 'history' );
+			// Legacy cleanup.
 			$list = bt_pairing_history_index();
 			foreach ( $list as $s ) {
 				delete_transient( bt_pairing_history_key( $s ) );
@@ -1239,12 +1465,47 @@ function bt_pairing_purge( WP_REST_Request $request ) {
 		}
 	}
 
-	if ( in_array( $target, array( 'pairings-static', 'all' ), true ) ) {
-		$list = bt_pairings_static_index();
-		foreach ( $list as $key ) {
-			delete_transient( $key );
+	if ( in_array( $target, array( 'fun-facts', 'fun_facts', 'all' ), true ) ) {
+		if ( $hash ) {
+			$slugs = bt_pairing_text_index_hash_slugs( 'fun_facts', $hash );
+			foreach ( $slugs as $s ) {
+				$key = bt_pairing_text_key( 'fun_facts', $hash, $s );
+				if ( $key ) {
+					delete_transient( $key );
+				}
+			}
+			bt_pairing_text_index_remove_hash( 'fun_facts', $hash );
+		} else {
+			$index = bt_pairing_text_index_get( 'fun_facts' );
+			foreach ( $index as $h => $hash_slugs ) {
+				if ( ! is_array( $hash_slugs ) ) {
+					continue;
+				}
+				foreach ( $hash_slugs as $s ) {
+					$key = bt_pairing_text_key( 'fun_facts', $h, $s );
+					if ( $key ) {
+						delete_transient( $key );
+					}
+				}
+			}
+			bt_pairing_text_index_clear( 'fun_facts' );
 		}
-		bt_pairings_static_index_clear();
+	}
+
+	if ( in_array( $target, array( 'pairings-static', 'all' ), true ) ) {
+		if ( $hash ) {
+			$keys = bt_pairings_static_hash_index_keys( $hash );
+			foreach ( $keys as $key ) {
+				delete_transient( $key );
+			}
+			bt_pairings_static_hash_index_remove_hash( $hash );
+		} else {
+			$list = bt_pairings_static_index();
+			foreach ( $list as $key ) {
+				delete_transient( $key );
+			}
+			bt_pairings_static_index_clear();
+		}
 	}
 
 	if ( in_array( $target, array( 'pairing', 'all' ), true ) ) {
@@ -1255,7 +1516,130 @@ function bt_pairing_purge( WP_REST_Request $request ) {
 		bt_pairing_cache_index_clear();
 	}
 
+	if ( in_array( $target, array( 'colors', 'all' ), true ) ) {
+		$list = bt_beer_colors_index();
+		foreach ( $list as $key ) {
+			delete_transient( $key );
+		}
+		bt_beer_colors_index_clear();
+	}
+
+	if ( in_array( $target, array( 'menu-snapshot', 'all' ), true ) ) {
+		bt_pairing_menu_clear_snapshot();
+	}
+
 	return new WP_REST_Response( array( 'purged' => true ), 200 );
+}
+
+/**
+ * Canonical menu snapshot REST routes (Phase 1).
+ */
+add_action(
+	'rest_api_init',
+	function() {
+		register_rest_route(
+			'bt/v1',
+			'/menu-snapshot',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => 'bt_pairing_menu_snapshot_get',
+					'permission_callback' => '__return_true',
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => 'bt_pairing_menu_snapshot_clear',
+					'permission_callback' => function () {
+						return current_user_can( 'manage_options' );
+					},
+				),
+			)
+		);
+		register_rest_route(
+			'bt/v1',
+			'/menu-snapshot/intake',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_pairing_menu_snapshot_intake',
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'bt/v1',
+			'/menu-snapshot/rebuild',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'bt_pairing_menu_snapshot_rebuild',
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+			)
+		);
+	}
+);
+
+function bt_pairing_menu_snapshot_get() {
+	$snapshot = bt_pairing_menu_get_snapshot();
+	if ( ! is_array( $snapshot ) ) {
+		return new WP_REST_Response( array( 'error' => 'snapshot_missing' ), 404 );
+	}
+	return new WP_REST_Response( $snapshot, 200 );
+}
+
+function bt_pairing_menu_snapshot_intake( WP_REST_Request $request ) {
+	$body = $request->get_json_params();
+	if ( ! is_array( $body ) ) {
+		return new WP_REST_Response( array( 'error' => 'invalid_body' ), 400 );
+	}
+
+	$kind = isset( $body['kind'] ) ? sanitize_key( (string) $body['kind'] ) : '';
+	if ( ! in_array( $kind, array( 'beer', 'food' ), true ) ) {
+		return new WP_REST_Response( array( 'error' => 'invalid_kind' ), 400 );
+	}
+
+	$payload = isset( $body['payload'] ) && is_array( $body['payload'] ) ? $body['payload'] : array();
+	$source  = isset( $body['source'] ) && is_array( $body['source'] ) ? $body['source'] : array();
+
+	$source_meta = array(
+		'name'      => isset( $source['name'] ) ? sanitize_text_field( (string) $source['name'] ) : 'theme-bridge',
+		'url'       => isset( $source['url'] ) ? esc_url_raw( (string) $source['url'] ) : '',
+		'rebuiltBy' => 'intake',
+	);
+
+	$snapshot = bt_pairing_menu_intake_payload( $kind, $payload, $source_meta );
+	return new WP_REST_Response(
+		array(
+			'ok'          => true,
+			'kind'        => $kind,
+			'fingerprint' => isset( $snapshot['fingerprint'] ) ? $snapshot['fingerprint'] : null,
+		),
+		200
+	);
+}
+
+function bt_pairing_menu_snapshot_rebuild() {
+	$snapshot = bt_pairing_menu_rebuild_snapshot();
+	if ( is_wp_error( $snapshot ) ) {
+		return new WP_REST_Response(
+			array(
+				'error'   => $snapshot->get_error_code(),
+				'message' => $snapshot->get_error_message(),
+			),
+			400
+		);
+	}
+	return new WP_REST_Response(
+		array(
+			'ok'          => true,
+			'fingerprint' => isset( $snapshot['fingerprint'] ) ? $snapshot['fingerprint'] : null,
+		),
+		200
+	);
+}
+
+function bt_pairing_menu_snapshot_clear() {
+	bt_pairing_menu_clear_snapshot();
+	return new WP_REST_Response( array( 'ok' => true, 'cleared' => true ), 200 );
 }
 
 /**
@@ -1536,410 +1920,748 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
  * Minimal admin-only purge buttons (frontend).
  */
 function bt_pairing_admin_buttons() {
-	if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+	$is_admin_user = is_user_logged_in() && current_user_can( 'manage_options' );
+	$is_preview    = 'local' === wp_get_environment_type() && isset( $_GET['bt_pairing_admin_preview'] ) && ! $is_admin_user;
+	if ( ! $is_admin_user && ! $is_preview ) {
 		return;
 	}
 	global $bt_pairing_app_present;
 	if ( empty( $bt_pairing_app_present ) ) {
 		return;
 	}
-	$nonce    = wp_create_nonce( 'wp_rest' );
-	$endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/purge' ) );
-	$status_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/status' ) );
-	$pairing_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing' ) );
-	$static_endpoint = esc_url_raw( rest_url( 'bt/v1/pairings/static' ) );
-	$features_endpoint = esc_url_raw( rest_url( 'bt/v1/pairing/features' ) );
-	$feature_flags = bt_pairing_get_feature_flags();
+	$nonce                     = wp_create_nonce( 'wp_rest' );
+	$endpoint                  = esc_url_raw( rest_url( 'bt/v1/pairing/purge' ) );
+	$snapshot_endpoint         = esc_url_raw( rest_url( 'bt/v1/menu-snapshot' ) );
+	$snapshot_rebuild_endpoint = esc_url_raw( rest_url( 'bt/v1/menu-snapshot/rebuild' ) );
+	$pairing_endpoint          = esc_url_raw( rest_url( 'bt/v1/pairing' ) );
+	$static_endpoint           = esc_url_raw( rest_url( 'bt/v1/pairings/static' ) );
 	?>
-	<div class="bt-pairing-admin-tools" id="bt-pairing-admin-tools" role="region" aria-labelledby="bt-pairing-admin-title">
+	<div
+		class="bt-pairing-admin-tools"
+		id="bt-pairing-admin-tools"
+		role="region"
+		aria-labelledby="bt-pairing-admin-title"
+		data-preview-only="<?php echo $is_preview ? 'true' : 'false'; ?>"
+	>
 		<div class="bt-pairing-admin-header">
-			<button type="button" class="bt-pairing-admin-toggle" aria-expanded="true" aria-controls="bt-pairing-admin-tools">
-				Close
+			<div class="bt-pairing-admin-intro">
+				<p class="bt-pairing-admin-kicker">Admin tools</p>
+				<h2 class="bt-pairing-admin-title" id="bt-pairing-admin-title">Pairing data tools</h2>
+				<p class="bt-pairing-admin-summary">Update saved menu data, refresh page extras, and warm pairing results for visitors.</p>
+			</div>
+			<button type="button" class="bt-pairing-admin-toggle" aria-expanded="true" aria-controls="bt-pairing-admin-body">
+				Hide tools
 			</button>
-			<div class="bt-pairing-admin-title" id="bt-pairing-admin-title">Pairing Admin</div>
 		</div>
-		<div class="bt-pairing-feature-flags">
-			<div class="muted small">Site-wide feature toggles</div>
-			<label class="bt-pairing-feature-row">
-				<input type="checkbox" class="bt-pairing-feature" data-feature="help_form" <?php checked( ! empty( $feature_flags['help_form'] ) ); ?> />
-				Help me decide form
-			</label>
-			<label class="bt-pairing-feature-row">
-				<input type="checkbox" class="bt-pairing-feature" data-feature="history" <?php checked( ! empty( $feature_flags['history'] ) ); ?> />
-				History &amp; fun facts
-			</label>
-			<label class="bt-pairing-feature-row">
-				<input type="checkbox" class="bt-pairing-feature" data-feature="food_pairings" <?php checked( ! empty( $feature_flags['food_pairings'] ) ); ?> />
-				Food pairings
-			</label>
-			<button type="button" class="bt-pairing-feature-save">Save feature toggles</button>
-			<div class="muted small" id="bt-pairing-feature-status" role="status" aria-live="polite"></div>
+		<div class="bt-pairing-admin-body" id="bt-pairing-admin-body">
+			<p class="bt-pairing-admin-checklist">
+				<strong>Typical update:</strong> after the beer list or food sheet changes, run <strong>Sync menu data</strong>, then <strong>Warm visitor pairings</strong> if you want guests to skip the first-load wait.
+			</p>
+			<?php if ( $is_preview ) : ?>
+				<p class="bt-pairing-admin-preview-note" role="note">
+					Preview mode is on. Layout and copy are visible, but actions stay disabled until you log into WordPress as an admin.
+				</p>
+			<?php endif; ?>
+			<div class="bt-pairing-admin-feedback" id="bt-pairing-feedback" role="status" aria-live="polite" aria-atomic="true"></div>
+			<section class="bt-pairing-admin-section bt-pairing-admin-section--status" aria-labelledby="bt-pairing-admin-status-title">
+				<h3 class="bt-pairing-section-title" id="bt-pairing-admin-status-title">Status</h3>
+				<div class="bt-pairing-status-grid">
+					<div class="bt-pairing-status-card">
+						<div class="bt-pairing-status-label">Current page data</div>
+						<div class="bt-pairing-status-value" id="bt-pairing-menu-meta" role="status" aria-live="polite">Checking beer and food data…</div>
+					</div>
+					<div class="bt-pairing-status-card">
+						<div class="bt-pairing-status-label">Visitor pairing cache</div>
+						<div class="bt-pairing-status-value" id="bt-pairing-refresh-meta" role="status" aria-live="polite">Not warmed yet.</div>
+					</div>
+					<div class="bt-pairing-status-card">
+						<div class="bt-pairing-status-label">Static food pairings</div>
+						<div class="bt-pairing-status-value" id="bt-pairing-static-meta" role="status" aria-live="polite">Not loaded yet.</div>
+					</div>
+					<div class="bt-pairing-status-card">
+						<div class="bt-pairing-status-label">Page readiness</div>
+						<div class="bt-pairing-status-value" id="bt-pairing-ready" role="status" aria-live="polite">Waiting for page status…</div>
+					</div>
+				</div>
+			</section>
+			<section class="bt-pairing-admin-section" aria-labelledby="bt-pairing-common-title">
+				<h3 class="bt-pairing-section-title" id="bt-pairing-common-title">Most common tasks</h3>
+				<div class="bt-pairing-admin-task-list">
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--featured">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">1. Sync menu data</h4>
+							<p class="bt-pairing-admin-task-text">Pull the latest beer list and food sheet already loaded on this page into the saved pairing dataset.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Run this first after menu changes.</p>
+						</div>
+						<div class="bt-pairing-admin-actions">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--primary bt-feature-action" data-feature-action="refresh-menu" data-pending-label="Syncing menu data…">Sync menu data</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--featured">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">2. Warm visitor pairings</h4>
+							<p class="bt-pairing-admin-task-text" id="bt-pairing-help-refresh">Pre-generate pairing results so guests see recommendations faster the next time they load this page.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Visitor speed</span> Run after syncing menu data.</p>
+						</div>
+						<div class="bt-pairing-admin-actions">
+							<button type="button" class="bt-pairing-refresh bt-pairing-button bt-pairing-button--secondary" aria-describedby="bt-pairing-help-refresh" data-default-label="Warm visitor pairings" data-pending-label="Warming visitor pairings…">Warm visitor pairings</button>
+						</div>
+						<p class="bt-pairing-inline-hint" id="bt-pairing-refresh-hint" role="status" aria-live="polite">Warm visitor pairings needs both beer and food data on this page.</p>
+					</div>
+				</div>
+			</section>
+			<section class="bt-pairing-admin-section" aria-labelledby="bt-pairing-features-title">
+				<h3 class="bt-pairing-section-title" id="bt-pairing-features-title">Refresh this page’s extras</h3>
+				<p class="bt-pairing-section-help">Use these when one part of the pairing experience looks stale on this page. <strong>Refresh</strong> rebuilds it now. <strong>Clear cached copy</strong> removes the saved copy so the next refresh can start clean.</p>
+				<div class="bt-pairing-admin-task-list" id="bt-pairing-feature-controls">
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Beer colors</h4>
+							<p class="bt-pairing-admin-task-text">Rebuild the color swatches used in the beer cards.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+						</div>
+						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-colors" data-pending-label="Refreshing beer colors…">Refresh</button>
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-colors" data-pending-label="Clearing beer color cache…">Clear cached copy</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_history">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Beer history</h4>
+							<p class="bt-pairing-admin-task-text">Refresh the short history notes shown on each beer.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+						</div>
+						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-history" data-pending-label="Refreshing beer history…">Refresh</button>
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-history" data-pending-label="Clearing beer history cache…">Clear cached copy</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_fun_facts">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Fun facts</h4>
+							<p class="bt-pairing-admin-task-text">Refresh the fun facts shown in the beer details.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+						</div>
+						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-fun-facts" data-pending-label="Refreshing fun facts…">Refresh</button>
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-fun-facts" data-pending-label="Clearing fun facts cache…">Clear cached copy</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_pairings">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Food pairings</h4>
+							<p class="bt-pairing-admin-task-text">Refresh the suggested food pairings shown inside the beer cards.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+						</div>
+						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-static-pairings" data-pending-label="Refreshing food pairings…">Refresh</button>
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-static-pairings" data-pending-label="Clearing food pairing cache…">Clear cached copy</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact bt-pairing-admin-task--warning">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">All page extras</h4>
+							<p class="bt-pairing-admin-task-text">Clear cached colors, history, fun facts, and food pairings for this page in one step.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved caches</span> Use this when several extras look out of date.</p>
+						</div>
+						<div class="bt-pairing-admin-actions">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-feature-caches" data-pending-label="Clearing page extras…" data-confirm-message="Clear all cached extras for this page? This removes saved copies for colors, history, fun facts, and food pairings so they can be rebuilt cleanly.">Clear all page extras</button>
+						</div>
+					</div>
+				</div>
+			</section>
+			<details class="bt-pairing-admin-section bt-pairing-admin-section--advanced">
+				<summary class="bt-pairing-advanced-summary">Advanced maintenance</summary>
+				<p class="bt-pairing-section-help">Use these only when the saved menu dataset itself is wrong or you need to force a clean rebuild.</p>
+				<div class="bt-pairing-admin-task-list">
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Rebuild saved menu data</h4>
+							<p class="bt-pairing-admin-task-text">Rebuild the saved menu snapshot from the latest menu data already ingested on the server.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Use this if saved menu data still looks wrong after syncing.</p>
+						</div>
+						<div class="bt-pairing-admin-actions">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="rebuild-snapshot" data-pending-label="Rebuilding saved menu data…">Rebuild saved data</button>
+						</div>
+					</div>
+					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact bt-pairing-admin-task--danger">
+						<div class="bt-pairing-admin-task-copy">
+							<h4 class="bt-pairing-admin-task-title">Clear saved menu data</h4>
+							<p class="bt-pairing-admin-task-text">Remove the saved menu snapshot entirely. Visitors may see slower or incomplete pairing results until you sync menu data again.</p>
+							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Only use this when you need a full reset.</p>
+						</div>
+						<div class="bt-pairing-admin-actions">
+							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--danger bt-feature-action" data-feature-action="clear-menu" data-pending-label="Clearing saved menu data…" data-confirm-message="Clear the saved menu data? Visitors may see stale or missing pairing results until you sync menu data again.">Clear saved data</button>
+						</div>
+					</div>
+				</div>
+			</details>
 		</div>
-		<div class="muted small bt-pairing-help" id="bt-pairing-help-reset-beer">Regenerates histories and pairings when beer menu is updated.</div>
-		<button type="button" class="bt-pairing-action" data-action="reset-beer" aria-describedby="bt-pairing-help-reset-beer">Reset Beer Menu Data</button>
-		<div class="muted small bt-pairing-help" id="bt-pairing-help-reset-food">Regenerates pairings when food menu is updated.</div>
-		<button type="button" class="bt-pairing-action" data-action="reset-food" aria-describedby="bt-pairing-help-reset-food">Reset Food Menu Data</button>
-		<div class="muted small bt-pairing-help" id="bt-pairing-help-rebuild-pairings">Keeps menus, regenerates pairings.</div>
-		<button type="button" class="bt-pairing-action" data-action="rebuild-pairings" aria-describedby="bt-pairing-help-rebuild-pairings">Rebuild Pairings Only</button>
-		<div class="muted small bt-pairing-help" id="bt-pairing-help-reset-all">Clears all data and all pairing data.</div>
-		<button type="button" class="bt-pairing-action" data-action="reset-all" aria-describedby="bt-pairing-help-reset-all">Reset Everything</button>
-		<div class="muted small bt-pairing-help" id="bt-pairing-help-refresh">Fetches latest menus and rebuilds pairings.</div>
-		<button type="button" class="bt-pairing-refresh" aria-describedby="bt-pairing-help-refresh">Refresh Pairings Now</button>
-		<div class="muted small" id="bt-pairing-refresh-hint" role="status" aria-live="polite">Refresh requires beer + food data.</div>
-		<div class="muted small" id="bt-pairing-refresh-meta" role="status" aria-live="polite">Last refreshed: </div>
-		<div class="muted small" id="bt-pairing-static-meta" role="status" aria-live="polite">Static pairings: </div>
-		<div class="muted small" id="bt-pairing-ready" role="status" aria-live="polite">Food pairings: </div>
 	</div>
 	<script>
-	(() => {
-		const buttons = document.querySelectorAll('.bt-pairing-action');
-		const refreshBtn = document.querySelector('.bt-pairing-refresh');
-		const adminTools = document.getElementById('bt-pairing-admin-tools');
-		const adminToggle = adminTools ? adminTools.querySelector('.bt-pairing-admin-toggle') : null;
-		const refreshHint = document.getElementById('bt-pairing-refresh-hint');
-		const refreshMeta = document.getElementById('bt-pairing-refresh-meta');
-		const staticMeta = document.getElementById('bt-pairing-static-meta');
-		const readyMeta = document.getElementById('bt-pairing-ready');
-		const featureInputs = document.querySelectorAll('.bt-pairing-feature');
-		const featureSaveBtn = document.querySelector('.bt-pairing-feature-save');
-		const featureStatus = document.getElementById('bt-pairing-feature-status');
-		if (!buttons.length && !refreshBtn && !featureSaveBtn) return;
-		const setAdminCollapsed = (collapsed) => {
-			if (!adminTools || !adminToggle) return;
-			adminTools.classList.toggle('bt-pairing-admin-tools--collapsed', collapsed);
-			adminToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-			adminToggle.textContent = collapsed ? 'Open' : 'Close';
-		};
-		if (adminTools && adminToggle) {
-			adminToggle.addEventListener('click', () => {
-				const isCollapsed = adminTools.classList.contains('bt-pairing-admin-tools--collapsed');
-				setAdminCollapsed(!isCollapsed);
-			});
-		}
-		const readFeaturePayload = () => {
-			const payload = {};
-			featureInputs.forEach((input) => {
-				const key = input.getAttribute('data-feature');
-				if (!key) return;
-				payload[key] = !!input.checked;
-			});
-			return payload;
-		};
-		const setFeatureStatus = (message) => {
-			if (!featureStatus) return;
-			featureStatus.textContent = message || '';
-		};
-		const formatTime = (value) => {
-			if (!value) return '—';
-			const date = new Date(value);
-			return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
-		};
-		const safeString = (value) => {
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
-			return '';
-		};
-		const hashString = (value) => {
-			const str = safeString(value);
-			let hash = 5381;
-			for (let i = 0; i < str.length; i++) {
-				hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
-				hash = hash >>> 0;
+		(() => {
+			const buttons = document.querySelectorAll('.bt-pairing-action');
+			const featureButtons = document.querySelectorAll('.bt-feature-action');
+			const refreshBtn = document.querySelector('.bt-pairing-refresh');
+			const adminTools = document.getElementById('bt-pairing-admin-tools');
+			const adminToggle = adminTools ? adminTools.querySelector('.bt-pairing-admin-toggle') : null;
+			const adminBody = document.getElementById('bt-pairing-admin-body');
+			const previewOnly = adminTools?.dataset.previewOnly === 'true';
+			const refreshHint = document.getElementById('bt-pairing-refresh-hint');
+			const menuMeta = document.getElementById('bt-pairing-menu-meta');
+			const refreshMeta = document.getElementById('bt-pairing-refresh-meta');
+			const staticMeta = document.getElementById('bt-pairing-static-meta');
+			const readyMeta = document.getElementById('bt-pairing-ready');
+			const feedback = document.getElementById('bt-pairing-feedback');
+			const featureRows = document.querySelectorAll('[data-requires-feature]');
+			if (!buttons.length && !refreshBtn) return;
+			const actionCopy = {
+				'refresh-menu': {
+					success: 'Saved menu data updated from the beer list and food sheet currently loaded on this page.',
+					error: 'Could not sync menu data. Reload the page and confirm both beer and food data are available before trying again.'
+				},
+				'clear-menu': {
+					success: 'Saved menu data cleared. Sync menu data again before warming visitor pairings.',
+					error: 'Could not clear saved menu data.'
+				},
+				'rebuild-snapshot': {
+					success: 'Saved menu data rebuilt.',
+					error: 'Could not rebuild the saved menu data.'
+				},
+				'clear-feature-caches': {
+					success: 'Cleared cached page extras. Refresh any feature below if you want fresh content right away.',
+					error: 'Could not clear the page extras.'
+				},
+				'refresh-colors': {
+					success: 'Beer colors refreshed for this page.',
+					error: 'Could not refresh beer colors.'
+				},
+				'clear-colors': {
+					success: 'Beer color cache cleared for this page.',
+					error: 'Could not clear the beer color cache.'
+				},
+				'refresh-history': {
+					success: 'Beer history refreshed for this page.',
+					error: 'Could not refresh beer history.'
+				},
+				'clear-history': {
+					success: 'Beer history cache cleared for this page.',
+					error: 'Could not clear the beer history cache.'
+				},
+				'refresh-fun-facts': {
+					success: 'Fun facts refreshed for this page.',
+					error: 'Could not refresh fun facts.'
+				},
+				'clear-fun-facts': {
+					success: 'Fun facts cache cleared for this page.',
+					error: 'Could not clear the fun facts cache.'
+				},
+				'refresh-static-pairings': {
+					success: 'Food pairings refreshed for this page.',
+					error: 'Could not refresh food pairings.'
+				},
+				'clear-static-pairings': {
+					success: 'Food pairing cache cleared for this page.',
+					error: 'Could not clear the food pairing cache.'
+				},
+				'preload-pairings': {
+					success: 'Visitor pairing cache warmed for this page.',
+					error: 'Could not warm visitor pairings.'
+				}
+			};
+			const getPageFeatures = () => {
+				const root = document.getElementById('bt-pairing-app-root');
+				const attrBool = (value, fallback) => {
+					if (value === '1' || value === 'true') return true;
+					if (value === '0' || value === 'false') return false;
+					return fallback;
+				};
+				const raw = window.BT_PAIRING_APP_PAGE_FEATURES
+					|| (window.BT_PAIRING_APP_CONFIG && window.BT_PAIRING_APP_CONFIG.pageFeatures)
+					|| {};
+				return {
+					show_quiz: root ? attrBool(root.dataset.showQuiz, raw.show_quiz !== false) : raw.show_quiz !== false,
+					show_flight: root ? attrBool(root.dataset.showFlight, raw.show_flight !== false) : raw.show_flight !== false,
+					show_history: root ? attrBool(root.dataset.showHistory, raw.show_history !== false) : raw.show_history !== false,
+					show_fun_facts: root ? attrBool(root.dataset.showFunFacts, raw.show_fun_facts !== false) : raw.show_fun_facts !== false,
+					show_pairings: root ? attrBool(root.dataset.showPairings, raw.show_pairings !== false) : raw.show_pairings !== false,
+				};
+			};
+			let pageFeatures = getPageFeatures();
+			let pageCacheHash = '';
+			const announceFeedback = (message, type = 'info') => {
+				if (!feedback) return;
+				feedback.textContent = message || '';
+				feedback.classList.remove('is-success', 'is-error', 'is-info');
+				if (!message) return;
+				feedback.classList.add(type === 'error' ? 'is-error' : type === 'success' ? 'is-success' : 'is-info');
+			};
+			const setButtonBusy = (button, busy) => {
+				if (!button) return;
+				const defaultLabel = button.dataset.defaultLabel || button.textContent || '';
+				if (!button.dataset.defaultLabel) {
+					button.dataset.defaultLabel = defaultLabel;
+				}
+				button.disabled = !!busy;
+				button.setAttribute('aria-busy', busy ? 'true' : 'false');
+				button.textContent = busy ? (button.dataset.pendingLabel || defaultLabel) : (button.dataset.defaultLabel || defaultLabel);
+			};
+			const setAdminCollapsed = (collapsed) => {
+				if (!adminTools || !adminToggle) return;
+				adminTools.classList.toggle('bt-pairing-admin-tools--collapsed', collapsed);
+				adminToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+				if (adminBody) {
+					adminBody.hidden = collapsed;
+				}
+				adminToggle.textContent = collapsed ? 'Show tools' : 'Hide tools';
+			};
+			if (adminTools && adminToggle) {
+				adminToggle.addEventListener('click', () => {
+					const isCollapsed = adminTools.classList.contains('bt-pairing-admin-tools--collapsed');
+					setAdminCollapsed(!isCollapsed);
+				});
 			}
-			return hash.toString(36);
-		};
-		const toItems = (payload) => {
-			if (Array.isArray(payload)) return payload;
-			if (payload && typeof payload === 'object' && Array.isArray(payload.items)) return payload.items;
-			return [];
-		};
-		const getBeerFingerprint = (items) => {
-			if (!Array.isArray(items) || !items.length) return null;
-			const normalized = items.map((item) => {
-				if (!item || typeof item !== 'object') return '';
-				const key = item.btKey || item.id || item.slug || item.name || '';
-				const style = item.style || '';
-				const profile = item.pairingProfile ? JSON.stringify(item.pairingProfile) : '';
-				return `${key}|${style}|${profile}`;
-			}).filter(Boolean).sort().join('||');
-			return normalized ? hashString(normalized) : null;
-		};
-		const getFoodFingerprint = (items) => {
-			if (!Array.isArray(items) || !items.length) return null;
-			const normalized = items.map((item) => {
-				if (!item || typeof item !== 'object') return '';
-				const key = item.btKey || item.id || item.slug || item.name || '';
-				const category = item.category || '';
-				return `${key}|${category}`;
-			}).filter(Boolean).sort().join('||');
-			return normalized ? hashString(normalized) : null;
-		};
-		const readJsonScript = (id) => {
-			const script = document.getElementById(id);
-			if (!script || !script.textContent) return null;
-			try {
-				return JSON.parse(script.textContent);
-			} catch (err) {
+			const formatTime = (value) => {
+				if (!value) return '—';
+				const date = new Date(value);
+				return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+			};
+			const safeString = (value) => {
+				if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+				return '';
+			};
+			const hashString = (value) => {
+				const str = safeString(value);
+				let hash = 5381;
+				for (let i = 0; i < str.length; i++) {
+					hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+					hash = hash >>> 0;
+				}
+				return hash.toString(36);
+			};
+			const toItems = (payload) => {
+				if (Array.isArray(payload)) return payload;
+				if (payload && typeof payload === 'object' && Array.isArray(payload.items)) return payload.items;
+				return [];
+			};
+			const getBeerFingerprint = (items) => {
+				if (!Array.isArray(items) || !items.length) return null;
+				const normalized = items.map((item) => {
+					if (!item || typeof item !== 'object') return '';
+					const key = item.btKey || item.id || item.slug || item.name || '';
+					const style = item.style || '';
+					const profile = item.pairingProfile ? JSON.stringify(item.pairingProfile) : '';
+					return `${key}|${style}|${profile}`;
+				}).filter(Boolean).sort().join('||');
+				return normalized ? hashString(normalized) : null;
+			};
+			const getFoodFingerprint = (items) => {
+				if (!Array.isArray(items) || !items.length) return null;
+				const normalized = items.map((item) => {
+					if (!item || typeof item !== 'object') return '';
+					const key = item.btKey || item.id || item.slug || item.name || '';
+					const category = item.category || '';
+					return `${key}|${category}`;
+				}).filter(Boolean).sort().join('||');
+				return normalized ? hashString(normalized) : null;
+			};
+			const readJsonScript = (id) => {
+				const script = document.getElementById(id);
+				if (!script || !script.textContent) return null;
+				try {
+					return JSON.parse(script.textContent);
+				} catch (err) {
+					return null;
+				}
+			};
+			const isKind = (payload, kind) => payload && typeof payload === 'object' && (!payload.kind || payload.kind === kind);
+			const readBeerData = () => {
+				const win = window;
+				const direct = win.__BT_BEER_DATA;
+				if (isKind(direct, 'beer')) return direct;
+				const nested = win.__BT_DATA && win.__BT_DATA.beer;
+				if (isKind(nested, 'beer')) return nested;
+				const script = readJsonScript('bt-beer-data');
+				if (isKind(script, 'beer')) return script;
 				return null;
-			}
-		};
-		const isKind = (payload, kind) => payload && typeof payload === 'object' && (!payload.kind || payload.kind === kind);
-		const readBeerData = () => {
-			const win = window;
-			const direct = win.__BT_BEER_DATA;
-			if (isKind(direct, 'beer')) return direct;
-			const nested = win.__BT_DATA && win.__BT_DATA.beer;
-			if (isKind(nested, 'beer')) return nested;
-			const script = readJsonScript('bt-beer-data');
-			if (isKind(script, 'beer')) return script;
-			return null;
-		};
-		const readFoodData = () => {
-			const win = window;
-			const direct = win.__BT_FOOD_DATA;
-			if (isKind(direct, 'food')) return direct;
-			const nested = win.__BT_DATA && win.__BT_DATA.food;
-			if (isKind(nested, 'food')) return nested;
-			const scriptFood = readJsonScript('bt-food-data');
-			if (isKind(scriptFood, 'food')) return scriptFood;
-			const scriptLegacy = readJsonScript('bt-menu-data');
-			if (isKind(scriptLegacy, 'food')) return scriptLegacy;
-			return null;
-		};
-		const setRefreshState = ({ disabled, label, hint }) => {
-			if (refreshBtn) {
-				refreshBtn.disabled = !!disabled;
-				if (label) refreshBtn.textContent = label;
-			}
-			if (refreshHint) {
-				refreshHint.textContent = hint || '';
-				refreshHint.style.display = hint ? 'block' : 'none';
-			}
-		};
-		const clearStaticPairingsCache = () => {
-			const keys = [];
-			try {
-				if (window.localStorage) {
-					for (let i = 0; i < window.localStorage.length; i++) {
-						const key = window.localStorage.key(i);
-						if (key && key.indexOf('bt_static_pairings_') === 0) keys.push(key);
-					}
-					keys.forEach((key) => window.localStorage.removeItem(key));
-				}
-			} catch (err) {
-				console.warn('Unable to clear localStorage static pairings', err);
-			}
-			try {
-				if (window.sessionStorage) {
-					for (let i = 0; i < window.sessionStorage.length; i++) {
-						const key = window.sessionStorage.key(i);
-						if (key && key.indexOf('bt_static_pairings_') === 0) keys.push(key);
-					}
-					keys.forEach((key) => window.sessionStorage.removeItem(key));
-				}
-			} catch (err) {
-				console.warn('Unable to clear sessionStorage static pairings', err);
-			}
-		};
-		const clearPairingCacheMap = () => {
-			const keys = [];
-			try {
-				if (window.sessionStorage) {
-					for (let i = 0; i < window.sessionStorage.length; i++) {
-						const key = window.sessionStorage.key(i);
-						if (key && key.indexOf('bt_pairing_cache_v1_map') === 0) keys.push(key);
-					}
-					keys.forEach((key) => window.sessionStorage.removeItem(key));
-				}
-			} catch (err) {
-				console.warn('Unable to clear sessionStorage pairing cache', err);
-			}
-		};
-		const clearHistoryCache = () => {
-			try {
-				if (window.sessionStorage) {
-					window.sessionStorage.removeItem('bt_history_cache_v1');
-				}
-			} catch (err) {
-				console.warn('Unable to clear sessionStorage history cache', err);
-			}
-		};
-		const updateAvailability = () => {
-			const beerData = readBeerData();
-			const foodData = readFoodData();
-			const beerItems = toItems(beerData);
-			const foodItems = toItems(foodData);
-			const beerHash = getBeerFingerprint(beerItems);
-			const foodHash = getFoodFingerprint(foodItems);
-			if (!beerHash || !foodHash) {
-				if (refreshMeta) refreshMeta.textContent = 'Last refreshed: —';
-				setRefreshState({
-					disabled: true,
-					label: 'Refresh Now',
-					hint: 'Refresh requires beer + food data.',
-				});
-				return;
-			}
-			setRefreshState({ disabled: false, label: 'Refresh Now', hint: '' });
-		};
-		const refreshPairingCache = async () => {
-			if (!refreshBtn) return;
-			const beerData = readBeerData();
-			const foodData = readFoodData();
-			if (!beerData || !foodData) {
-				setRefreshState({
-					disabled: true,
-					label: 'Refresh Now',
-					hint: 'Refresh requires beer + food data.',
-				});
-				return;
-			}
-			const payload = {
-				beerData,
-				foodData,
-				preload: true,
-				answers: { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' },
 			};
-			const staticPayload = {
-				beerData,
-				foodData,
-				force: true,
+			const readFoodData = () => {
+				const win = window;
+				const direct = win.__BT_FOOD_DATA;
+				if (isKind(direct, 'food')) return direct;
+				const nested = win.__BT_DATA && win.__BT_DATA.food;
+				if (isKind(nested, 'food')) return nested;
+				const scriptFood = readJsonScript('bt-food-data');
+				if (isKind(scriptFood, 'food')) return scriptFood;
+				const scriptLegacy = readJsonScript('bt-menu-data');
+				if (isKind(scriptLegacy, 'food')) return scriptLegacy;
+				return null;
 			};
-			setRefreshState({ disabled: true, label: 'Refreshing…', hint: '' });
-			try {
-				const res = await fetch('<?php echo esc_js( $pairing_endpoint ); ?>', {
+			const PRELOAD_LABEL = 'Warm visitor pairings';
+			const setRefreshState = ({ disabled, label, hint }) => {
+				if (refreshBtn) {
+					refreshBtn.disabled = previewOnly ? true : !!disabled;
+					refreshBtn.setAttribute('aria-disabled', previewOnly || disabled ? 'true' : 'false');
+					if (label) refreshBtn.textContent = label;
+				}
+				if (refreshHint) {
+					refreshHint.textContent = hint || '';
+					refreshHint.style.display = hint ? 'block' : 'none';
+				}
+			};
+			const upsertJsonScript = (id, value) => {
+				let script = document.getElementById(id);
+				if (!script) {
+					script = document.createElement('script');
+					script.type = 'application/json';
+					script.id = id;
+					document.body.appendChild(script);
+				}
+				script.textContent = JSON.stringify(value || {});
+			};
+			const applyMenuSnapshotRuntime = (snapshot) => {
+				const win = window;
+				const canonical = snapshot && typeof snapshot === 'object' ? snapshot : null;
+				win.__BT_CANONICAL_MENU_SNAPSHOT = canonical;
+				win.__BT_DATA = win.__BT_DATA && typeof win.__BT_DATA === 'object' ? win.__BT_DATA : {};
+				if (!canonical || !canonical.beer || !canonical.food) {
+					const emptyBeer = { kind: 'beer', items: [] };
+					const emptyFood = { kind: 'food', items: [] };
+					delete win.__BT_DATA.beer;
+					delete win.__BT_DATA.food;
+					win.__BT_BEER_DATA = null;
+					win.__BT_FOOD_DATA = null;
+					win.__BT_MENU_DATA = null;
+					upsertJsonScript('bt-beer-data', emptyBeer);
+					upsertJsonScript('bt-food-data', emptyFood);
+					upsertJsonScript('bt-menu-data', emptyFood);
+					document.dispatchEvent(new CustomEvent('btBeerDataReady', { detail: emptyBeer }));
+					document.dispatchEvent(new CustomEvent('btFoodDataReady', { detail: emptyFood }));
+					document.dispatchEvent(new CustomEvent('btPairingReset', { detail: { action: 'menu-sync', empty: true } }));
+					return;
+				}
+				win.__BT_DATA.beer = canonical.beer;
+				win.__BT_DATA.food = canonical.food;
+				win.__BT_BEER_DATA = canonical.beer;
+				win.__BT_FOOD_DATA = canonical.food;
+				win.__BT_MENU_DATA = canonical.food;
+				upsertJsonScript('bt-beer-data', canonical.beer);
+				upsertJsonScript('bt-food-data', canonical.food);
+				upsertJsonScript('bt-menu-data', canonical.food);
+				document.dispatchEvent(new CustomEvent('btBeerDataReady', { detail: canonical.beer }));
+				document.dispatchEvent(new CustomEvent('btFoodDataReady', { detail: canonical.food }));
+				document.dispatchEvent(new CustomEvent('btPairingReset', { detail: { action: 'menu-sync' } }));
+			};
+			const syncMenuSnapshotRuntime = async ({ allowEmpty = false } = {}) => {
+				const res = await fetch('<?php echo esc_js( $snapshot_endpoint ); ?>', {
+					method: 'GET',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+					},
+				});
+				if (!res.ok) {
+					if (allowEmpty && res.status === 404) {
+						applyMenuSnapshotRuntime(null);
+						return null;
+					}
+					throw new Error(`Snapshot read failed (${res.status})`);
+				}
+				const data = await res.json();
+				applyMenuSnapshotRuntime(data && data.snapshot ? data.snapshot : null);
+				return data && data.snapshot ? data.snapshot : null;
+			};
+			const readCanonicalBeerData = () => {
+				const snapBeer = window.__BT_CANONICAL_MENU_SNAPSHOT?.beer;
+				if (snapBeer && Array.isArray(snapBeer.items)) return snapBeer;
+				return readBeerData();
+			};
+			const readCanonicalFoodData = () => {
+				const snapFood = window.__BT_CANONICAL_MENU_SNAPSHOT?.food;
+				if (snapFood && Array.isArray(snapFood.items)) return snapFood;
+				return readFoodData();
+			};
+			const postMenuIntake = async (kind, payload, sourceName) => {
+				if (!payload || !Array.isArray(payload.items)) return;
+				await fetch('<?php echo esc_js( rest_url( 'bt/v1/menu-snapshot/intake' ) ); ?>', {
 					method: 'POST',
 					credentials: 'same-origin',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
 					},
-					body: JSON.stringify(payload),
+					body: JSON.stringify({
+						kind,
+						payload,
+						source: { name: sourceName, url: window.location.href },
+					}),
+				});
+			};
+			const applyFeatureControlVisibility = () => {
+				pageFeatures = getPageFeatures();
+				featureRows.forEach((row) => {
+					const required = row.getAttribute('data-requires-feature');
+					const visible = !required || pageFeatures[required];
+					row.style.display = visible ? '' : 'none';
+				});
+			};
+			const clearFeatureCaches = async () => {
+				const actions = ['clear-colors'];
+				if (pageFeatures.show_history) actions.push('clear-history');
+				if (pageFeatures.show_fun_facts) actions.push('clear-fun-facts');
+				if (pageFeatures.show_pairings) actions.push('clear-static-pairings');
+				for (const action of actions) {
+					document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+				}
+			};
+			const rebuildSnapshot = async () => {
+				const res = await fetch('<?php echo esc_js( $snapshot_rebuild_endpoint ); ?>', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+					},
 				});
 				if (!res.ok) {
-					console.warn('Refresh failed', res.status);
-				} else {
-					document.dispatchEvent(new CustomEvent('btPairingRefresh', { detail: { action: 'refresh' } }));
-					await fetch('<?php echo esc_js( $static_endpoint ); ?>', {
-						method: 'POST',
-						credentials: 'same-origin',
-						headers: {
-							'Content-Type': 'application/json',
-							'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
-						},
-						body: JSON.stringify(staticPayload),
+					throw new Error(`Snapshot rebuild failed (${res.status})`);
+				}
+			};
+			const clearSnapshot = async () => {
+				const res = await fetch('<?php echo esc_js( $snapshot_endpoint ); ?>', {
+					method: 'DELETE',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+					},
+				});
+				if (!res.ok) {
+					throw new Error(`Snapshot clear failed (${res.status})`);
+				}
+			};
+			const refreshMenuSnapshot = async () => {
+				const beer = readCanonicalBeerData();
+				const food = readCanonicalFoodData();
+				if (!beer || !food) {
+					throw new Error('Menu refresh requires current page beer + food data.');
+				}
+				await postMenuIntake('beer', beer, 'admin-page-refresh');
+				await postMenuIntake('food', food, 'admin-page-refresh');
+				await rebuildSnapshot();
+			};
+			const updateAvailability = () => {
+				const beerData = readBeerData();
+				const foodData = readFoodData();
+				const beerItems = toItems(beerData);
+				const foodItems = toItems(foodData);
+				const beerHash = getBeerFingerprint(beerItems);
+				const foodHash = getFoodFingerprint(foodItems);
+				if (menuMeta) {
+					if (beerHash && foodHash) {
+						menuMeta.textContent = `Ready · ${beerItems.length} beers and ${foodItems.length} food items loaded on this page.`;
+					} else {
+						menuMeta.textContent = 'Waiting for both beer and food data to load on this page.';
+					}
+				}
+				if (!beerHash || !foodHash) {
+					if (refreshMeta) refreshMeta.textContent = 'Not warmed yet.';
+					setRefreshState({
+						disabled: true,
+						label: PRELOAD_LABEL,
+						hint: 'Warm visitor pairings needs both beer and food data on this page.',
 					});
-					const nowLabel = formatTime(Date.now());
-					setRefreshState({ disabled: false, label: `Refreshed (${nowLabel})`, hint: '' });
-					if (refreshMeta) refreshMeta.textContent = `Last refreshed: ${nowLabel}`;
+					return;
 				}
-			} catch (err) {
-				console.error('Refresh error', err);
-			} finally {
-				if (refreshBtn.textContent === 'Refreshing…') {
-					setRefreshState({ disabled: false, label: 'Refresh Now', hint: '' });
+				setRefreshState({ disabled: false, label: PRELOAD_LABEL, hint: '' });
+			};
+			const refreshPairingCache = async () => {
+				if (!refreshBtn) return;
+				const beerData = readBeerData();
+				const foodData = readFoodData();
+				if (!beerData || !foodData) {
+					setRefreshState({
+						disabled: true,
+						label: PRELOAD_LABEL,
+						hint: 'Warm visitor pairings needs both beer and food data on this page.',
+					});
+					return;
 				}
-				updateAvailability();
-			}
-		};
-		const purgeTargets = async (targets) => {
-			for (const target of targets) {
+				const payload = {
+					beerData,
+					foodData,
+					preload: true,
+					answers: { mood: '', body: '', bitterness: '', flavorFocus: [], alcoholPreference: '' },
+				};
+				const staticPayload = {
+					beerData,
+					foodData,
+					force: true,
+				};
+				setRefreshState({ disabled: true, label: 'Warming visitor pairings…', hint: '' });
+				announceFeedback('Warming visitor pairings…');
 				try {
-					const res = await fetch('<?php echo esc_js( $endpoint ); ?>', {
+					const res = await fetch('<?php echo esc_js( $pairing_endpoint ); ?>', {
 						method: 'POST',
 						credentials: 'same-origin',
 						headers: {
 							'Content-Type': 'application/json',
 							'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
 						},
-						body: JSON.stringify({ target }),
+						body: JSON.stringify(payload),
 					});
 					if (!res.ok) {
-						console.warn('Purge failed', res.status);
+						console.warn('Refresh failed', res.status);
+						announceFeedback(actionCopy['preload-pairings'].error, 'error');
+					} else {
+						document.dispatchEvent(new CustomEvent('btPairingRefresh', { detail: { action: 'refresh' } }));
+						await fetch('<?php echo esc_js( $static_endpoint ); ?>', {
+							method: 'POST',
+							credentials: 'same-origin',
+							headers: {
+								'Content-Type': 'application/json',
+								'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+							},
+							body: JSON.stringify(staticPayload),
+						});
+						const nowLabel = formatTime(Date.now());
+						setRefreshState({ disabled: false, label: `Warmed ${nowLabel}`, hint: '' });
+						if (refreshMeta) refreshMeta.textContent = `Warmed ${nowLabel}.`;
+						announceFeedback(actionCopy['preload-pairings'].success, 'success');
 					}
 				} catch (err) {
-					console.error('Purge error', err);
-				}
-			}
-		};
-		buttons.forEach((btn) => {
-			btn.addEventListener('click', async () => {
-				const action = btn.getAttribute('data-action') || '';
-				btn.disabled = true;
-				document.dispatchEvent(new CustomEvent('btPairingReset', { detail: { action } }));
-				if (action === 'reset-beer') {
-					clearHistoryCache();
-					clearPairingCacheMap();
-					clearStaticPairingsCache();
-					await purgeTargets(['history', 'pairings-static', 'pairing']);
-				} else if (action === 'reset-food') {
-					clearPairingCacheMap();
-					clearStaticPairingsCache();
-					await purgeTargets(['pairings-static', 'pairing']);
-				} else if (action === 'rebuild-pairings') {
-					clearPairingCacheMap();
-					clearStaticPairingsCache();
-					await purgeTargets(['pairings-static', 'pairing']);
-				} else if (action === 'reset-all') {
-					clearHistoryCache();
-					clearPairingCacheMap();
-					clearStaticPairingsCache();
-					await purgeTargets(['all']);
-				}
-				btn.disabled = false;
-			});
-		});
-		if (refreshBtn) {
-			refreshBtn.addEventListener('click', refreshPairingCache);
-		}
-		if (featureSaveBtn) {
-			featureSaveBtn.addEventListener('click', async () => {
-				if (!featureInputs.length) return;
-				featureSaveBtn.disabled = true;
-				setFeatureStatus('Saving…');
-				try {
-					const res = await fetch('<?php echo esc_js( $features_endpoint ); ?>', {
-						method: 'POST',
-						credentials: 'same-origin',
-						headers: {
-							'Content-Type': 'application/json',
-							'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
-						},
-						body: JSON.stringify(readFeaturePayload()),
-					});
-					if (!res.ok) {
-						throw new Error(`Save failed: ${res.status}`);
-					}
-					setFeatureStatus('Saved. Refresh the page to apply changes.');
-				} catch (err) {
-					console.error('Feature save error', err);
-					setFeatureStatus('Unable to save toggles. Try again.');
+					console.error('Refresh error', err);
+					announceFeedback(actionCopy['preload-pairings'].error, 'error');
 				} finally {
-					featureSaveBtn.disabled = false;
+					if (refreshBtn.textContent === 'Warming visitor pairings…') {
+						setRefreshState({ disabled: false, label: PRELOAD_LABEL, hint: '' });
+					}
+					updateAvailability();
+				}
+			};
+			const purgeTargetByHash = async (target) => {
+				if (!target) return;
+				const body = { target };
+				if (pageCacheHash) body.hash = pageCacheHash;
+				const res = await fetch('<?php echo esc_js( $endpoint ); ?>', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': '<?php echo esc_js( $nonce ); ?>',
+					},
+					body: JSON.stringify(body),
+				});
+				if (!res.ok) {
+					throw new Error(`Purge failed (${res.status})`);
+				}
+			};
+			featureButtons.forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const action = btn.getAttribute('data-feature-action') || '';
+					const required = btn.closest('[data-requires-feature]')?.getAttribute('data-requires-feature');
+					const confirmMessage = btn.getAttribute('data-confirm-message');
+					if (!action) return;
+					if (previewOnly) {
+						announceFeedback('Preview mode is on. Log into WordPress as an admin to run these actions.', 'info');
+						return;
+					}
+					if (required && !pageFeatures[required]) return;
+					if (confirmMessage && !window.confirm(confirmMessage)) return;
+					setButtonBusy(btn, true);
+					announceFeedback(btn.dataset.pendingLabel || 'Working…');
+					try {
+						if (action === 'refresh-menu') {
+							await refreshMenuSnapshot();
+							await syncMenuSnapshotRuntime();
+						} else if (action === 'clear-menu') {
+							await clearSnapshot();
+							await syncMenuSnapshotRuntime({ allowEmpty: true });
+						} else if (action === 'rebuild-snapshot') {
+							await rebuildSnapshot();
+							await syncMenuSnapshotRuntime();
+						} else if (action === 'clear-feature-caches') {
+							await purgeTargetByHash('colors');
+							if (pageFeatures.show_history) await purgeTargetByHash('history');
+							if (pageFeatures.show_fun_facts) await purgeTargetByHash('fun_facts');
+							if (pageFeatures.show_pairings) await purgeTargetByHash('pairings-static');
+							await clearFeatureCaches();
+						} else if (action === 'refresh-colors') {
+							await purgeTargetByHash('colors');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'clear-colors') {
+							await purgeTargetByHash('colors');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'refresh-history') {
+							await purgeTargetByHash('history');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'clear-history') {
+							await purgeTargetByHash('history');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'refresh-fun-facts') {
+							await purgeTargetByHash('fun_facts');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'clear-fun-facts') {
+							await purgeTargetByHash('fun_facts');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'refresh-static-pairings') {
+							await purgeTargetByHash('pairings-static');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else if (action === 'clear-static-pairings') {
+							await purgeTargetByHash('pairings-static');
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						} else {
+							document.dispatchEvent(new CustomEvent('btPairingAdminAction', { detail: { action } }));
+						}
+						announceFeedback(actionCopy[action]?.success || 'Done.', 'success');
+					} catch (err) {
+						console.error('Feature action failed', action, err);
+						announceFeedback(actionCopy[action]?.error || 'This action could not be completed.', 'error');
+					} finally {
+						setButtonBusy(btn, false);
+						updateAvailability();
+					}
+				});
+			});
+			if (refreshBtn) {
+				if (previewOnly) {
+					refreshBtn.disabled = true;
+				} else {
+					refreshBtn.addEventListener('click', refreshPairingCache);
+				}
+			}
+			document.addEventListener('btPairingStatus', (event) => {
+				const detail = event && event.detail ? event.detail : {};
+				if (readyMeta) {
+					readyMeta.textContent = detail.pairingsReady ? 'Ready for visitors.' : 'Still loading or not warmed yet.';
+				}
+				if (staticMeta) {
+					const updated = formatTime(detail.staticLastUpdated);
+					const store = detail.staticStore ? ` from ${detail.staticStore}` : '';
+					staticMeta.textContent = detail.staticLastUpdated ? `Updated ${updated}${store}.` : 'Not loaded yet.';
+				}
+				if (detail.lastFetched && refreshMeta) {
+					refreshMeta.textContent = `Warmed ${formatTime(detail.lastFetched)}.`;
 				}
 			});
-		}
-		document.addEventListener('btPairingStatus', (event) => {
-			const detail = event && event.detail ? event.detail : {};
-			if (readyMeta) {
-				readyMeta.textContent = detail.pairingsReady
-					? 'Food pairings: ready'
-					: 'Food pairings: loading';
+			document.addEventListener('btPairingPageContext', (event) => {
+				const detail = event && event.detail ? event.detail : {};
+				pageCacheHash = typeof detail.cacheHash === 'string' ? detail.cacheHash : '';
+				applyFeatureControlVisibility();
+			});
+			applyFeatureControlVisibility();
+			updateAvailability();
+			if (previewOnly) {
+				announceFeedback('Preview mode is on. Log into WordPress as an admin to run these actions.', 'info');
+				buttons.forEach((button) => {
+					button.disabled = true;
+				});
+				if (refreshBtn) refreshBtn.disabled = true;
 			}
-			if (staticMeta) {
-				const updated = formatTime(detail.staticLastUpdated);
-				const store = detail.staticStore ? ` (${detail.staticStore})` : '';
-				staticMeta.textContent = detail.staticLastUpdated
-					? `Static pairings: ${updated}${store}`
-					: 'Static pairings: —';
-			}
-			if (detail.lastFetched && refreshMeta) {
-				refreshMeta.textContent = `Last refreshed: ${formatTime(detail.lastFetched)}`;
-			}
-		});
-		updateAvailability();
-		document.addEventListener('btBeerDataReady', updateAvailability);
-		document.addEventListener('btFoodDataReady', updateAvailability);
-	})();
+			document.addEventListener('btBeerDataReady', updateAvailability);
+			document.addEventListener('btFoodDataReady', updateAvailability);
+		})();
 	</script>
 	<?php
 }
