@@ -4,7 +4,7 @@ import { createLogger } from './logger';
 const log = createLogger('api');
 
 /**
- * @typedef {{ restUrl?: string; nonce?: string; openaiConfigured?: boolean }} PairingGlobals
+ * @typedef {{ restUrl?: string; nonce?: string; openaiConfigured?: unknown; capabilities?: { openai?: unknown } }} PairingGlobals
  * @typedef {Window & { BT_PAIRING_APP_CONFIG?: PairingGlobals; PAIRING_APP?: PairingGlobals; PAIRINGAPP?: PairingGlobals }} PairingWindow
  */
 
@@ -18,7 +18,7 @@ function getGlobals() {
   if (!source || typeof source !== 'object') return {};
   const restUrl = typeof source.restUrl === 'string' ? source.restUrl : undefined;
   const nonce = typeof source.nonce === 'string' ? source.nonce : undefined;
-  const openaiConfigured = typeof source.openaiConfigured === 'boolean' ? source.openaiConfigured : undefined;
+  const openaiConfigured = source.openaiConfigured ?? source.capabilities?.openai;
   return { restUrl, nonce, openaiConfigured };
 }
 
@@ -34,7 +34,15 @@ function getNonce() {
 
 export function isOpenAIConfigured() {
   const g = getGlobals();
-  return g.openaiConfigured !== false;
+  const value = g.openaiConfigured;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['', '0', 'false', 'no', 'off'].includes(normalized)) return false;
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  }
+  return true;
 }
 
 /**
@@ -143,6 +151,7 @@ export async function getBeerColors(items = []) {
  * @returns {Promise<unknown>}
  */
 export function getPairing(answers = {}, beerItems = [], options = {}) {
+  if (!isOpenAIConfigured()) return Promise.resolve(null);
   log.debug('pairing.start', {
     phase: 'api',
     answers: Object.keys(answers ?? {}).length,
@@ -162,6 +171,7 @@ export function getPairing(answers = {}, beerItems = [], options = {}) {
  * @returns {Promise<unknown>}
  */
 export async function preloadPairing(beerItems = [], answers = {}, foodData = null) {
+  if (!isOpenAIConfigured()) return null;
   return /** @type {Promise<unknown>} */ (wpFetch('/bt/v1/pairing', {
     method: 'POST',
     body: JSON.stringify({ beerData: beerItems, foodData, preload: true, answers }),
@@ -221,6 +231,7 @@ export function getHistories(items = [], options = {}) {
   if (!Array.isArray(items) || !items.length) {
     return Promise.resolve({ histories: {}, partial: false, cached: [] });
   }
+  if (!isOpenAIConfigured()) return Promise.resolve({ histories: {}, partial: false, cached: [] });
   /** @type {{ force: boolean; hash?: string; slugs?: string[]; items?: Array<{ slug: string; name: string; description: string; style?: string }> }} */
   const payload = {
     force: options.force ? true : false,
@@ -259,6 +270,7 @@ export function getFunFacts(items = [], options = {}) {
   if (!Array.isArray(items) || !items.length) {
     return Promise.resolve({ histories: {}, partial: false, cached: [] });
   }
+  if (!isOpenAIConfigured()) return Promise.resolve({ histories: {}, partial: false, cached: [] });
   /** @type {{ force: boolean; hash?: string; slugs?: string[]; items?: Array<{ slug: string; name: string; description: string; style?: string }> }} */
   const payload = {
     force: options.force ? true : false,
@@ -293,6 +305,7 @@ export function getFunFacts(items = [], options = {}) {
  * @returns {Promise<unknown>}
  */
 export function fetchStaticPairings(input = {}) {
+  if (!isOpenAIConfigured()) return Promise.resolve(null);
   const payload = {
     beerData: input.beerData ?? null,
     foodData: input.foodData ?? null,

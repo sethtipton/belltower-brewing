@@ -4,7 +4,7 @@ import { useBeerData } from './hooks/useBeerData';
 import { BeerDataProvider } from './providers/BeerDataProvider';
 import BeerList from './components/BeerList';
 import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
-import { preloadPairing, getHistories, getFunFacts, getPairingCache, getPairingCacheStatus } from './api';
+import { preloadPairing, getHistories, getFunFacts, getPairingCache, getPairingCacheStatus, isOpenAIConfigured } from './api';
 import FlightTray from './components/FlightTray';
 import { PairingForm } from './components/PairingForm';
 import { getCachedColors, isCacheStale } from './utils/beerColor';
@@ -319,6 +319,35 @@ function toHistoryMap(raw: unknown): Record<string, string> {
     }
   });
   return map;
+}
+
+function hasDisplayableAiText(raw: unknown): boolean {
+  if (!isRecord(raw)) return false;
+  return Object.values(raw).some((val) => {
+    if (typeof val !== 'string') return false;
+    const text = val.trim();
+    return Boolean(text) && !text.toLowerCase().startsWith('loading ');
+  });
+}
+
+function hasPairingReasonText(raw: unknown): boolean {
+  if (!isRecord(raw)) return false;
+  return Object.values(raw).some((entry) => {
+    if (!isRecord(entry)) return false;
+    const mains = Array.isArray(entry.mains) ? entry.mains : [];
+    const hasMainReason = mains.some((item) => (
+      isRecord(item)
+      && typeof item.pairingReason === 'string'
+      && Boolean(item.pairingReason.trim())
+    ));
+    const side = entry.side;
+    const hasSideReason = Boolean(
+      isRecord(side)
+      && typeof side.pairingReason === 'string'
+      && side.pairingReason.trim()
+    );
+    return hasMainReason || hasSideReason;
+  });
 }
 
 function extractSuccessMessage(raw: PairingResponse | null): string {
@@ -943,6 +972,7 @@ function AppContent(): React.ReactElement {
 
   const fetchAndMergeHistories = useCallback(async () => {
     if (!featureFlags.showHistory) return;
+    if (!isOpenAIConfigured()) return;
     if (historyRequestInProgress.current) return;
     if (!safeItems.length) return;
     if (Date.now() < historyCooldownUntil.current) return;
@@ -1015,6 +1045,7 @@ function AppContent(): React.ReactElement {
 
   useEffect(() => {
     if (!featureFlags.showHistory) return;
+    if (!isOpenAIConfigured()) return;
     if (!safeItems.length) return;
     scheduleIdle(() => {
       void fetchAndMergeHistories();
@@ -1023,6 +1054,7 @@ function AppContent(): React.ReactElement {
 
   const fetchAndMergeFunFacts = useCallback(async () => {
     if (!featureFlags.showFunFacts) return;
+    if (!isOpenAIConfigured()) return;
     if (funFactsRequestInProgress.current) return;
     if (!safeItems.length) return;
     if (Date.now() < funFactsCooldownUntil.current) return;
@@ -1085,6 +1117,7 @@ function AppContent(): React.ReactElement {
 
   useEffect(() => {
     if (!featureFlags.showFunFacts) return;
+    if (!isOpenAIConfigured()) return;
     if (!safeItems.length) return;
     scheduleIdle(() => {
       void fetchAndMergeFunFacts();
@@ -1093,6 +1126,7 @@ function AppContent(): React.ReactElement {
 
   useEffect(() => {
     if (!featureFlags.showPairings) return;
+    if (!isOpenAIConfigured()) return;
     scheduleIdle(() => {
       void staticPairings.ensureLoaded();
     }, 800);
@@ -1101,7 +1135,11 @@ function AppContent(): React.ReactElement {
   const trayClassName = flightOpen ? 'beerWrapper is-flight-open' : 'beerWrapper';
   const listReady = ready && safeItems.length > 0;
   const showFlightTray = listReady;
-  const showAiDisclaimer = featureFlags.showQuiz || featureFlags.showHistory || featureFlags.showFunFacts || featureFlags.showPairings;
+  const showAiDisclaimer = successIsAi
+    || (showRecommendations && Object.values(recMeta).some((meta) => Boolean(meta?.matchSentence?.trim())))
+    || (featureFlags.showHistory && hasDisplayableAiText(historyTextByName))
+    || (featureFlags.showFunFacts && hasDisplayableAiText(funFactsByName))
+    || (featureFlags.showPairings && staticPairings.available && hasPairingReasonText(staticPairings.pairingsByBeerKey));
   const appVisible = beerError ? true : listReady;
   const [bootTimedOut, setBootTimedOut] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -1578,6 +1616,11 @@ function AppContent(): React.ReactElement {
       const detail = 'detail' in event ? (event as CustomEvent<{ action?: string }>).detail : null;
       const action = detail?.action ?? '';
       if (!action) return;
+      const needsOpenAI = action === 'refresh-colors'
+        || action === 'refresh-history'
+        || action === 'refresh-fun-facts'
+        || action === 'refresh-static-pairings';
+      if (needsOpenAI && !isOpenAIConfigured()) return;
       if (action === 'refresh-colors') {
         if (refreshColors) void refreshColors(true);
         return;

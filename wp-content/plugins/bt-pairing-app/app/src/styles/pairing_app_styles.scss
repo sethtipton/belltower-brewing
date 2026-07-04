@@ -511,7 +511,7 @@ span.ai-text {
   color: rgba(var(--color__btblack-rgb), 0.82);
 }
 
- .bt-pairing-admin-toggle,
+.bt-pairing-admin-toggle,
 .bt-pairing-button {
   display: inline-flex;
   align-items: center;
@@ -583,8 +583,8 @@ span.ai-text {
   display: grid;
   gap: 0.75rem;
   border: 1px solid rgba(var(--color__btblack-rgb), 0.1);
-  border-radius: 1rem;
-  padding: 1rem;
+  border-radius: 0.6rem;
+  padding: 0.85rem;
   background: rgba(var(--color__btwhite-rgb), 0.82);
 }
 
@@ -621,15 +621,16 @@ span.ai-text {
 
 .bt-pairing-status-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  //grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.65rem;
 }
 
 .bt-pairing-status-card {
   display: grid;
   gap: 0.2rem;
-  padding: 0.75rem;
-  border-radius: 0.85rem;
+  padding: 0.65rem;
+  border-radius: 0.45rem;
   background: rgba(var(--color__btblack-rgb), 0.05);
 }
 
@@ -652,9 +653,9 @@ span.ai-text {
 
 .bt-pairing-admin-task {
   display: grid;
-  gap: 0.75rem;
-  padding: 0.85rem;
-  border-radius: 0.9rem;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
   border: 1px solid rgba(var(--color__btblack-rgb), 0.1);
   background: rgba(var(--color__btwhite-rgb), 0.95);
 }
@@ -729,7 +730,7 @@ span.ai-text {
   color: rgba(var(--color__btblack-rgb), 0.72);
 }
 
-.bt-pairing-admin-section--advanced {
+.bt-pairing-admin-section--disclosure {
   summary {
     cursor: pointer;
     list-style: none;
@@ -741,21 +742,38 @@ span.ai-text {
   }
 }
 
-.bt-pairing-advanced-summary {
+.bt-pairing-disclosure-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  margin: -0.15rem;
+  min-block-size: 34px;
+  padding: 0.15rem;
+  line-height: 1.2;
 }
 
-.bt-pairing-advanced-summary::after {
-  content: '+';
+.bt-pairing-disclosure-summary::after {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  border: 1px solid rgba(var(--color__btblack-rgb), 0.25);
+  border-radius: 999px;
   font-size: 1.25rem;
   line-height: 1;
 }
 
-.bt-pairing-admin-section--advanced[open] {
-  .bt-pairing-advanced-summary::after {
-    content: '−';
+.bt-pairing-admin-section--disclosure[open] {
+  .bt-pairing-disclosure-summary {
+    margin-block-end: 0.1rem;
+  }
+
+  .bt-pairing-disclosure-summary::after {
+    content: "−";
   }
 }
 

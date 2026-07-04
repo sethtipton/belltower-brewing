@@ -1935,6 +1935,7 @@ function bt_pairing_admin_buttons() {
 	$snapshot_rebuild_endpoint = esc_url_raw( rest_url( 'bt/v1/menu-snapshot/rebuild' ) );
 	$pairing_endpoint          = esc_url_raw( rest_url( 'bt/v1/pairing' ) );
 	$static_endpoint           = esc_url_raw( rest_url( 'bt/v1/pairings/static' ) );
+	$openai_configured         = '' !== (string) bt_pairing_app_get_openai_config()['api_key'];
 	?>
 	<div
 		class="bt-pairing-admin-tools"
@@ -1946,8 +1947,8 @@ function bt_pairing_admin_buttons() {
 		<div class="bt-pairing-admin-header">
 			<div class="bt-pairing-admin-intro">
 				<p class="bt-pairing-admin-kicker">Admin tools</p>
-				<h2 class="bt-pairing-admin-title" id="bt-pairing-admin-title">Pairing data tools</h2>
-				<p class="bt-pairing-admin-summary">Update saved menu data, refresh page extras, and warm pairing results for visitors.</p>
+					<h2 class="bt-pairing-admin-title" id="bt-pairing-admin-title">Pairing tools</h2>
+					<p class="bt-pairing-admin-summary">Save the current menu, prepare visitor results, and refresh AI extras.</p>
 			</div>
 			<button type="button" class="bt-pairing-admin-toggle" aria-expanded="true" aria-controls="bt-pairing-admin-body">
 				Hide tools
@@ -1955,7 +1956,7 @@ function bt_pairing_admin_buttons() {
 		</div>
 		<div class="bt-pairing-admin-body" id="bt-pairing-admin-body">
 			<p class="bt-pairing-admin-checklist">
-				<strong>Typical update:</strong> after the beer list or food sheet changes, run <strong>Sync menu data</strong>, then <strong>Warm visitor pairings</strong> if you want guests to skip the first-load wait.
+					<strong>Quick path:</strong> after changing beer or food, save the menu snapshot. Then prepare visitor results.
 			</p>
 			<?php if ( $is_preview ) : ?>
 				<p class="bt-pairing-admin-preview-note" role="note">
@@ -1963,9 +1964,9 @@ function bt_pairing_admin_buttons() {
 				</p>
 			<?php endif; ?>
 			<div class="bt-pairing-admin-feedback" id="bt-pairing-feedback" role="status" aria-live="polite" aria-atomic="true"></div>
-			<section class="bt-pairing-admin-section bt-pairing-admin-section--status" aria-labelledby="bt-pairing-admin-status-title">
-				<h3 class="bt-pairing-section-title" id="bt-pairing-admin-status-title">Status</h3>
-				<div class="bt-pairing-status-grid">
+				<details class="bt-pairing-admin-section bt-pairing-admin-section--disclosure bt-pairing-admin-section--status">
+					<summary class="bt-pairing-disclosure-summary" id="bt-pairing-admin-status-title">Status</summary>
+					<div class="bt-pairing-status-grid">
 					<div class="bt-pairing-status-card">
 						<div class="bt-pairing-status-label">Current page data</div>
 						<div class="bt-pairing-status-value" id="bt-pairing-menu-meta" role="status" aria-live="polite">Checking beer and food data…</div>
@@ -1982,103 +1983,103 @@ function bt_pairing_admin_buttons() {
 						<div class="bt-pairing-status-label">Page readiness</div>
 						<div class="bt-pairing-status-value" id="bt-pairing-ready" role="status" aria-live="polite">Waiting for page status…</div>
 					</div>
-				</div>
-			</section>
-			<section class="bt-pairing-admin-section" aria-labelledby="bt-pairing-common-title">
-				<h3 class="bt-pairing-section-title" id="bt-pairing-common-title">Most common tasks</h3>
-				<div class="bt-pairing-admin-task-list">
+					</div>
+				</details>
+				<details class="bt-pairing-admin-section bt-pairing-admin-section--disclosure">
+					<summary class="bt-pairing-disclosure-summary" id="bt-pairing-common-title">Menu update</summary>
+					<div class="bt-pairing-admin-task-list">
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--featured">
 						<div class="bt-pairing-admin-task-copy">
-							<h4 class="bt-pairing-admin-task-title">1. Sync menu data</h4>
-							<p class="bt-pairing-admin-task-text">Pull the latest beer list and food sheet already loaded on this page into the saved pairing dataset.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Run this first after menu changes.</p>
+								<h4 class="bt-pairing-admin-task-title">1. Save menu snapshot</h4>
+								<p class="bt-pairing-admin-task-text">Reads the beer and food data currently loaded in this browser page, then saves that menu snapshot in WordPress for the pairing app.</p>
+								<p class="bt-pairing-admin-meta">Run this after the beer list or food menu changes.</p>
 						</div>
 						<div class="bt-pairing-admin-actions">
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--primary bt-feature-action" data-feature-action="refresh-menu" data-pending-label="Syncing menu data…">Sync menu data</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--primary bt-feature-action" data-feature-action="refresh-menu" data-pending-label="Saving menu snapshot…">Save menu snapshot</button>
 						</div>
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--featured">
 						<div class="bt-pairing-admin-task-copy">
-							<h4 class="bt-pairing-admin-task-title">2. Warm visitor pairings</h4>
-							<p class="bt-pairing-admin-task-text" id="bt-pairing-help-refresh">Pre-generate pairing results so guests see recommendations faster the next time they load this page.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Visitor speed</span> Run after syncing menu data.</p>
+								<h4 class="bt-pairing-admin-task-title">2. Prepare visitor results</h4>
+								<p class="bt-pairing-admin-task-text" id="bt-pairing-help-refresh">Uses the saved menu snapshot to ask AI for pairing recommendations, then caches the results for visitors.</p>
+								<p class="bt-pairing-admin-meta">Run this after saving the menu snapshot.</p>
 						</div>
 						<div class="bt-pairing-admin-actions">
-							<button type="button" class="bt-pairing-refresh bt-pairing-button bt-pairing-button--secondary" aria-describedby="bt-pairing-help-refresh" data-default-label="Warm visitor pairings" data-pending-label="Warming visitor pairings…">Warm visitor pairings</button>
+								<button type="button" class="bt-pairing-refresh bt-pairing-button bt-pairing-button--secondary" aria-describedby="bt-pairing-help-refresh" data-default-label="Prepare visitor results" data-pending-label="Preparing visitor results…">Prepare visitor results</button>
 						</div>
-						<p class="bt-pairing-inline-hint" id="bt-pairing-refresh-hint" role="status" aria-live="polite">Warm visitor pairings needs both beer and food data on this page.</p>
+					<p class="bt-pairing-inline-hint" id="bt-pairing-refresh-hint" role="status" aria-live="polite">Preparing results needs both beer and food data on this page.</p>
 					</div>
-				</div>
-			</section>
-			<section class="bt-pairing-admin-section" aria-labelledby="bt-pairing-features-title">
-				<h3 class="bt-pairing-section-title" id="bt-pairing-features-title">Refresh this page’s extras</h3>
-				<p class="bt-pairing-section-help">Use these when one part of the pairing experience looks stale on this page. <strong>Refresh</strong> rebuilds it now. <strong>Clear cached copy</strong> removes the saved copy so the next refresh can start clean.</p>
+					</div>
+				</details>
+				<details class="bt-pairing-admin-section bt-pairing-admin-section--disclosure">
+					<summary class="bt-pairing-disclosure-summary" id="bt-pairing-features-title">Page extras</summary>
+					<p class="bt-pairing-section-help">Use when one AI extra looks stale. <strong>Refresh</strong> rebuilds now. <strong>Clear cache</strong> removes the saved copy.</p>
 				<div class="bt-pairing-admin-task-list" id="bt-pairing-feature-controls">
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact">
 						<div class="bt-pairing-admin-task-copy">
 							<h4 class="bt-pairing-admin-task-title">Beer colors</h4>
-							<p class="bt-pairing-admin-task-text">Rebuild the color swatches used in the beer cards.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+								<p class="bt-pairing-admin-task-text">Rebuild beer-card swatches.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">AI extra</span> This page and saved cache.</p>
 						</div>
 						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-colors" data-pending-label="Refreshing beer colors…">Refresh</button>
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-colors" data-pending-label="Clearing beer color cache…">Clear cached copy</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-colors" data-pending-label="Clearing beer color cache…">Clear cache</button>
 						</div>
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_history">
 						<div class="bt-pairing-admin-task-copy">
 							<h4 class="bt-pairing-admin-task-title">Beer history</h4>
-							<p class="bt-pairing-admin-task-text">Refresh the short history notes shown on each beer.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+								<p class="bt-pairing-admin-task-text">Refresh short beer-history notes.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">AI extra</span> This page and saved cache.</p>
 						</div>
 						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-history" data-pending-label="Refreshing beer history…">Refresh</button>
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-history" data-pending-label="Clearing beer history cache…">Clear cached copy</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-history" data-pending-label="Clearing beer history cache…">Clear cache</button>
 						</div>
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_fun_facts">
 						<div class="bt-pairing-admin-task-copy">
 							<h4 class="bt-pairing-admin-task-title">Fun facts</h4>
-							<p class="bt-pairing-admin-task-text">Refresh the fun facts shown in the beer details.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+								<p class="bt-pairing-admin-task-text">Refresh fun facts in beer details.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">AI extra</span> This page and saved cache.</p>
 						</div>
 						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-fun-facts" data-pending-label="Refreshing fun facts…">Refresh</button>
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-fun-facts" data-pending-label="Clearing fun facts cache…">Clear cached copy</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-fun-facts" data-pending-label="Clearing fun facts cache…">Clear cache</button>
 						</div>
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact" data-requires-feature="show_pairings">
 						<div class="bt-pairing-admin-task-copy">
 							<h4 class="bt-pairing-admin-task-title">Food pairings</h4>
-							<p class="bt-pairing-admin-task-text">Refresh the suggested food pairings shown inside the beer cards.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved cache</span></p>
+								<p class="bt-pairing-admin-task-text">Refresh food suggestions in beer cards.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">AI extra</span> This page and saved cache.</p>
 						</div>
 						<div class="bt-pairing-admin-actions bt-pairing-admin-actions--split">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="refresh-static-pairings" data-pending-label="Refreshing food pairings…">Refresh</button>
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-static-pairings" data-pending-label="Clearing food pairing cache…">Clear cached copy</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-static-pairings" data-pending-label="Clearing food pairing cache…">Clear cache</button>
 						</div>
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact bt-pairing-admin-task--warning">
 						<div class="bt-pairing-admin-task-copy">
-							<h4 class="bt-pairing-admin-task-title">All page extras</h4>
-							<p class="bt-pairing-admin-task-text">Clear cached colors, history, fun facts, and food pairings for this page in one step.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">This page + saved caches</span> Use this when several extras look out of date.</p>
+								<h4 class="bt-pairing-admin-task-title">Clear all extras</h4>
+								<p class="bt-pairing-admin-task-text">Remove cached colors, history, fun facts, and food pairings for this page.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Reset</span> Use when several extras look stale.</p>
 						</div>
 						<div class="bt-pairing-admin-actions">
-							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-feature-caches" data-pending-label="Clearing page extras…" data-confirm-message="Clear all cached extras for this page? This removes saved copies for colors, history, fun facts, and food pairings so they can be rebuilt cleanly.">Clear all page extras</button>
+								<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--subtle bt-feature-action" data-feature-action="clear-feature-caches" data-pending-label="Clearing page extras…" data-confirm-message="Clear all cached extras for this page? This removes saved copies for colors, history, fun facts, and food pairings so they can be rebuilt cleanly.">Clear all extras</button>
 						</div>
 					</div>
-				</div>
-			</section>
-			<details class="bt-pairing-admin-section bt-pairing-admin-section--advanced">
-				<summary class="bt-pairing-advanced-summary">Advanced maintenance</summary>
-				<p class="bt-pairing-section-help">Use these only when the saved menu dataset itself is wrong or you need to force a clean rebuild.</p>
+					</div>
+				</details>
+				<details class="bt-pairing-admin-section bt-pairing-admin-section--disclosure">
+					<summary class="bt-pairing-disclosure-summary">Advanced</summary>
+					<p class="bt-pairing-section-help">Use only when saved menu data is wrong or you need a full reset.</p>
 				<div class="bt-pairing-admin-task-list">
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact">
 						<div class="bt-pairing-admin-task-copy">
-							<h4 class="bt-pairing-admin-task-title">Rebuild saved menu data</h4>
-							<p class="bt-pairing-admin-task-text">Rebuild the saved menu snapshot from the latest menu data already ingested on the server.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Use this if saved menu data still looks wrong after syncing.</p>
+								<h4 class="bt-pairing-admin-task-title">Rebuild saved data</h4>
+								<p class="bt-pairing-admin-task-text">Rebuild from the latest server-ingested menu data.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Repair</span> Use if sync did not fix saved data.</p>
 						</div>
 						<div class="bt-pairing-admin-actions">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--secondary bt-feature-action" data-feature-action="rebuild-snapshot" data-pending-label="Rebuilding saved menu data…">Rebuild saved data</button>
@@ -2086,9 +2087,9 @@ function bt_pairing_admin_buttons() {
 					</div>
 					<div class="bt-pairing-admin-task bt-pairing-admin-task--compact bt-pairing-admin-task--danger">
 						<div class="bt-pairing-admin-task-copy">
-							<h4 class="bt-pairing-admin-task-title">Clear saved menu data</h4>
-							<p class="bt-pairing-admin-task-text">Remove the saved menu snapshot entirely. Visitors may see slower or incomplete pairing results until you sync menu data again.</p>
-							<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Saved server data</span> Only use this when you need a full reset.</p>
+								<h4 class="bt-pairing-admin-task-title">Clear saved data</h4>
+								<p class="bt-pairing-admin-task-text">Remove the saved menu snapshot. Sync again before warming pairings.</p>
+								<p class="bt-pairing-admin-meta"><span class="bt-pairing-scope">Full reset</span> Visitors may see slower results until repaired.</p>
 						</div>
 						<div class="bt-pairing-admin-actions">
 							<button type="button" class="bt-pairing-action bt-pairing-button bt-pairing-button--danger bt-feature-action" data-feature-action="clear-menu" data-pending-label="Clearing saved menu data…" data-confirm-message="Clear the saved menu data? Visitors may see stale or missing pairing results until you sync menu data again.">Clear saved data</button>
@@ -2115,13 +2116,15 @@ function bt_pairing_admin_buttons() {
 			const feedback = document.getElementById('bt-pairing-feedback');
 			const featureRows = document.querySelectorAll('[data-requires-feature]');
 			if (!buttons.length && !refreshBtn) return;
+			const openaiConfigured = <?php echo $openai_configured ? 'true' : 'false'; ?>;
+			const OPENAI_UNAVAILABLE_MESSAGE = 'OpenAI API credentials are not configured, so AI-generated pairing extras cannot be refreshed.';
 			const actionCopy = {
 				'refresh-menu': {
 					success: 'Saved menu data updated from the beer list and food sheet currently loaded on this page.',
 					error: 'Could not sync menu data. Reload the page and confirm both beer and food data are available before trying again.'
 				},
 				'clear-menu': {
-					success: 'Saved menu data cleared. Sync menu data again before warming visitor pairings.',
+					success: 'Saved menu data cleared. Save the current menu again before preparing visitor results.',
 					error: 'Could not clear saved menu data.'
 				},
 				'rebuild-snapshot': {
@@ -2165,8 +2168,8 @@ function bt_pairing_admin_buttons() {
 					error: 'Could not clear the food pairing cache.'
 				},
 				'preload-pairings': {
-					success: 'Visitor pairing cache warmed for this page.',
-					error: 'Could not warm visitor pairings.'
+					success: 'Visitor results prepared for this page.',
+					error: 'Could not prepare visitor results.'
 				}
 			};
 			const getPageFeatures = () => {
@@ -2297,7 +2300,7 @@ function bt_pairing_admin_buttons() {
 				if (isKind(scriptLegacy, 'food')) return scriptLegacy;
 				return null;
 			};
-			const PRELOAD_LABEL = 'Warm visitor pairings';
+			const PRELOAD_LABEL = 'Prepare visitor results';
 			const setRefreshState = ({ disabled, label, hint }) => {
 				if (refreshBtn) {
 					refreshBtn.disabled = previewOnly ? true : !!disabled;
@@ -2470,7 +2473,7 @@ function bt_pairing_admin_buttons() {
 					setRefreshState({
 						disabled: true,
 						label: PRELOAD_LABEL,
-						hint: 'Warm visitor pairings needs both beer and food data on this page.',
+						hint: 'Preparing results needs both beer and food data on this page.',
 					});
 					return;
 				}
@@ -2478,13 +2481,22 @@ function bt_pairing_admin_buttons() {
 			};
 			const refreshPairingCache = async () => {
 				if (!refreshBtn) return;
+				if (!openaiConfigured) {
+					setRefreshState({
+						disabled: false,
+						label: PRELOAD_LABEL,
+						hint: 'OpenAI API credentials are not configured.',
+					});
+					announceFeedback(OPENAI_UNAVAILABLE_MESSAGE, 'error');
+					return;
+				}
 				const beerData = readBeerData();
 				const foodData = readFoodData();
 				if (!beerData || !foodData) {
 					setRefreshState({
 						disabled: true,
 						label: PRELOAD_LABEL,
-						hint: 'Warm visitor pairings needs both beer and food data on this page.',
+						hint: 'Preparing results needs both beer and food data on this page.',
 					});
 					return;
 				}
@@ -2499,8 +2511,8 @@ function bt_pairing_admin_buttons() {
 					foodData,
 					force: true,
 				};
-				setRefreshState({ disabled: true, label: 'Warming visitor pairings…', hint: '' });
-				announceFeedback('Warming visitor pairings…');
+				setRefreshState({ disabled: true, label: 'Preparing visitor results…', hint: '' });
+				announceFeedback('Preparing visitor results…');
 				try {
 					const res = await fetch('<?php echo esc_js( $pairing_endpoint ); ?>', {
 						method: 'POST',
@@ -2534,7 +2546,7 @@ function bt_pairing_admin_buttons() {
 					console.error('Refresh error', err);
 					announceFeedback(actionCopy['preload-pairings'].error, 'error');
 				} finally {
-					if (refreshBtn.textContent === 'Warming visitor pairings…') {
+					if (refreshBtn.textContent === 'Preparing visitor results…') {
 						setRefreshState({ disabled: false, label: PRELOAD_LABEL, hint: '' });
 					}
 					updateAvailability();
@@ -2572,6 +2584,13 @@ function bt_pairing_admin_buttons() {
 					setButtonBusy(btn, true);
 					announceFeedback(btn.dataset.pendingLabel || 'Working…');
 					try {
+						if (
+							!openaiConfigured
+							&& ['refresh-colors', 'refresh-history', 'refresh-fun-facts', 'refresh-static-pairings'].includes(action)
+						) {
+							announceFeedback(OPENAI_UNAVAILABLE_MESSAGE, 'error');
+							return;
+						}
 						if (action === 'refresh-menu') {
 							await refreshMenuSnapshot();
 							await syncMenuSnapshotRuntime();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchStaticPairings } from './api';
+import { fetchStaticPairings, isOpenAIConfigured } from './api';
 import { createLogger } from './logger';
 
 const log = createLogger('staticPairings');
@@ -626,6 +626,12 @@ export function useStaticPairings({ beers = [], enabled = true } = {}) {
       }
       const nextFoodIndex = buildFoodByKey(currentFood);
       setFoodByKey(nextFoodIndex);
+      if (!isOpenAIConfigured()) {
+        setPairingsByBeerKey(/** @type {PairingsByBeerKey} */ ({}));
+        setStatus('idle');
+        setAvailable(false);
+        return;
+      }
       const localCached = !force ? readLocal(cacheKey) : null;
       const sessionCached = !force ? readSession(cacheKey) : null;
       const cached = isStaticPairingsResponse(localCached)

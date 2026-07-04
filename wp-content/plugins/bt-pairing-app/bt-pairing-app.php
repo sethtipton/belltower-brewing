@@ -293,6 +293,9 @@ function bt_pairing_app_enqueue_assets() {
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'isAdmin'   => current_user_can( 'manage_options' ),
 				'openaiConfigured' => $openai_configured,
+				'capabilities' => array(
+					'openai' => $openai_configured,
+				),
 				'cacheHash' => get_option( 'bt_pairing_latest_hash', '' ),
 				'siteUrl'   => get_site_url(),
 				'menuSnapshot' => bt_pairing_menu_get_snapshot(),
