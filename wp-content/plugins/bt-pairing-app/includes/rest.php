@@ -1722,6 +1722,47 @@ function bt_pairing_cache_status( WP_REST_Request $request ) {
 	);
 }
 
+function bt_pairing_slim_beer_payload( $item ) {
+	if ( ! is_array( $item ) ) {
+		return null;
+	}
+
+	$slim  = array();
+	$style = '';
+	if ( isset( $item['style'] ) && '' !== $item['style'] ) {
+		$style = $item['style'];
+	} elseif ( isset( $item['category'] ) && '' !== $item['category'] ) {
+		$style = $item['category'];
+	}
+
+	foreach ( array( 'id', 'btKey', 'name', 'abv', 'ibu', 'description', 'pairingProfile' ) as $key ) {
+		if ( isset( $item[ $key ] ) && '' !== $item[ $key ] ) {
+			$slim[ $key ] = $item[ $key ];
+		}
+	}
+	if ( '' !== $style ) {
+		$slim['style'] = $style;
+	}
+
+	return empty( $slim ) ? null : $slim;
+}
+
+function bt_pairing_slim_beer_payload_list( $items ) {
+	if ( ! is_array( $items ) ) {
+		return array();
+	}
+
+	$slim_items = array();
+	foreach ( $items as $item ) {
+		$slim = bt_pairing_slim_beer_payload( $item );
+		if ( is_array( $slim ) ) {
+			$slim_items[] = $slim;
+		}
+	}
+
+	return $slim_items;
+}
+
 function bt_proxy_pairing( WP_REST_Request $request ) {
 	$body    = json_decode( $request->get_body(), true );
 	$answers = array();
@@ -1748,16 +1789,17 @@ function bt_proxy_pairing( WP_REST_Request $request ) {
 	$beer_data = ( isset( $body['beerData'] ) && is_array( $body['beerData'] ) ) ? $body['beerData'] : null;
 	$food_data = ( isset( $body['foodData'] ) && is_array( $body['foodData'] ) ) ? $body['foodData'] : null;
 
-	$beer_catalog = $beer_data && isset( $beer_data['items'] ) ? $beer_data['items'] : ( is_array( $beer_data ) ? $beer_data : array() );
-	$color_map    = bt_compute_color_map_from_beers( $beer_catalog );
-	$allowed_beers = array();
+	$beer_catalog        = $beer_data && isset( $beer_data['items'] ) ? $beer_data['items'] : ( is_array( $beer_data ) ? $beer_data : array() );
+	$color_map           = bt_compute_color_map_from_beers( $beer_catalog );
+	$pairing_beer_catalog = bt_pairing_slim_beer_payload_list( $beer_catalog );
+	$allowed_beers       = array();
 	foreach ( $beer_catalog as $beer_item ) {
 		if ( is_array( $beer_item ) && ! empty( $beer_item['name'] ) ) {
 			$allowed_beers[] = $beer_item['name'];
 		}
 	}
 
-	$inline_beer_json  = $beer_data ? wp_json_encode( $beer_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : 'null';
+	$inline_beer_json  = $pairing_beer_catalog ? wp_json_encode( $pairing_beer_catalog, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : 'null';
 	$user_answers_json = wp_json_encode( $answers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 	$prompt            = <<<PROMPT
 		You are a sensory scientist and beer history educator. Be concise, fun and informative.
@@ -1954,10 +1996,10 @@ function bt_pairing_admin_buttons() {
 				Hide tools
 			</button>
 		</div>
-		<div class="bt-pairing-admin-body" id="bt-pairing-admin-body">
-			<p class="bt-pairing-admin-checklist">
-					<strong>Quick path:</strong> after changing beer or food, save the menu snapshot. Then prepare visitor results.
-			</p>
+			<div class="bt-pairing-admin-body" id="bt-pairing-admin-body">
+				<p class="bt-pairing-admin-checklist">
+					<strong>Quick path:</strong> to reset and show fresh data, click <strong>Clear all extras</strong>, then <strong>Save menu snapshot</strong>, then <strong>Prepare visitor results</strong>. Use <strong>Clear saved data</strong> only if the saved menu still looks wrong after that.
+				</p>
 			<?php if ( $is_preview ) : ?>
 				<p class="bt-pairing-admin-preview-note" role="note">
 					Preview mode is on. Layout and copy are visible, but actions stay disabled until you log into WordPress as an admin.

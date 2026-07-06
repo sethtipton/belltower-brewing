@@ -145,6 +145,39 @@ export async function getBeerColors(items = []) {
 }
 
 /**
+ * Keep the live pairing request focused on fields that can affect matching.
+ *
+ * @param {unknown} item
+ * @returns {Record<string, unknown> | null}
+ */
+function toPairingBeerPayload(item) {
+  if (!item || typeof item !== 'object') return null;
+  const source = /** @type {Record<string, unknown>} */ (item);
+  const slim = /** @type {Record<string, unknown>} */ ({});
+  const style = source.style ?? source.category;
+
+  for (const key of ['id', 'btKey', 'name', 'abv', 'ibu', 'description', 'pairingProfile']) {
+    if (source[key] !== undefined && source[key] !== null && source[key] !== '') {
+      slim[key] = source[key];
+    }
+  }
+  if (style !== undefined && style !== null && style !== '') {
+    slim.style = style;
+  }
+
+  return Object.keys(slim).length ? slim : null;
+}
+
+/**
+ * @param {unknown[]} beerItems
+ * @returns {Record<string, unknown>[]}
+ */
+function toPairingBeerPayloadList(beerItems = []) {
+  if (!Array.isArray(beerItems)) return [];
+  return beerItems.map(toPairingBeerPayload).filter(Boolean);
+}
+
+/**
  * @param {Record<string, unknown>} answers
  * @param {unknown[]} beerItems
  * @param {{ force?: boolean }} options
@@ -152,15 +185,17 @@ export async function getBeerColors(items = []) {
  */
 export function getPairing(answers = {}, beerItems = [], options = {}) {
   if (!isOpenAIConfigured()) return Promise.resolve(null);
+  const pairingBeerData = toPairingBeerPayloadList(beerItems);
   log.debug('pairing.start', {
     phase: 'api',
     answers: Object.keys(answers ?? {}).length,
     beers: Array.isArray(beerItems) ? beerItems.length : 0,
+    pairingBeers: pairingBeerData.length,
     force: !!options.force,
   });
   return /** @type {Promise<unknown>} */ (wpFetch('/bt/v1/pairing', {
     method: 'POST',
-    body: JSON.stringify({ answers, beerData: beerItems, force: options.force ? true : false }),
+    body: JSON.stringify({ answers, beerData: pairingBeerData, force: options.force ? true : false }),
   }));
 }
 
@@ -172,9 +207,10 @@ export function getPairing(answers = {}, beerItems = [], options = {}) {
  */
 export async function preloadPairing(beerItems = [], answers = {}, foodData = null) {
   if (!isOpenAIConfigured()) return null;
+  const pairingBeerData = toPairingBeerPayloadList(beerItems);
   return /** @type {Promise<unknown>} */ (wpFetch('/bt/v1/pairing', {
     method: 'POST',
-    body: JSON.stringify({ beerData: beerItems, foodData, preload: true, answers }),
+    body: JSON.stringify({ beerData: pairingBeerData, foodData, preload: true, answers }),
   }));
 }
 

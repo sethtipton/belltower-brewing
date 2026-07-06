@@ -927,6 +927,80 @@ add_shortcode( 'partners_grid', function() {
 add_filter( 'cmplz_autofocus', '__return_false' );
 
 /**
+ * Add a concise shortcode reference to the WordPress dashboard.
+ */
+function belltower_register_shortcode_dashboard_widget() {
+	if ( ! current_user_can( 'edit_pages' ) ) {
+		return;
+	}
+
+	wp_add_dashboard_widget(
+		'belltower_shortcode_reference',
+		'Bell Tower Shortcodes',
+		'belltower_render_shortcode_dashboard_widget'
+	);
+}
+add_action( 'wp_dashboard_setup', 'belltower_register_shortcode_dashboard_widget' );
+
+function belltower_shortcode_reference_group( $title, $shortcodes ) {
+	echo '<h3 style="margin: 1em 0 0.35em;font-weight: 700;">' . esc_html( $title ) . '</h3>';
+	echo '<ul>';
+	foreach ( $shortcodes as $shortcode ) {
+		echo '<li><code style="font-size: 11px;">' . esc_html( $shortcode ) . '</code></li>';
+	}
+	echo '</ul>';
+}
+
+function belltower_render_shortcode_dashboard_widget() {
+	belltower_shortcode_reference_group(
+		'Food and drinks menus',
+		array(
+			'[brewery_menu category="Shareables"]',
+			'[brewery_menu category="Soup & Salad"]',
+			'[brewery_menu category="Bowls"]',
+			'[brewery_menu category="Handhelds"]',
+			'[brewery_menu category="Kids"]',
+			'[brewery_menu category="Sides"]',
+			'[drinks_menu category="Cocktails"]',
+			'[drinks_menu category="Wine"]',
+			'[drinks_menu category="Non-Alcoholic"]',
+			'[spirits_menu category="Whiskey"]',
+			'[spirits_menu category="Vodka"]',
+			'[brewery_legend]',
+		)
+	);
+
+	belltower_shortcode_reference_group(
+		'Beer, kegs, events, and partners',
+		array(
+			'[untappd_menu]',
+			'[untappd_menu location_id="38757" menu_id="150549"]',
+			'[untappd_menu id="my-beer-menu" class="extra-class"]',
+			'[keg_list]',
+			'[keg_list type="retail"]',
+			'[keg_list type="wholesale"]',
+			'[keg_list type="both"]',
+			'[events_by_date]',
+			'[partners_grid]',
+		)
+	);
+
+	belltower_shortcode_reference_group(
+		'Pairing app',
+		array(
+			'[bt_pairing_app]',
+			'[bt_pairing_app show_quiz="1" show_flight="1" show_history="1" show_fun_facts="1" show_pairings="1"]',
+			'[bt_pairing_app show_quiz="0"]',
+			'[bt_pairing_app show_flight="0"]',
+			'[bt_pairing_app show_history="0"]',
+			'[bt_pairing_app show_fun_facts="0"]',
+			'[bt_pairing_app show_pairings="0"]',
+			'[bt_pairing_app show_history="0" show_fun_facts="0" show_pairings="0"]',
+		)
+	);
+}
+
+/**
  * Implement the Custom Header feature.
  */
 require get_template_directory() . '/inc/custom-header.php';
